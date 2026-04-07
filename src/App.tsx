@@ -1,25 +1,55 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react';
+import Header from './components/Header.tsx';
+import Footer from './components/Footer.tsx';
+import HexBinTrainer from './components/HexBinTrainer.tsx';
+import UnicodeTrainer from './components/UnicodeTrainer.tsx';
+import Leaderboard from './components/Leaderboard.tsx';
+import WelcomeScreen from './components/WelcomeScreen.tsx';
 
-function App() {
-  const [count, setCount] = useState<number>(0)
+export default function App() {
+    const [activeApp, setActiveApp] = useState<'hex' | 'unicode'>('hex');
+    const [username, setUsername] = useState<string | null>(null);
 
-  return (
-      <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
-        <h1 className="text-4xl font-bold text-blue-600 mb-4">
-          Vite + React + Tailwind (TSX)
-        </h1>
-        <p className="text-gray-700 mb-8">
-          Dein Hex-to-Binary Trainer Projekt ist bereit!
-        </p>
+    useEffect(() => {
+        const savedName = localStorage.getItem('trainer_name');
+        if (savedName) setUsername(savedName);
+    }, []);
 
-        <button
-            onClick={() => setCount((count) => count + 1)}
-            className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors shadow-lg"
-        >
-          Counter ist: {count}
-        </button>
-      </div>
-  )
+    const handleJoin = (name: string) => {
+        localStorage.setItem('trainer_name', name);
+        setUsername(name);
+    };
+
+    const handleLogout = () => {
+        localStorage.removeItem('trainer_name');
+        setUsername(null);
+    };
+
+    if (!username) {
+        return <WelcomeScreen onJoin={handleJoin} />;
+    }
+
+    return (
+        <div className="min-h-screen bg-slate-900 text-slate-200 font-sans flex flex-col">
+            <Header
+                activeApp={activeApp}
+                setActiveApp={setActiveApp}
+                username={username}
+                onLogout={handleLogout}
+            />
+
+            <main className="max-w-4xl mx-auto w-full p-4 py-8 flex-grow">
+                <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+                    {activeApp === 'hex' ? (
+                        <HexBinTrainer username={username} />
+                    ) : (
+                        <UnicodeTrainer username={username} />
+                    )}
+                    <Leaderboard currentUsername={username} />
+                </div>
+            </main>
+
+            <Footer />
+        </div>
+    );
 }
-
-export default App

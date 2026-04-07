@@ -1,0 +1,58 @@
+{
+  "1": {
+    "correct": 443,
+    "index": 1,
+    "name": "Max",
+    "points": 10056,
+    "wrong": 16
+  },
+  "2": {
+    "correct": 751,
+    "index": 2,
+    "name": "Erik",
+    "points": 9388,
+    "wrong": 4
+  },
+  "3": {
+    "correct": 246,
+    "index": 3,
+    "name": "Kai",
+    "points": 4312,
+    "wrong": 2
+  },
+  "4": {
+    "correct": 117,
+    "index": 4,
+    "name": "Aaron",
+    "points": 1056,
+    "wrong": 7
+  },
+  "5": {
+    "correct": 138,
+    "index": 5,
+    "name": "Lennart",
+    "points": 852,
+    "wrong": 3
+  },
+  "6": {
+    "correct": 57,
+    "index": 6,
+    "name": "Nico",
+    "points": 456,
+    "wrong": 0
+  },
+  "7": {
+    "correct": 1,
+    "index": 7,
+    "name": "Mika",
+    "points": 8,
+    "wrong": 0
+  },
+  "8": {
+    "correct": 1,
+    "index": 8,
+    "name": "Adrian",
+    "points": 8,
+    "wrong": 0
+  }
+}
