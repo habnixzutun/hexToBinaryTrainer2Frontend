@@ -7,35 +7,74 @@ export interface LeaderboardEntry {
     points: number;
 }
 
+export interface UserType {
+    name: string;
+    correct: number;
+    incorrect: number;
+    points: number;
+}
+
+export interface UserList {
+    entries: UserType[];
+}
+
+export interface ResultResponse {
+    message: string;
+    user: UserType;
+}
+
 export const api = {
     // Holt die aktuelle Bestenliste
-    async getLeaderboard(): Promise<LeaderboardEntry[]> {
+    async getUser(username: string): Promise<UserType> {
+        const response = await fetch(`${BASE_URL}/api/user`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                name: username
+            }),
+        });
+        if (!response.ok) {
+            // Fallback, falls der User neu ist und das Backend z.B. 404 wirft
+            return { name: username, correct: 0, incorrect: 0, points: 0 };
+        }
+        return await response.json();
+    },
+
+    // Holt die Bestenliste
+    async getLeaderboard(): Promise<UserType[]> {
         try {
-            // const response = await fetch(`${BASE_URL}/api/leaderboard`);
-            const response = await fetch("/leaderboard.json");
+            const response = await fetch(`${BASE_URL}/api/leaderboard`);
             if (!response.ok) throw new Error("Netzwerk-Fehler");
-            return await response.json();
+            const data: UserList = await response.json();
+            return data.entries; // Wir geben nur die Liste zurück
         } catch (error) {
             console.error("Leaderboard konnte nicht geladen werden:", error);
-            return []; // Fallback auf leeres Array
+            return [];
         }
     },
 
     // Meldet eine richtige Antwort
-    async updateUserCorrect(username: string): Promise<void> {
-        await fetch(`${BASE_URL}/api/correct`, {
+    async updateUserCorrect(username: string, bits: number): Promise<ResultResponse> {
+        const response = await fetch(`${BASE_URL}/api/correct`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username }),
+            body: JSON.stringify({
+                name: username,
+                bits: bits
+            }),
         });
+        return await response.json();
     },
 
-    // Meldet eine falsche Antwort
-    async updateUserIncorrect(username: string): Promise<void> {
-        await fetch(`${BASE_URL}/api/incorrect`, {
+    async updateUserIncorrect(username: string, bits: number): Promise<ResultResponse> {
+        const response = await fetch(`${BASE_URL}/api/incorrect`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username }),
+            body: JSON.stringify({
+                name: username,
+                bits: bits
+            }),
         });
+        return await response.json();
     }
 };

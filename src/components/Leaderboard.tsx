@@ -1,45 +1,41 @@
 import { useEffect, useState } from 'react';
-import { api, type LeaderboardEntry } from '../services/api.ts';
+import { api, type UserType } from '../services/api.ts';
 
 interface Props {
-    currentUsername: string;
+    currentUser: UserType;
+    refreshTrigger: number;
 }
 
-export default function Leaderboard({ currentUsername }: Props) {
-    const [data, setData] = useState<LeaderboardEntry[]>([]);
+export default function Leaderboard({ currentUser, refreshTrigger }: Props) {
+    const [data, setData] = useState<UserType[]>([]);
     const [loading, setLoading] = useState(true);
 
     const refreshData = async () => {
         setLoading(true);
         const result = await api.getLeaderboard();
-        const array = Object.values(result);
-        // Sortierung nach Punkten (absteigend)
-        const sorted = [...array].sort((a, b) => b.points - a.points);
+        // Sortierung nach Punkten
+        const sorted = result.sort((a, b) => b.points - a.points);
         setData(sorted);
         setLoading(false);
     };
 
     useEffect(() => {
         refreshData();
-        // Optional: Alle 30 Sekunden automatisch aktualisieren
+    }, [refreshTrigger]); // Lädt neu, wenn refreshTrigger sich ändert
+
+    // Optionales Polling alle 30 Sekunden
+    useEffect(() => {
         const interval = setInterval(refreshData, 30000);
         return () => clearInterval(interval);
     }, []);
 
     return (
-        <div className="mt-8 bg-slate-800 p-6 rounded-xl shadow-lg border border-slate-700">
+        <div className="mt-8 bg-slate-800 p-6 rounded-xl shadow-lg border border-slate-700 relative">
             <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xl font-bold text-white flex items-center gap-2">
                     Bestenliste
                     {loading && <span className="w-2 h-2 bg-blue-500 rounded-full animate-ping"></span>}
                 </h3>
-                <button
-                    onClick={refreshData}
-                    className="text-slate-400 hover:text-white transition-colors text-2xl"
-                    title="Aktualisieren"
-                >
-                    ⟳
-                </button>
             </div>
 
             <div className="overflow-x-auto">
@@ -55,7 +51,7 @@ export default function Leaderboard({ currentUsername }: Props) {
                     </thead>
                     <tbody>
                     {data.map((entry, idx) => {
-                        const isMe = entry.name === currentUsername;
+                        const isMe = entry.name === currentUser.name;
                         const rankIcon = idx === 0 ? '🏆' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}.`;
 
                         return (
@@ -72,7 +68,7 @@ export default function Leaderboard({ currentUsername }: Props) {
                     </span>
                                 </td>
                                 <td className="py-3 px-4 text-center text-green-400/80">{entry.correct}</td>
-                                <td className="py-3 px-4 text-center text-red-400/80">{entry.wrong}</td>
+                                <td className="py-3 px-4 text-center text-red-400/80">{entry.incorrect}</td>
                                 <td className={`py-3 px-4 text-right font-bold ${isMe ? 'text-blue-400' : 'text-yellow-400'}`}>
                                     {entry.points.toLocaleString()}
                                 </td>

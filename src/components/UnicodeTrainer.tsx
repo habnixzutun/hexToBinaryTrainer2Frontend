@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Score } from '../types.tsx';
-import { api } from "../services/api.ts";
+import {api, type UserType} from "../services/api.ts";
 
 interface Props {
-    username: string;
+    user: UserType;
+    onUpdate: (user: UserType) => void;
 }
 
-export default function UnicodeTrainer({ username }: Props) {
+export default function UnicodeTrainer({ user, onUpdate }: Props) {
     const [bytes, setBytes] = useState(1);
     const [question, setQuestion] = useState('');
     const [char, setChar] = useState('');
@@ -14,6 +15,7 @@ export default function UnicodeTrainer({ username }: Props) {
     const [userAnswer, setUserAnswer] = useState('');
     const [score, setScore] = useState<Score>({ correct: 0, wrong: 0, points: 0 });
     const [feedback, setFeedback] = useState<'none' | 'correct' | 'wrong'>('none');
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     // --- Kern-Logik: UTF-8 Encoding ---
     const encodeToUTF8Binary = (codePoint: number): string => {
@@ -57,24 +59,28 @@ export default function UnicodeTrainer({ username }: Props) {
         generateQuestion();
     }, [generateQuestion]);
 
-    const handleCheck = () => {
-        // Wir ignorieren Leerzeichen in der Usereingabe für bessere UX
-        const cleanUserAnswer = userAnswer.replace(/\s/g, '');
-        const normalize = (str: string) =>
-            str.trim().toUpperCase().replace(/^0+/, '');
+    const handleCheck = async () => {
+        if (isSubmitting || !userAnswer.trim()) return;
+        setIsSubmitting(true);
 
-        const isCorrect = normalize(cleanUserAnswer) === normalize(cleanUserAnswer);
+        const isCorrect = userAnswer.trim().toUpperCase() === correctAnswer.toUpperCase();
 
-        if (isCorrect) {
-            setFeedback('correct');
-            setScore(s => ({ ...s, correct: s.correct + 1, points: s.points + bytes * 16 }));
-            api.updateUserCorrect(username);
-            setTimeout(generateQuestion, 600);
-        } else {
-            setFeedback('wrong');
-            setScore(s => ({ ...s, wrong: s.wrong + 1, points: Math.max(0, s.points - bytes * 16 * 4) }));
-            api.updateUserIncorrect(username);
-            setTimeout(() => setFeedback('none'), 2000);
+        try {
+            if (isCorrect) {
+                setFeedback('correct');
+                const res = await api.updateUserCorrect(user.name, bytes + 8);
+                onUpdate(res.user); // State in App.tsx updaten
+                setTimeout(generateQuestion, 600);
+            } else {
+                setFeedback('wrong');
+                const res = await api.updateUserIncorrect(user.name, bytes * 8);
+                onUpdate(res.user); // State in App.tsx updaten
+                setTimeout(() => setFeedback('none'), 1000);
+            }
+        } catch (e) {
+            console.error("Fehler beim Senden ans Backend", e);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -103,9 +109,19 @@ export default function UnicodeTrainer({ username }: Props) {
                     </div>
 
                     <div className="flex gap-6 text-lg font-mono bg-slate-800 px-4 py-2 rounded-lg border border-slate-700">
-                        <div className="flex flex-col items-center"><span className="text-xs text-slate-500 uppercase">Richtig</span><span className="text-green-400 font-bold">{score.correct}</span></div>
-                        <div className="flex flex-col items-center"><span className="text-xs text-slate-500 uppercase">Falsch</span><span className="text-red-400 font-bold">{score.wrong}</span></div>
-                        <div className="flex flex-col items-center"><span className="text-xs text-slate-500 uppercase">Score</span><span className="text-yellow-400 font-bold">{score.points}</span></div>
+                        <div className="flex flex-col items-center">
+                            <span className="text-xs text-slate-500 uppercase">Richtig</span>
+                            <span className="text-green-400 font-bold">{user.correct}</span>
+                        </div>
+                        <div className="flex flex-col items-center">
+                            <span className="text-xs text-slate-500 uppercase">Falsch</span>
+                            {/* Wichtig: Hier 'incorrect' gemäß Backend-Model nutzen */}
+                            <span className="text-red-400 font-bold">{user.incorrect}</span>
+                        </div>
+                        <div className="flex flex-col items-center">
+                            <span className="text-xs text-slate-500 uppercase">Score</span>
+                            <span className="text-yellow-400 font-bold">{user.points}</span>
+                        </div>
                     </div>
                 </div>
 
