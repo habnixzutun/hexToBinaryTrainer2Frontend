@@ -41,8 +41,12 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
     const handleCheck = async () => {
         if (isSubmitting || !userAnswer.trim()) return;
         setIsSubmitting(true);
+        const normalize = (str: string) =>
+            str.trim().toUpperCase().replace(/^0+/, '');
 
-        const isCorrect = userAnswer.trim().toUpperCase() === correctAnswer.toUpperCase();
+        const isCorrect = normalize(userAnswer) === normalize(correctAnswer);
+
+        // const isCorrect = userAnswer.trim().toUpperCase() === correctAnswer.toUpperCase();
 
         try {
             if (isCorrect) {
