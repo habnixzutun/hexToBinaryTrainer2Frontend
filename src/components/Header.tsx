@@ -13,7 +13,7 @@ export default function Header({ activeApp, setActiveApp, username, onLogout }: 
                 {/* Logo & User Info */}
                 <div className="flex flex-col">
                     <h1 className="text-xl font-black bg-gradient-to-r from-indigo-400 to-indigo-400 bg-clip-text text-transparent tracking-tight">
-                        TRAINER<span className="text-white/20">HUB</span>
+                        IT <span className="text-white/20">TRAINER</span>
                     </h1>
                     <div className="flex items-center gap-1.5">
                         <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
