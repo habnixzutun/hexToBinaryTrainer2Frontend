@@ -7,7 +7,10 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  base: '/trainer/',
   server: {
+    host: '0.0.0.0',
+    port: 5173,
     watch: {
       usePolling: true, // Nötig, wenn HMR in Docker/WSL2 nicht reagiert
     },
