@@ -1,4 +1,4 @@
-const BASE_URL = "http://localhost:8000"; // Deine spätere FastAPI URL
+const BASE_URL = "http:/server.albecker.eu:8000"; // Deine spätere FastAPI URL
 
 export interface LeaderboardEntry {
     name: string;
