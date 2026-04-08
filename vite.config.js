@@ -11,6 +11,7 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 5173,
+    allowedHosts: ['server.albecker.eu', "localhost"],
     watch: {
       usePolling: true, // Nötig, wenn HMR in Docker/WSL2 nicht reagiert
     },
