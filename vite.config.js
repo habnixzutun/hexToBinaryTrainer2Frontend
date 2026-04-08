@@ -7,7 +7,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
-  base: '/trainer/',
+  base: '/trainer',
   server: {
     host: '0.0.0.0',
     port: 5173,
