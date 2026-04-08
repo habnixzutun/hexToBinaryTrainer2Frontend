@@ -7,4 +7,4 @@ services:
       - .:/app                # Geändert von ./frontend auf .
       - /app/node_modules      # Wichtig: Verhindert, dass lokale node_modules die im Container überschreiben
     environment:
-      - VITE_API_URL=http://localhost:8000
+      - VITE_API_URL=https://server.albecker.eu
