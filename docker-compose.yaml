@@ -1,0 +1,10 @@
+services:
+  frontend:
+    build: .
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/app                # Geändert von ./frontend auf .
+      - /app/node_modules      # Wichtig: Verhindert, dass lokale node_modules die im Container überschreiben
+    environment:
+      - VITE_API_URL=http://localhost:8000
