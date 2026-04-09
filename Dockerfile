@@ -1,15 +1,17 @@
-# 🔨 Build Stage
-FROM node:20 AS builder
+FROM node:20-slim
+
 WORKDIR /app
 
+# Abhängigkeiten kopieren und installieren
 COPY package*.json ./
 RUN npm install
 
+# Quellcode kopieren
 COPY . .
-RUN npm run build
 
-# 🚀 Production Stage
-FROM alpine:latest
-WORKDIR /app
+# Vite Standard-Port
+EXPOSE 5173
 
-COPY --from=builder /app/dist .
+# WICHTIG: --host 0.0.0.0 ist nötig, damit der Port aus dem Container
+# an deinen Rechner weitergereicht werden kann.
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
