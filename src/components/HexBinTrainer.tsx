@@ -22,7 +22,8 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
     const generateQuestion = useCallback(() => {
         // ... (Hier bleibt deine bestehende generateQuestion-Logik exakt gleich) ...
         const max = Math.pow(2, bits) - 1;
-        const randomVal = Math.floor(Math.random() * (max + 1));
+        const min = Math.pow(2, bits - 4) - 1;
+        const randomVal = Math.floor(Math.random() * (max - min + 1) + min);
         let q = '', a = '';
 
         switch (activeMode) {
