@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import {useState, useEffect, useCallback, useRef} from 'react';
 import type { Score } from '../types.tsx';
 import {api, type UserType} from "../services/api.ts";
 
@@ -16,6 +16,8 @@ export default function UnicodeTrainer({ user, onUpdate }: Props) {
     const [score, setScore] = useState<Score>({ correct: 0, wrong: 0, points: 0 });
     const [feedback, setFeedback] = useState<'none' | 'correct' | 'wrong'>('none');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    // Ref für das Input-Feld, um den Fokus programmatisch zu setzen
+    const inputRef = useRef<HTMLInputElement>(null);
 
     // --- Kern-Logik: UTF-8 Encoding ---
     const encodeToUTF8Binary = (codePoint: number): string => {
@@ -53,11 +55,28 @@ export default function UnicodeTrainer({ user, onUpdate }: Props) {
         setCorrectAnswer(encodeToUTF8Binary(randomCP));
         setUserAnswer('');
         setFeedback('none');
+
+        // Optional: Fokus auch beim Wechseln des Modus/Generieren der Frage setzen
+        setTimeout(() => inputRef.current?.focus(), 0);
     }, [bytes]);
 
+    useEffect(() => { generateQuestion(); }, [generateQuestion]);
+
+    // Effekt, um den Fokus zurückzuholen, wenn isSubmitting wieder false wird
     useEffect(() => {
-        generateQuestion();
-    }, [generateQuestion]);
+        if (!isSubmitting && inputRef.current) {
+            inputRef.current.focus();
+        }
+    }, [isSubmitting]);
+
+    // Filtert die Eingabe basierend auf dem aktiven Modus
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        let val = e.target.value;
+        val = val.replace(/[^01]/g, ''); // Nur 0 und 1
+
+        setUserAnswer(val);
+    };
+
 
     const handleCheck = async () => {
         if (isSubmitting || !userAnswer.trim()) return;
@@ -143,9 +162,10 @@ export default function UnicodeTrainer({ user, onUpdate }: Props) {
                         <div className="flex justify-center gap-3 w-full max-w-lg">
                             <input
                                 type="text"
+                                ref={inputRef}
                                 autoFocus
                                 value={userAnswer}
-                                onChange={e => setUserAnswer(e.target.value)}
+                                onChange={handleInputChange}
                                 onKeyDown={e => e.key === 'Enter' && handleCheck()}
                                 placeholder="z.B. 1110xxxx 10xxxxxx..."
                                 className={`bg-slate-900 border-2 rounded-lg px-6 py-4 text-xl md:text-2xl font-mono text-white focus:outline-none w-full text-center shadow-inner transition-colors ${

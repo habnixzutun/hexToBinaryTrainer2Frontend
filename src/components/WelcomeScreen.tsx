@@ -18,7 +18,7 @@ export default function WelcomeScreen({ onJoin }: Props) {
         <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
             <div className="bg-slate-800 border border-slate-700 p-8 rounded-2xl shadow-2xl max-w-md w-full text-center">
                 <h1 className="text-4xl font-black bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent mb-2">
-                    Trainer Hub
+                    IT-TRAINER
                 </h1>
                 <p className="text-slate-400 mb-8">Gib deinen Namen ein, um dein Training zu starten und in die Bestenliste einzusteigen.</p>
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { api, type UserType } from '../services/api.ts';
 
 type Mode = 'HexToBin' | 'HexToDec' | 'BinToHex' | 'BinToDec' | 'DecToHex' | 'DecToBin';
@@ -17,10 +17,12 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
     const [correctAnswer, setCorrectAnswer] = useState('');
     const [userAnswer, setUserAnswer] = useState('');
     const [feedback, setFeedback] = useState<'none' | 'correct' | 'wrong'>('none');
-    const [isSubmitting, setIsSubmitting] = useState(false); // Verhindert Spam-Klicks
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Ref für das Input-Feld, um den Fokus programmatisch zu setzen
+    const inputRef = useRef<HTMLInputElement>(null);
 
     const generateQuestion = useCallback(() => {
-        // ... (Hier bleibt deine bestehende generateQuestion-Logik exakt gleich) ...
         const max = Math.pow(2, bits) - 1;
         const min = Math.pow(2, bits - 4) - 1;
         const randomVal = Math.floor(Math.random() * (max - min + 1) + min);
@@ -35,9 +37,35 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
             case 'DecToBin': q = randomVal.toString(10); a = randomVal.toString(2).padStart(bits, '0'); break;
         }
         setQuestion(q); setCorrectAnswer(a); setUserAnswer(''); setFeedback('none');
+
+        // Optional: Fokus auch beim Wechseln des Modus/Generieren der Frage setzen
+        setTimeout(() => inputRef.current?.focus(), 0);
     }, [activeMode, bits]);
 
     useEffect(() => { generateQuestion(); }, [generateQuestion]);
+
+    // Effekt, um den Fokus zurückzuholen, wenn isSubmitting wieder false wird
+    useEffect(() => {
+        if (!isSubmitting && inputRef.current) {
+            inputRef.current.focus();
+        }
+    }, [isSubmitting]);
+
+    // Filtert die Eingabe basierend auf dem aktiven Modus
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        let val = e.target.value;
+        const targetFormat = activeMode.split('To')[1]; // 'Bin', 'Dec', oder 'Hex'
+
+        if (targetFormat === 'Bin') {
+            val = val.replace(/[^01]/g, ''); // Nur 0 und 1
+        } else if (targetFormat === 'Dec') {
+            val = val.replace(/[^0-9]/g, ''); // Nur 0-9
+        } else if (targetFormat === 'Hex') {
+            val = val.replace(/[^0-9a-fA-F]/g, ''); // Nur 0-9, a-f, A-F
+        }
+
+        setUserAnswer(val);
+    };
 
     const handleCheck = async () => {
         if (isSubmitting || !userAnswer.trim()) return;
@@ -47,18 +75,16 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
 
         const isCorrect = normalize(userAnswer) === normalize(correctAnswer);
 
-        // const isCorrect = userAnswer.trim().toUpperCase() === correctAnswer.toUpperCase();
-
         try {
             if (isCorrect) {
                 setFeedback('correct');
                 const res = await api.updateUserCorrect(user.name, bits);
-                onUpdate(res.user); // State in App.tsx updaten
+                onUpdate(res.user);
                 setTimeout(generateQuestion, 600);
             } else {
                 setFeedback('wrong');
                 const res = await api.updateUserIncorrect(user.name, bits);
-                onUpdate(res.user); // State in App.tsx updaten
+                onUpdate(res.user);
                 setTimeout(() => setFeedback('none'), 1000);
             }
         } catch (e) {
@@ -107,7 +133,6 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
                         </div>
                     </div>
 
-                    {/* HIER nutzen wir jetzt die globalen User-Daten vom Server! */}
                     <div className="flex gap-6 text-lg font-mono bg-slate-800 px-4 py-2 rounded-lg border border-slate-700">
                         <div className="flex flex-col items-center">
                             <span className="text-xs text-slate-500 uppercase">Richtig</span>
@@ -115,7 +140,6 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
                         </div>
                         <div className="flex flex-col items-center">
                             <span className="text-xs text-slate-500 uppercase">Falsch</span>
-                            {/* Wichtig: Hier 'incorrect' gemäß Backend-Model nutzen */}
                             <span className="text-red-400 font-bold">{user.incorrect}</span>
                         </div>
                         <div className="flex flex-col items-center">
@@ -125,7 +149,7 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
                     </div>
                 </div>
 
-                {/* Spielbereich ... (bleibt gleich) */}
+                {/* Spielbereich */}
                 <div className="text-center py-4">
                     <div className="text-slate-500 text-sm mb-2 uppercase tracking-widest font-semibold">
                         Übersetze {activeMode.split('To')[0]}
@@ -136,11 +160,12 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
                     <div className="flex flex-col items-center gap-4">
                         <div className="flex justify-center gap-3 w-full max-w-md">
                             <input
+                                ref={inputRef}
                                 type="text"
                                 autoFocus
                                 disabled={isSubmitting}
                                 value={userAnswer}
-                                onChange={e => setUserAnswer(e.target.value)}
+                                onChange={handleInputChange}
                                 onKeyDown={e => e.key === 'Enter' && handleCheck()}
                                 placeholder={`${activeMode.split('To')[1]} eingeben...`}
                                 className={`bg-slate-900 border-2 rounded-lg px-6 py-4 text-2xl font-mono text-white focus:outline-none w-full text-center shadow-inner transition-colors ${
