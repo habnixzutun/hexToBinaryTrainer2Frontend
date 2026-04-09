@@ -10,6 +10,6 @@ RUN npm run build
 
 # 🚀 Production Stage
 FROM alpine:latest
-WORKDIR /srv/frontend
+WORKDIR /app
 
 COPY --from=builder /app/dist .
