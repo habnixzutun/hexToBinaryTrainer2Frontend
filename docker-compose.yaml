@@ -1,10 +1,21 @@
 services:
   frontend:
     build: .
-    ports:
-      - "5173:5173"
     volumes:
-      - .:/app                # Geändert von ./frontend auf .
-      - /app/node_modules      # Wichtig: Verhindert, dass lokale node_modules die im Container überschreiben
-    environment:
-      - VITE_API_URL=https://server.albecker.eu
+      - frontend_dist:/srv/frontend
+
+  caddy:
+    image: caddy:latest
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - frontend_dist:/srv/frontend
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  frontend_dist:
+  caddy_data:
+  caddy_config:
