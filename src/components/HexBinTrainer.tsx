@@ -162,6 +162,7 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
                             <input
                                 ref={inputRef}
                                 type="text"
+                                autoComplete="off"
                                 autoFocus
                                 disabled={isSubmitting}
                                 value={userAnswer}

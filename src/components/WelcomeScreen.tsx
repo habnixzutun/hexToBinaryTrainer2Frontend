@@ -25,6 +25,7 @@ export default function WelcomeScreen({ onJoin }: Props) {
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <input
                         autoFocus
+                        autoComplete="off"
                         type="text"
                         value={name}
                         onChange={(e) => setName(e.target.value)}

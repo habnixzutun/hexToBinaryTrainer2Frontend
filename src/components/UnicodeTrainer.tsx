@@ -162,6 +162,7 @@ export default function UnicodeTrainer({ user, onUpdate }: Props) {
                         <div className="flex justify-center gap-3 w-full max-w-lg">
                             <input
                                 type="text"
+                                autoComplete="off"
                                 ref={inputRef}
                                 autoFocus
                                 value={userAnswer}
