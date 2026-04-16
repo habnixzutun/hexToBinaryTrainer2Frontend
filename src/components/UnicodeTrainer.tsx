@@ -161,9 +161,11 @@ export default function UnicodeTrainer({ user, onUpdate }: Props) {
                     <div className="flex flex-col items-center gap-4">
                         <div className="flex justify-center gap-3 w-full max-w-lg">
                             <input
-                                type="text"
-                                autoComplete="off"
+                                id="game-input-field" // ID für die Barrierefreiheit
+                                name="binary-input-unique" // Name gegen Autofill-Verwirrung
                                 ref={inputRef}
+                                type="text"
+                                autoComplete="one-time-code" // Trick: Chrome denkt, es sei ein SMS-Code und lässt Kreditkarten in Ruhe
                                 autoFocus
                                 value={userAnswer}
                                 onChange={handleInputChange}

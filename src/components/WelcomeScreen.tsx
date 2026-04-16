@@ -24,9 +24,10 @@ export default function WelcomeScreen({ onJoin }: Props) {
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <input
-                        autoFocus
-                        autoComplete="off"
+                        id="game-input-field" // ID für die Barrierefreiheit
+                        name="binary-input-unique" // Name gegen Autofill-Verwirrung
                         type="text"
+                        autoComplete="one-time-code" // Trick: Chrome denkt, es sei ein SMS-Code und lässt Kreditkarten in Ruhe
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         placeholder="Dein Username..."

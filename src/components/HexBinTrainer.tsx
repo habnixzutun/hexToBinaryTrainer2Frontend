@@ -160,9 +160,11 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
                     <div className="flex flex-col items-center gap-4">
                         <div className="flex justify-center gap-3 w-full max-w-md">
                             <input
+                                id="game-input-field" // ID für die Barrierefreiheit
+                                name="binary-input-unique" // Name gegen Autofill-Verwirrung
                                 ref={inputRef}
                                 type="text"
-                                autoComplete="off"
+                                autoComplete="one-time-code" // Trick: Chrome denkt, es sei ein SMS-Code und lässt Kreditkarten in Ruhe
                                 autoFocus
                                 disabled={isSubmitting}
                                 value={userAnswer}
