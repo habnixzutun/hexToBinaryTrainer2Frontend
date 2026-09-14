@@ -1,4 +1,5 @@
-const BASE_URL = "https://server.albecker.eu"; // Deine spätere FastAPI URL
+const BASE_URL: string = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+console.log(BASE_URL)
 
 export interface LeaderboardEntry {
     name: string;
