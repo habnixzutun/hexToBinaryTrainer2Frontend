@@ -10,32 +10,30 @@ import { api, type UserType } from './services/api.ts';
 export default function App() {
     const [activeApp, setActiveApp] = useState<'hex' | 'unicode'>('hex');
     const [currentUser, setCurrentUser] = useState<UserType | null>(null);
-    const [refreshKey, setRefreshKey] = useState(0); // Trigger für das Leaderboard
+    const [refreshKey, setRefreshKey] = useState(0);
 
-    // Login-Logik inkl. Backend-Abfrage
-    const handleJoin = async (name: string) => {
+    const handleJoin = async (name: string): Promise<void> => {
         const userStats = await api.getUser(name);
         localStorage.setItem('trainer_name', name);
         setCurrentUser(userStats);
     };
 
-    // Auto-Login beim Neuladen der Seite
     useEffect(() => {
         const savedName = localStorage.getItem('trainer_name');
         if (savedName) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             handleJoin(savedName);
         }
     }, []);
 
-    const handleLogout = () => {
+    const handleLogout = (): void => {
         localStorage.removeItem('trainer_name');
         setCurrentUser(null);
     };
 
-    // Wird von den Trainern aufgerufen, wenn das Backend antwortet
-    const updateUserData = (updatedUser: UserType) => {
+    const updateUserData = (updatedUser: UserType): void => {
         setCurrentUser(updatedUser);
-        setRefreshKey(prev => prev + 1); // Bestenliste sofort updaten
+        setRefreshKey(prev => prev + 1);
     };
 
     if (!currentUser) {

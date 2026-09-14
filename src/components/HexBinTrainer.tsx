@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { api, type UserType } from '../services/api.ts';
+import { useI18n } from '../i18n/useI18n.ts';
 
 type Mode = 'HexToBin' | 'HexToDec' | 'BinToHex' | 'BinToDec' | 'DecToHex' | 'DecToBin';
 
@@ -10,6 +11,7 @@ interface Props {
 
 export default function HexBinTrainer({ user, onUpdate }: Props) {
     const modes: Mode[] = ['HexToBin', 'HexToDec', 'BinToHex', 'BinToDec', 'DecToHex', 'DecToBin'];
+    const { t } = useI18n();
 
     const [activeMode, setActiveMode] = useState<Mode>('HexToBin');
     const [bits, setBits] = useState(8);
@@ -19,60 +21,63 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
     const [feedback, setFeedback] = useState<'none' | 'correct' | 'wrong'>('none');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Ref für das Input-Feld, um den Fokus programmatisch zu setzen
     const inputRef = useRef<HTMLInputElement>(null);
 
-    const generateQuestion = useCallback(() => {
+    const generateQuestion = useCallback((): void => {
         const max = Math.pow(2, bits) - 1;
         const min = Math.pow(2, bits - 4) - 1;
-        const randomVal = Math.floor(Math.random() * (max - min + 1) + min);
-        let q = '', a = '';
+        const v = Math.floor(Math.random() * (max - min + 1) + min);
 
-        switch (activeMode) {
-            case 'HexToBin': q = randomVal.toString(16).toUpperCase(); a = randomVal.toString(2).padStart(bits, '0'); break;
-            case 'HexToDec': q = randomVal.toString(16).toUpperCase(); a = randomVal.toString(10); break;
-            case 'BinToHex': q = randomVal.toString(2).padStart(bits, '0'); a = randomVal.toString(16).toUpperCase(); break;
-            case 'BinToDec': q = randomVal.toString(2).padStart(bits, '0'); a = randomVal.toString(10); break;
-            case 'DecToHex': q = randomVal.toString(10); a = randomVal.toString(16).toUpperCase(); break;
-            case 'DecToBin': q = randomVal.toString(10); a = randomVal.toString(2).padStart(bits, '0'); break;
-        }
-        setQuestion(q); setCorrectAnswer(a); setUserAnswer(''); setFeedback('none');
+        const hex = v.toString(16).toUpperCase();
+        const bin = v.toString(2).padStart(bits, '0');
+        const dec = v.toString(10);
 
-        // Optional: Fokus auch beim Wechseln des Modus/Generieren der Frage setzen
+        const qa: Record<Mode, [string, string]> = {
+            HexToBin: [hex, bin],
+            HexToDec: [hex, dec],
+            BinToHex: [bin, hex],
+            BinToDec: [bin, dec],
+            DecToHex: [dec, hex],
+            DecToBin: [dec, bin],
+        };
+
+        const [q, a] = qa[activeMode];
+        setQuestion(q);
+        setCorrectAnswer(a);
+        setUserAnswer('');
+        setFeedback('none');
+
         setTimeout(() => inputRef.current?.focus(), 0);
     }, [activeMode, bits]);
 
     useEffect(() => { generateQuestion(); }, [generateQuestion]);
 
-    // Effekt, um den Fokus zurückzuholen, wenn isSubmitting wieder false wird
     useEffect(() => {
         if (!isSubmitting && inputRef.current) {
             inputRef.current.focus();
         }
     }, [isSubmitting]);
 
-    // Filtert die Eingabe basierend auf dem aktiven Modus
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        let val = e.target.value;
-        const targetFormat = activeMode.split('To')[1]; // 'Bin', 'Dec', oder 'Hex'
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+        const targetFormat = activeMode.split('To')[1];
+        const raw = e.target.value;
 
-        if (targetFormat === 'Bin') {
-            val = val.replace(/[^01]/g, ''); // Nur 0 und 1
-        } else if (targetFormat === 'Dec') {
-            val = val.replace(/[^0-9]/g, ''); // Nur 0-9
-        } else if (targetFormat === 'Hex') {
-            val = val.replace(/[^0-9a-fA-F]/g, ''); // Nur 0-9, a-f, A-F
-        }
+        const FILTERS: Partial<Record<string, RegExp>> = {
+            Bin: /[^01]/g,
+            Dec: /[^0-9]/g,
+            Hex: /[^0-9a-fA-F]/g,
+        };
+        const pattern = targetFormat !== undefined ? FILTERS[targetFormat] : undefined;
+        const val = pattern !== undefined ? raw.replace(pattern, '') : raw;
 
         setUserAnswer(val);
     };
 
-    const handleCheck = async () => {
+    const handleCheck = async (): Promise<void> => {
         if (isSubmitting || !userAnswer.trim()) return;
         setIsSubmitting(true);
-        const normalize = (str: string) =>
-            str.trim().toUpperCase().replace(/^0+/, '');
 
+        const normalize = (str: string): string => str.trim().toUpperCase().replace(/^0+/, '');
         const isCorrect = normalize(userAnswer) === normalize(correctAnswer);
 
         try {
@@ -87,14 +92,15 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
                 onUpdate(res.user);
                 setTimeout(() => setFeedback('none'), 1000);
             }
-        } catch (e) {
-            console.error("Fehler beim Senden ans Backend", e);
+        } catch (e: unknown) {
+            const message = e instanceof Error ? e.message : 'Unbekannter Fehler';
+            throw new Error(`Fehler beim Senden ans Backend: ${message}`);
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    const adjustBits = (delta: number) => {
+    const adjustBits = (delta: number): void => {
         setBits(prev => {
             const next = prev + delta;
             return next >= 4 && next <= 32 ? next : prev;
@@ -122,10 +128,9 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
                     feedback === 'wrong' ? 'border-red-500' : 'border-slate-700'
             }`}>
 
-                {/* Config & Stats */}
                 <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8 bg-slate-900/50 p-4 rounded-lg">
                     <div className="flex items-center gap-4">
-                        <span className="font-semibold text-slate-400">Bits:</span>
+                        <span className="font-semibold text-slate-400">{t.bits}</span>
                         <div className="flex items-center gap-1 bg-slate-800 rounded-lg p-1 border border-slate-700">
                             <button onClick={() => adjustBits(-4)} className="w-8 h-8 flex items-center justify-center rounded hover:bg-slate-700 text-indigo-400 font-bold text-xl">-</button>
                             <span className="w-10 text-center font-mono text-lg text-white">{bits}</span>
@@ -135,24 +140,23 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
 
                     <div className="flex gap-6 text-lg font-mono bg-slate-800 px-4 py-2 rounded-lg border border-slate-700">
                         <div className="flex flex-col items-center">
-                            <span className="text-xs text-slate-500 uppercase">Richtig</span>
+                            <span className="text-xs text-slate-500 uppercase">{t.correct}</span>
                             <span className="text-green-400 font-bold">{user.correct}</span>
                         </div>
                         <div className="flex flex-col items-center">
-                            <span className="text-xs text-slate-500 uppercase">Falsch</span>
+                            <span className="text-xs text-slate-500 uppercase">{t.wrong}</span>
                             <span className="text-red-400 font-bold">{user.incorrect}</span>
                         </div>
                         <div className="flex flex-col items-center">
-                            <span className="text-xs text-slate-500 uppercase">Score</span>
+                            <span className="text-xs text-slate-500 uppercase">{t.score}</span>
                             <span className="text-yellow-400 font-bold">{user.points}</span>
                         </div>
                     </div>
                 </div>
 
-                {/* Spielbereich */}
                 <div className="text-center py-4">
                     <div className="text-slate-500 text-sm mb-2 uppercase tracking-widest font-semibold">
-                        Übersetze {activeMode.split('To')[0]}
+                        {t.translateFrom} {activeMode.split('To')[0]}
                     </div>
                     <div className="text-5xl md:text-7xl font-mono tracking-wider text-white mb-10 break-all select-none">
                         {question}
@@ -160,17 +164,17 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
                     <div className="flex flex-col items-center gap-4">
                         <div className="flex justify-center gap-3 w-full max-w-md">
                             <input
-                                id="game-input-field" // ID für die Barrierefreiheit
-                                name="binary-input-unique" // Name gegen Autofill-Verwirrung
+                                id="game-input-field"
+                                name="binary-input-unique"
                                 ref={inputRef}
                                 type="text"
-                                autoComplete="one-time-code" // Trick: Chrome denkt, es sei ein SMS-Code und lässt Kreditkarten in Ruhe
+                                autoComplete="one-time-code"
                                 autoFocus
                                 disabled={isSubmitting}
                                 value={userAnswer}
                                 onChange={handleInputChange}
                                 onKeyDown={e => e.key === 'Enter' && handleCheck()}
-                                placeholder={`${activeMode.split('To')[1]} eingeben...`}
+                                placeholder={t.inputPlaceholder(activeMode.split('To')[1] ?? '')}
                                 className={`bg-slate-900 border-2 rounded-lg px-6 py-4 text-2xl font-mono text-white focus:outline-none w-full text-center shadow-inner transition-colors ${
                                     feedback === 'wrong' ? 'border-red-500 bg-red-900/10' : 'border-slate-600 focus:border-indigo-500'
                                 }`}

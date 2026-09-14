@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { api, type UserType } from '../services/api.ts';
+import { useI18n } from '../i18n/useI18n.ts';
 
 interface Props {
     currentUser: UserType;
@@ -9,31 +10,31 @@ interface Props {
 export default function Leaderboard({ currentUser, refreshTrigger }: Props) {
     const [data, setData] = useState<UserType[]>([]);
     const [loading, setLoading] = useState(true);
+    const { t } = useI18n();
 
-    const refreshData = async () => {
+    const refreshData = useCallback(async (): Promise<void> => {
         setLoading(true);
         const result = await api.getLeaderboard();
-        // Sortierung nach Punkten
-        const sorted = result.sort((a, b) => b.points - a.points);
+        const sorted = [...result].sort((a, b) => b.points - a.points);
         setData(sorted);
         setLoading(false);
-    };
+    }, []);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         refreshData();
-    }, [refreshTrigger]); // Lädt neu, wenn refreshTrigger sich ändert
+    }, [refreshTrigger, refreshData]);
 
-    // Optionales Polling alle 30 Sekunden
     useEffect(() => {
         const interval = setInterval(refreshData, 30000);
         return () => clearInterval(interval);
-    }, []);
+    }, [refreshData]);
 
     return (
         <div className="mt-8 bg-slate-800 p-6 rounded-xl shadow-lg border border-slate-700 relative">
             <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                    Bestenliste
+                    {t.leaderboardTitle}
                     {loading && <span className="w-2 h-2 bg-blue-500 rounded-full animate-ping"></span>}
                 </h3>
             </div>
@@ -42,11 +43,11 @@ export default function Leaderboard({ currentUser, refreshTrigger }: Props) {
                 <table className="w-full text-left border-collapse">
                     <thead>
                     <tr className="border-b border-slate-600 text-slate-400 text-sm">
-                        <th className="py-2 px-4">Platz</th>
-                        <th className="py-2 px-4">Name</th>
+                        <th className="py-2 px-4">{t.rank}</th>
+                        <th className="py-2 px-4">{t.name}</th>
                         <th className="py-2 px-4 text-center">✅</th>
                         <th className="py-2 px-4 text-center">❌</th>
-                        <th className="py-2 px-4 text-right">Punkte ✨</th>
+                        <th className="py-2 px-4 text-right">{t.points}</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -64,7 +65,7 @@ export default function Leaderboard({ currentUser, refreshTrigger }: Props) {
                                 <td className="py-3 px-4 font-bold">{rankIcon}</td>
                                 <td className="py-3 px-4">
                     <span className={isMe ? 'text-blue-400 font-bold' : 'text-slate-200'}>
-                      {entry.name} {isMe && "(Du)"}
+                      {entry.name} {isMe && t.me}
                     </span>
                                 </td>
                                 <td className="py-3 px-4 text-center text-green-400/80">{entry.correct}</td>
