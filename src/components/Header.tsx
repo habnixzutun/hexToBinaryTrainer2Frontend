@@ -1,3 +1,5 @@
+import { motion } from 'framer-motion';
+import { Terminal, LogOut, Globe } from 'lucide-react';
 import { useI18n } from '../i18n/useI18n.ts';
 import { type Locale } from '../i18n/translations.ts';
 
@@ -17,68 +19,73 @@ export default function Header({ activeApp, setActiveApp, username, onLogout }: 
     };
 
     return (
-        <nav className="bg-slate-800/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-700 shadow-xl">
+        <nav className="bg-zinc-950/90 backdrop-blur-md sticky top-0 z-50 border-b border-zinc-900">
             <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
 
-                <div className="flex flex-col">
-                    <h1 className="text-xl font-black bg-gradient-to-r from-indigo-400 to-indigo-400 bg-clip-text text-transparent tracking-tight">
-                        IT <span className="text-white/20">{t.appTitleAccent}</span>
-                    </h1>
-                    <div className="flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                        <span className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">
-                            {username}
+                <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                        <Terminal strokeWidth={1.5} size={16} className="text-emerald-400" />
+                    </div>
+                    <div className="flex flex-col">
+                        <span className="text-sm font-bold tracking-tight text-white leading-none">
+                            IT <span className="text-zinc-600">{t.appTitleAccent}</span>
                         </span>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            <span className="text-[9px] text-zinc-500 uppercase tracking-widest font-semibold">
+                                {username}
+                            </span>
+                        </div>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-4">
-                    <div className="flex bg-slate-950/50 p-1 rounded-xl border border-slate-700/50">
-                        <button
-                            onClick={() => setActiveApp('hex')}
-                            className={`px-4 py-1.5 rounded-lg font-bold transition-all text-xs ${
-                                activeApp === 'hex'
-                                    ? 'bg-indigo-600 text-white shadow-lg shadow-blue-900/40'
-                                    : 'text-slate-500 hover:text-slate-300'
-                            }`}
-                        >
-                            {t.navHexBin}
-                        </button>
-                        <button
-                            onClick={() => setActiveApp('unicode')}
-                            className={`px-4 py-1.5 rounded-lg font-bold transition-all text-xs ${
-                                activeApp === 'unicode'
-                                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/40'
-                                    : 'text-slate-500 hover:text-slate-300'
-                            }`}
-                        >
-                            {t.navUnicode}
-                        </button>
+                <div className="flex items-center gap-2">
+                    <div className="flex bg-zinc-900 p-0.5 rounded-lg border border-zinc-800">
+                        {(['hex', 'unicode'] as const).map((app) => (
+                            <motion.button
+                                key={app}
+                                onClick={() => setActiveApp(app)}
+                                whileTap={{ scale: 0.97 }}
+                                className={`relative px-4 py-1.5 rounded-md font-semibold text-xs transition-colors ${
+                                    activeApp === app
+                                        ? 'text-zinc-950'
+                                        : 'text-zinc-500 hover:text-zinc-300'
+                                }`}
+                            >
+                                {activeApp === app && (
+                                    <motion.div
+                                        layoutId="activeTab"
+                                        className="absolute inset-0 bg-emerald-400 rounded-md"
+                                        transition={{ type: 'spring', bounce: 0.2, duration: 0.35 }}
+                                    />
+                                )}
+                                <span className="relative z-10">
+                                    {app === 'hex' ? t.navHexBin : t.navUnicode}
+                                </span>
+                            </motion.button>
+                        ))}
                     </div>
 
-                    <button
+                    <motion.button
                         onClick={toggleLocale}
-                        className="flex items-center justify-center w-9 h-9 rounded-xl bg-slate-700/50 border border-slate-600 hover:border-indigo-500/50 hover:bg-indigo-500/10 transition-all duration-300 text-xs font-bold text-slate-400 hover:text-indigo-400"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="flex items-center gap-1 w-auto px-2.5 h-8 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-colors text-xs font-semibold text-zinc-400 hover:text-zinc-200"
                         title={locale === 'de' ? 'Switch to English' : 'Auf Deutsch wechseln'}
                     >
+                        <Globe strokeWidth={1.5} size={13} />
                         {locale === 'de' ? 'EN' : 'DE'}
-                    </button>
+                    </motion.button>
 
-                    <button
+                    <motion.button
                         onClick={onLogout}
-                        className="group flex items-center justify-center w-9 h-9 rounded-xl bg-slate-700/50 border border-slate-600 hover:border-red-500/50 hover:bg-red-500/10 transition-all duration-300"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="flex items-center justify-center w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-red-900/60 hover:bg-red-950/30 transition-colors group"
                         title={t.logoutTitle}
                     >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-5 w-5 text-slate-400 group-hover:text-red-400 transition-colors"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                        >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                        </svg>
-                    </button>
+                        <LogOut strokeWidth={1.5} size={14} className="text-zinc-500 group-hover:text-red-400 transition-colors" />
+                    </motion.button>
                 </div>
             </div>
         </nav>

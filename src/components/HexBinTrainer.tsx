@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Check, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { api, type UserType } from '../services/api.ts';
 import { useI18n } from '../i18n/useI18n.ts';
 
@@ -20,66 +22,49 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
     const [userAnswer, setUserAnswer] = useState('');
     const [feedback, setFeedback] = useState<'none' | 'correct' | 'wrong'>('none');
     const [isSubmitting, setIsSubmitting] = useState(false);
-
     const inputRef = useRef<HTMLInputElement>(null);
 
     const generateQuestion = useCallback((): void => {
         const max = Math.pow(2, bits) - 1;
         const min = Math.pow(2, bits - 4) - 1;
         const v = Math.floor(Math.random() * (max - min + 1) + min);
-
         const hex = v.toString(16).toUpperCase();
         const bin = v.toString(2).padStart(bits, '0');
         const dec = v.toString(10);
-
         const qa: Record<Mode, [string, string]> = {
-            HexToBin: [hex, bin],
-            HexToDec: [hex, dec],
-            BinToHex: [bin, hex],
-            BinToDec: [bin, dec],
-            DecToHex: [dec, hex],
-            DecToBin: [dec, bin],
+            HexToBin: [hex, bin], HexToDec: [hex, dec],
+            BinToHex: [bin, hex], BinToDec: [bin, dec],
+            DecToHex: [dec, hex], DecToBin: [dec, bin],
         };
-
         const [q, a] = qa[activeMode];
         setQuestion(q);
         setCorrectAnswer(a);
         setUserAnswer('');
         setFeedback('none');
-
         setTimeout(() => inputRef.current?.focus(), 0);
     }, [activeMode, bits]);
 
     useEffect(() => { generateQuestion(); }, [generateQuestion]);
 
     useEffect(() => {
-        if (!isSubmitting && inputRef.current) {
-            inputRef.current.focus();
-        }
+        if (!isSubmitting) inputRef.current?.focus();
     }, [isSubmitting]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
         const targetFormat = activeMode.split('To')[1];
         const raw = e.target.value;
-
         const FILTERS: Partial<Record<string, RegExp>> = {
-            Bin: /[^01]/g,
-            Dec: /[^0-9]/g,
-            Hex: /[^0-9a-fA-F]/g,
+            Bin: /[^01]/g, Dec: /[^0-9]/g, Hex: /[^0-9a-fA-F]/g,
         };
         const pattern = targetFormat !== undefined ? FILTERS[targetFormat] : undefined;
-        const val = pattern !== undefined ? raw.replace(pattern, '') : raw;
-
-        setUserAnswer(val);
+        setUserAnswer(pattern !== undefined ? raw.replace(pattern, '') : raw);
     };
 
     const handleCheck = async (): Promise<void> => {
         if (isSubmitting || !userAnswer.trim()) return;
         setIsSubmitting(true);
-
-        const normalize = (str: string): string => str.trim().toUpperCase().replace(/^0+/, '');
+        const normalize = (s: string) => s.trim().toUpperCase().replace(/^0+/, '');
         const isCorrect = normalize(userAnswer) === normalize(correctAnswer);
-
         try {
             if (isCorrect) {
                 setFeedback('correct');
@@ -93,8 +78,8 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
                 setTimeout(() => setFeedback('none'), 1000);
             }
         } catch (e: unknown) {
-            const message = e instanceof Error ? e.message : 'Unbekannter Fehler';
-            throw new Error(`Fehler beim Senden ans Backend: ${message}`);
+            const msg = e instanceof Error ? e.message : 'Fehler';
+            throw new Error(msg);
         } finally {
             setIsSubmitting(false);
         }
@@ -108,86 +93,103 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
     };
 
     return (
-        <div className="transition-opacity duration-300">
-            <div className="flex flex-nowrap gap-2 mb-6">
-                {modes.map(m => (
+        <div className="flex flex-col h-full">
+            {/* Top bar */}
+            <div className="flex items-center gap-0 border-b border-neutral-800/60 h-14 px-6 shrink-0">
+                {modes.map((m) => (
                     <button
                         key={m}
                         onClick={() => setActiveMode(m)}
-                        className={`px-4 py-2 rounded-lg font-medium text-sm transition-all w-full ${
-                            activeMode === m ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                        className={`px-3 h-full text-sm font-medium transition-colors border-b-2 -mb-px ${
+                            activeMode === m
+                                ? 'text-white border-emerald-500'
+                                : 'text-neutral-500 border-transparent hover:text-neutral-300'
                         }`}
                     >
                         {m}
                     </button>
                 ))}
-            </div>
 
-            <div className={`bg-slate-800 p-6 md:p-8 rounded-xl shadow-lg border-2 transition-colors duration-300 ${
-                feedback === 'correct' ? 'border-green-500' :
-                    feedback === 'wrong' ? 'border-red-500' : 'border-slate-700'
-            }`}>
-
-                <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8 bg-slate-900/50 p-4 rounded-lg">
-                    <div className="flex items-center gap-4">
-                        <span className="font-semibold text-slate-400">{t.bits}</span>
-                        <div className="flex items-center gap-1 bg-slate-800 rounded-lg p-1 border border-slate-700">
-                            <button onClick={() => adjustBits(-4)} className="w-8 h-8 flex items-center justify-center rounded hover:bg-slate-700 text-indigo-400 font-bold text-xl">-</button>
-                            <span className="w-10 text-center font-mono text-lg text-white">{bits}</span>
-                            <button onClick={() => adjustBits(4)} className="w-8 h-8 flex items-center justify-center rounded hover:bg-slate-700 text-indigo-400 font-bold text-xl">+</button>
-                        </div>
-                    </div>
-
-                    <div className="flex gap-6 text-lg font-mono bg-slate-800 px-4 py-2 rounded-lg border border-slate-700">
-                        <div className="flex flex-col items-center">
-                            <span className="text-xs text-slate-500 uppercase">{t.correct}</span>
-                            <span className="text-green-400 font-bold">{user.correct}</span>
-                        </div>
-                        <div className="flex flex-col items-center">
-                            <span className="text-xs text-slate-500 uppercase">{t.wrong}</span>
-                            <span className="text-red-400 font-bold">{user.incorrect}</span>
-                        </div>
-                        <div className="flex flex-col items-center">
-                            <span className="text-xs text-slate-500 uppercase">{t.score}</span>
-                            <span className="text-yellow-400 font-bold">{user.points}</span>
-                        </div>
+                {/* Bits stepper — pushed right */}
+                <div className="ml-auto flex items-center gap-2">
+                    <span className="text-xs text-neutral-500 uppercase tracking-wider">{t.bits}</span>
+                    <div className="flex items-center gap-0">
+                        <button
+                            onClick={() => adjustBits(-4)}
+                            className="w-7 h-7 flex items-center justify-center text-neutral-500 hover:text-neutral-200 transition-colors"
+                        >
+                            <ChevronLeft strokeWidth={2} size={14} />
+                        </button>
+                        <span className="w-7 text-center text-sm font-mono text-neutral-300">{bits}</span>
+                        <button
+                            onClick={() => adjustBits(4)}
+                            className="w-7 h-7 flex items-center justify-center text-neutral-500 hover:text-neutral-200 transition-colors"
+                        >
+                            <ChevronRight strokeWidth={2} size={14} />
+                        </button>
                     </div>
                 </div>
+            </div>
 
-                <div className="text-center py-4">
-                    <div className="text-slate-500 text-sm mb-2 uppercase tracking-widest font-semibold">
+            {/* Question area */}
+            <div className="flex-1 flex flex-col items-center justify-center px-12 gap-8">
+                <div className="text-center">
+                    <p className="text-xs text-neutral-500 uppercase tracking-widest mb-6">
                         {t.translateFrom} {activeMode.split('To')[0]}
+                    </p>
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={question}
+                            initial={{ opacity: 0, y: -6 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 6 }}
+                            transition={{ duration: 0.15 }}
+                            className="font-mono text-5xl tracking-widest text-white select-none break-all"
+                        >
+                            {question}
+                        </motion.div>
+                    </AnimatePresence>
+                </div>
+
+                {/* Input */}
+                <div className="flex items-center gap-2 w-full max-w-sm">
+                    <div className={`flex-1 border-b-2 transition-colors ${
+                        feedback === 'wrong' ? 'border-red-500' :
+                        feedback === 'correct' ? 'border-emerald-500' :
+                        'border-neutral-700 focus-within:border-neutral-500'
+                    }`}>
+                        <input
+                            id="game-input-field"
+                            name="binary-input-unique"
+                            ref={inputRef}
+                            type="text"
+                            autoComplete="one-time-code"
+                            autoFocus
+                            disabled={isSubmitting}
+                            value={userAnswer}
+                            onChange={handleInputChange}
+                            onKeyDown={e => e.key === 'Enter' && handleCheck()}
+                            placeholder={t.inputPlaceholder(activeMode.split('To')[1] ?? '')}
+                            className="w-full bg-transparent py-2 text-xl font-mono text-white placeholder-neutral-600 focus:outline-none text-center"
+                        />
                     </div>
-                    <div className="text-5xl md:text-7xl font-mono tracking-wider text-white mb-10 break-all select-none">
-                        {question}
-                    </div>
-                    <div className="flex flex-col items-center gap-4">
-                        <div className="flex justify-center gap-3 w-full max-w-md">
-                            <input
-                                id="game-input-field"
-                                name="binary-input-unique"
-                                ref={inputRef}
-                                type="text"
-                                autoComplete="one-time-code"
-                                autoFocus
-                                disabled={isSubmitting}
-                                value={userAnswer}
-                                onChange={handleInputChange}
-                                onKeyDown={e => e.key === 'Enter' && handleCheck()}
-                                placeholder={t.inputPlaceholder(activeMode.split('To')[1] ?? '')}
-                                className={`bg-slate-900 border-2 rounded-lg px-6 py-4 text-2xl font-mono text-white focus:outline-none w-full text-center shadow-inner transition-colors ${
-                                    feedback === 'wrong' ? 'border-red-500 bg-red-900/10' : 'border-slate-600 focus:border-indigo-500'
-                                }`}
-                            />
-                            <button
-                                onClick={handleCheck}
-                                disabled={isSubmitting || !userAnswer.trim()}
-                                className="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-3 rounded-lg text-2xl font-bold transition-all active:scale-95 shadow-lg disabled:opacity-50"
-                            >
-                                ✓
-                            </button>
-                        </div>
-                    </div>
+                    <motion.button
+                        onClick={handleCheck}
+                        disabled={isSubmitting || !userAnswer.trim()}
+                        whileTap={{ scale: 0.93 }}
+                        className={`w-9 h-9 rounded-md flex items-center justify-center transition-all shrink-0 ${
+                            !userAnswer.trim() || isSubmitting
+                                ? 'text-neutral-600'
+                                : feedback === 'wrong'
+                                    ? 'text-red-500'
+                                    : 'text-emerald-500 hover:bg-emerald-500/10'
+                        }`}
+                    >
+                        {feedback === 'wrong'
+                            ? <X strokeWidth={2.5} size={18} />
+                            : <Check strokeWidth={2.5} size={18} />
+                        }
+                    </motion.button>
                 </div>
             </div>
         </div>
