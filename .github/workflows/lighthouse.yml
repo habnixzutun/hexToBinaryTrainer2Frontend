@@ -2,9 +2,7 @@ name: Lighthouse CI
 
 on:
   push:
-    branches: ['**']
-  pull_request:
-    branches: [main, Redesign]
+    branches: [main]
 
 jobs:
   lighthouse:
@@ -29,18 +27,25 @@ jobs:
         env:
           VITE_API_URL: ${{ secrets.VITE_API_URL || 'http://localhost:8000' }}
 
+      - name: Install Google Chrome
+        run: |
+          wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+          sudo apt install ./google-chrome-stable_current_amd64.deb --yes
+
       - name: Install LHCI CLI
         run: npm install -g @lhci/cli@0.15.1
 
-      - name: Run Lighthouse Collect
-        run: npx lhci collect --config=.lighthouserc.json
+      - name: Run Lighthouse Collect & save snapshots
+        run: |
+          npx lhci collect --config=.lighthouserc.json
+          cp -r .lighthouseci lighthouse-artifacts
 
       - name: Upload Lighthouse reports
         uses: actions/upload-artifact@v4
-        if: success() || failure()
+        if: always()
         with:
           name: lighthouse-results
-          path: '.lighthouseci'
+          path: 'lighthouse-artifacts'
           retention-days: 30
 
       - name: Run Assertions
