@@ -32,17 +32,27 @@ jobs:
           find dist -type f \( -name '*.html' -o -name '*.js' -o -name '*.css' \) \
             -exec sed -i 's|/trainer/|/|g' {} +
 
-      - name: Run Lighthouse CI
-        uses: treosh/lighthouse-ci-action@v12
-        with:
-          configPath: '.lighthouserc.json'
-          uploadArtifacts: true
-          temporaryPublicStorage: true
+      - name: Install Google Chrome
+        run: |
+          wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+          sudo apt-get update && sudo apt-get install -y ./google-chrome-stable_current_amd64.deb
 
-      - name: Upload Lighthouse results
-        uses: actions/upload-artifact@v4
+      - name: Install LHCI CLI
+        run: npm install -g @lhci/cli@0.15.1
+
+      - name: Run Lighthouse Collect & save snapshots
+        run: npx lhci collect --config=.lighthouserc.json && cp -r .lighthouseci lighthouse-artifacts
+
+      - name: Upload Lighthouse reports as artifact
         if: always()
+        uses: actions/upload-artifact@v4
         with:
           name: lighthouse-results
-          path: '.lighthouseci'
+          path: lighthouse-artifacts
           retention-days: 30
+
+      - name: Run Assertions
+        run: npx lhci assert --config=.lighthouserc.json
+
+      - name: Upload to Google Storage
+        run: npx lhci upload --config=.lighthouserc.json

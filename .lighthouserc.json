@@ -1,7 +1,9 @@
 {
   "ci": {
     "collect": {
-      "url": ["https://hex-trainer.habnixzutun.de/trainer"],
+      "staticDistDir": "./dist",
+      "startServerCommand": "npx serve dist -l 5000",
+      "url": ["http://localhost:5000"],
       "numberOfRuns": 1,
       "settings": {
         "preset": "desktop",
