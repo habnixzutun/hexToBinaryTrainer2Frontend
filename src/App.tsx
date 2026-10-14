@@ -45,7 +45,7 @@ export default function App() {
     const isLeaderboardActive = activeApp === 'leaderboard';
 
     return (
-        <div className="flex flex-col md:flex-row h-screen bg-black text-neutral-200 overflow-hidden font-sans">
+        <div className="flex flex-col md:flex-row h-screen bg-surface text-on-surface-dim overflow-hidden font-sans">
             <Sidebar
                 activeApp={activeApp}
                 setActiveApp={setActiveApp}
@@ -57,7 +57,7 @@ export default function App() {
             <div className="flex flex-1 min-w-0 overflow-hidden">
                 {/* Trainer area — hidden when leaderboard is active on small viewports */}
                 {!isLeaderboardActive && (
-                    <main className="flex-1 overflow-y-auto border-r border-neutral-800/60">
+                    <main className="flex-1 overflow-y-auto border-r border-outline-faint">
                         <AnimatePresence mode="wait">
                             <motion.div
                                 key={activeApp}
