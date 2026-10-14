@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Check, X, ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
 import { api, type UserType } from '../services/api.ts';
 import { useI18n } from '../i18n/useI18n.ts';
 
@@ -92,10 +92,12 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
         });
     };
 
+    const [fromLabel, toLabel] = activeMode.split('To') as [string, string];
+
     return (
         <div className="flex flex-col h-full">
             {/* Top bar */}
-            <div className="flex items-center gap-0 border-b border-neutral-800/60 h-14 px-6 shrink-0">
+            <div className="flex items-center border-b border-neutral-800/60 h-16 px-6 shrink-0 gap-1">
                 {modes.map((m) => (
                     <button
                         key={m}
@@ -110,87 +112,117 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
                     </button>
                 ))}
 
-                {/* Bits stepper — pushed right */}
-                <div className="ml-auto flex items-center gap-2">
-                    <span className="text-xs text-neutral-500 uppercase tracking-wider">{t.bits}</span>
-                    <div className="flex items-center gap-0">
+                {/* Bits stepper */}
+                <div className="ml-auto flex items-center gap-2 shrink-0">
+                    <span className="text-sm text-neutral-500 uppercase tracking-wider">{t.bits}</span>
+                    <div className="flex items-center">
                         <button
                             onClick={() => adjustBits(-4)}
-                            className="w-7 h-7 flex items-center justify-center text-neutral-500 hover:text-neutral-200 transition-colors"
+                            className="w-8 h-8 flex items-center justify-center text-neutral-500 hover:text-neutral-200 transition-colors"
                         >
-                            <ChevronLeft strokeWidth={2} size={14} />
+                            <ChevronLeft strokeWidth={2} size={16} />
                         </button>
-                        <span className="w-7 text-center text-sm font-mono text-neutral-300">{bits}</span>
+                        <span className="w-8 text-center text-base font-mono text-neutral-300">{bits}</span>
                         <button
                             onClick={() => adjustBits(4)}
-                            className="w-7 h-7 flex items-center justify-center text-neutral-500 hover:text-neutral-200 transition-colors"
+                            className="w-8 h-8 flex items-center justify-center text-neutral-500 hover:text-neutral-200 transition-colors"
                         >
-                            <ChevronRight strokeWidth={2} size={14} />
+                            <ChevronRight strokeWidth={2} size={16} />
                         </button>
                     </div>
                 </div>
             </div>
 
-            {/* Question area */}
-            <div className="flex-1 flex flex-col items-center justify-center px-12 gap-8">
-                <div className="text-center">
-                    <p className="text-xs text-neutral-500 uppercase tracking-widest mb-6">
-                        {t.translateFrom} {activeMode.split('To')[0]}
-                    </p>
-                    <AnimatePresence mode="wait">
-                        <motion.div
-                            key={question}
-                            initial={{ opacity: 0, y: -6 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 6 }}
-                            transition={{ duration: 0.15 }}
-                            className="font-mono text-5xl tracking-widest text-white select-none break-all"
-                        >
-                            {question}
-                        </motion.div>
-                    </AnimatePresence>
-                </div>
+            {/* Two-column question area */}
+            <div className="flex-1 flex items-center justify-center px-8 gap-0">
+                <div className="flex items-stretch gap-8 w-full max-w-3xl">
 
-                {/* Input */}
-                <div className="flex items-center gap-2 w-full max-w-sm">
-                    <div className={`flex-1 border-b-2 transition-colors ${
-                        feedback === 'wrong' ? 'border-red-500' :
-                        feedback === 'correct' ? 'border-emerald-500' :
-                        'border-neutral-700 focus-within:border-neutral-500'
-                    }`}>
-                        <input
-                            id="game-input-field"
-                            name="binary-input-unique"
-                            ref={inputRef}
-                            type="text"
-                            autoComplete="one-time-code"
-                            autoFocus
-                            disabled={isSubmitting}
-                            value={userAnswer}
-                            onChange={handleInputChange}
-                            onKeyDown={e => e.key === 'Enter' && handleCheck()}
-                            placeholder={t.inputPlaceholder(activeMode.split('To')[1] ?? '')}
-                            className="w-full bg-transparent py-2 text-xl font-mono text-white placeholder-neutral-600 focus:outline-none text-center"
-                        />
+                    {/* Left: source value */}
+                    <div className="flex-1 flex flex-col">
+                        <p className="text-sm font-semibold uppercase tracking-widest text-neutral-500 mb-4">
+                            {fromLabel}
+                        </p>
+                        <div className="flex-1 flex items-center justify-center rounded-lg border border-neutral-800 bg-neutral-950 min-h-36 px-6 py-8">
+                            <AnimatePresence mode="wait">
+                                <motion.span
+                                    key={question}
+                                    initial={{ opacity: 0, y: -8 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: 8 }}
+                                    transition={{ duration: 0.15 }}
+                                    className="font-mono text-4xl tracking-widest text-white select-none break-all text-center leading-snug"
+                                >
+                                    {question}
+                                </motion.span>
+                            </AnimatePresence>
+                        </div>
                     </div>
-                    <motion.button
-                        onClick={handleCheck}
-                        disabled={isSubmitting || !userAnswer.trim()}
-                        whileTap={{ scale: 0.93 }}
-                        className={`w-9 h-9 rounded-md flex items-center justify-center transition-all shrink-0 ${
-                            !userAnswer.trim() || isSubmitting
-                                ? 'text-neutral-600'
-                                : feedback === 'wrong'
-                                    ? 'text-red-500'
-                                    : 'text-emerald-500 hover:bg-emerald-500/10'
-                        }`}
-                    >
-                        {feedback === 'wrong'
-                            ? <X strokeWidth={2.5} size={18} />
-                            : <Check strokeWidth={2.5} size={18} />
-                        }
-                    </motion.button>
+
+                    {/* Arrow */}
+                    <div className="flex items-center justify-center pt-10 shrink-0">
+                        <ArrowRight strokeWidth={1.5} size={32} className="text-neutral-600" />
+                    </div>
+
+                    {/* Right: answer input */}
+                    <div className="flex-1 flex flex-col">
+                        <p className="text-sm font-semibold uppercase tracking-widest text-neutral-500 mb-4">
+                            {toLabel}
+                        </p>
+                        <div className={`flex-1 flex items-center justify-center rounded-lg border min-h-36 px-6 py-8 transition-colors ${
+                            feedback === 'wrong' ? 'border-red-500/60 bg-red-500/5' :
+                            feedback === 'correct' ? 'border-emerald-500/60 bg-emerald-500/5' :
+                            'border-neutral-800 bg-neutral-950 focus-within:border-neutral-700'
+                        }`}>
+                            <input
+                                id="game-input-field"
+                                name="binary-input-unique"
+                                ref={inputRef}
+                                type="text"
+                                autoComplete="one-time-code"
+                                autoFocus
+                                disabled={isSubmitting}
+                                value={userAnswer}
+                                onChange={handleInputChange}
+                                onKeyDown={e => e.key === 'Enter' && handleCheck()}
+                                placeholder={t.inputPlaceholder(toLabel ?? '')}
+                                className="w-full bg-transparent text-2xl font-mono text-white placeholder-neutral-700 focus:outline-none text-center tracking-widest leading-snug"
+                            />
+                        </div>
+                    </div>
                 </div>
+            </div>
+
+            {/* Bottom bar: feedback + submit */}
+            <div className="h-16 px-8 border-t border-neutral-800/60 flex items-center justify-between shrink-0">
+                <AnimatePresence>
+                    {feedback === 'wrong' && (
+                        <motion.p
+                            initial={{ opacity: 0, x: -8 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0 }}
+                            className="text-base text-red-500/80 font-mono"
+                        >
+                            {t.tryAgain}
+                        </motion.p>
+                    )}
+                </AnimatePresence>
+                <motion.button
+                    onClick={handleCheck}
+                    disabled={isSubmitting || !userAnswer.trim()}
+                    whileTap={{ scale: 0.95 }}
+                    className={`ml-auto flex items-center gap-2 px-5 py-2.5 rounded-md text-base font-semibold transition-all ${
+                        !userAnswer.trim() || isSubmitting
+                            ? 'text-neutral-600 bg-neutral-900 cursor-not-allowed'
+                            : feedback === 'wrong'
+                                ? 'text-red-400 bg-red-500/10 hover:bg-red-500/20'
+                                : 'text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20'
+                    }`}
+                >
+                    {feedback === 'wrong'
+                        ? <><X strokeWidth={2.5} size={18} /> Falsch</>
+                        : <><Check strokeWidth={2.5} size={18} /> Prüfen</>
+                    }
+                </motion.button>
             </div>
         </div>
     );

@@ -45,7 +45,7 @@ export default function App() {
     const isLeaderboardActive = activeApp === 'leaderboard';
 
     return (
-        <div className="flex h-screen bg-black text-neutral-200 overflow-hidden font-sans">
+        <div className="flex flex-col md:flex-row h-screen bg-black text-neutral-200 overflow-hidden font-sans">
             <Sidebar
                 activeApp={activeApp}
                 setActiveApp={setActiveApp}
@@ -79,7 +79,7 @@ export default function App() {
 
                 {/* Leaderboard panel — always visible on lg+, full-width when active */}
                 <aside className={`shrink-0 overflow-y-auto ${
-                    isLeaderboardActive ? 'flex-1' : 'w-72 hidden lg:block'
+                    isLeaderboardActive ? 'flex-1' : 'hidden md:block w-80'
                 }`}>
                     <Leaderboard currentUser={currentUser} refreshTrigger={refreshKey} />
                 </aside>

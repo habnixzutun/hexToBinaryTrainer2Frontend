@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, X } from 'lucide-react';
+import { Check, X, ArrowRight } from 'lucide-react';
 import { api, type UserType } from '../services/api.ts';
 import { useI18n } from '../i18n/useI18n.ts';
 
@@ -79,12 +79,12 @@ export default function UnicodeTrainer({ user, onUpdate }: Props) {
     return (
         <div className="flex flex-col h-full">
             {/* Top bar */}
-            <div className="flex items-center gap-0 border-b border-neutral-800/60 h-14 px-6 shrink-0">
+            <div className="flex items-center border-b border-neutral-800/60 h-16 px-6 shrink-0 gap-1">
                 {byteOptions.map(b => (
                     <button
                         key={b}
                         onClick={() => setBytes(b)}
-                        className={`px-3 h-full text-sm font-medium transition-colors border-b-2 -mb-px ${
+                        className={`px-4 h-full text-sm font-medium transition-colors border-b-2 -mb-px ${
                             bytes === b
                                 ? 'text-white border-emerald-500'
                                 : 'text-neutral-500 border-transparent hover:text-neutral-300'
@@ -94,38 +94,52 @@ export default function UnicodeTrainer({ user, onUpdate }: Props) {
                     </button>
                 ))}
                 <div className="ml-auto">
-                    <span className="text-xs text-neutral-500 font-mono">{t.unicodeModeLabel}</span>
+                    <span className="text-sm text-neutral-500 font-mono">{t.unicodeModeLabel}</span>
                 </div>
             </div>
 
-            {/* Question */}
-            <div className="flex-1 flex flex-col items-center justify-center px-12 gap-8">
-                <div className="text-center">
-                    <p className="text-xs text-neutral-500 uppercase tracking-widest mb-6">
-                        {t.unicodeTaskLabel}
-                    </p>
-                    <AnimatePresence mode="wait">
-                        <motion.div
-                            key={question}
-                            initial={{ opacity: 0, y: -6 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 6 }}
-                            transition={{ duration: 0.15 }}
-                            className="flex flex-col items-center gap-3"
-                        >
-                            <span className="font-mono text-5xl tracking-widest text-white select-none">{question}</span>
-                            <span className="text-4xl select-none">{char}</span>
-                        </motion.div>
-                    </AnimatePresence>
-                </div>
+            {/* Two-column layout */}
+            <div className="flex-1 flex items-center justify-center px-8 gap-0">
+                <div className="flex items-stretch gap-8 w-full max-w-3xl">
 
-                {/* Input */}
-                <div className="flex flex-col items-center gap-3 w-full max-w-md">
-                    <div className="flex items-center gap-2 w-full">
-                        <div className={`flex-1 border-b-2 transition-colors ${
-                            feedback === 'wrong' ? 'border-red-500' :
-                            feedback === 'correct' ? 'border-emerald-500' :
-                            'border-neutral-700 focus-within:border-neutral-500'
+                    {/* Left: Unicode codepoint */}
+                    <div className="flex-1 flex flex-col">
+                        <p className="text-sm font-semibold uppercase tracking-widest text-neutral-500 mb-4">
+                            Unicode
+                        </p>
+                        <div className="flex-1 flex flex-col items-center justify-center rounded-lg border border-neutral-800 bg-neutral-950 min-h-36 px-6 py-8 gap-4">
+                            <AnimatePresence mode="wait">
+                                <motion.div
+                                    key={question}
+                                    initial={{ opacity: 0, y: -8 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: 8 }}
+                                    transition={{ duration: 0.15 }}
+                                    className="flex flex-col items-center gap-3"
+                                >
+                                    <span className="font-mono text-4xl tracking-widest text-white select-none">
+                                        {question}
+                                    </span>
+                                    <span className="text-5xl select-none">{char}</span>
+                                </motion.div>
+                            </AnimatePresence>
+                        </div>
+                    </div>
+
+                    {/* Arrow */}
+                    <div className="flex items-center justify-center pt-10 shrink-0">
+                        <ArrowRight strokeWidth={1.5} size={32} className="text-neutral-600" />
+                    </div>
+
+                    {/* Right: UTF-8 binary input */}
+                    <div className="flex-1 flex flex-col">
+                        <p className="text-sm font-semibold uppercase tracking-widest text-neutral-500 mb-4">
+                            UTF-8 Binary
+                        </p>
+                        <div className={`flex-1 flex items-center justify-center rounded-lg border min-h-36 px-6 py-8 transition-colors ${
+                            feedback === 'wrong' ? 'border-red-500/60 bg-red-500/5' :
+                            feedback === 'correct' ? 'border-emerald-500/60 bg-emerald-500/5' :
+                            'border-neutral-800 bg-neutral-950 focus-within:border-neutral-700'
                         }`}>
                             <input
                                 id="game-input-field"
@@ -138,46 +152,49 @@ export default function UnicodeTrainer({ user, onUpdate }: Props) {
                                 onChange={handleInputChange}
                                 onKeyDown={e => e.key === 'Enter' && handleCheck()}
                                 placeholder={t.unicodePlaceholder}
-                                className="w-full bg-transparent py-2 text-lg font-mono text-white placeholder-neutral-600 focus:outline-none text-center"
+                                className="w-full bg-transparent text-2xl font-mono text-white placeholder-neutral-700 focus:outline-none text-center tracking-wider leading-snug"
                             />
                         </div>
-                        <motion.button
-                            onClick={handleCheck}
-                            whileTap={{ scale: 0.93 }}
-                            className={`w-9 h-9 rounded-md flex items-center justify-center transition-all shrink-0 ${
-                                !userAnswer.trim() || isSubmitting
-                                    ? 'text-neutral-600'
-                                    : feedback === 'wrong'
-                                        ? 'text-red-500'
-                                        : 'text-emerald-500 hover:bg-emerald-500/10'
-                            }`}
-                        >
-                            {feedback === 'wrong'
-                                ? <X strokeWidth={2.5} size={18} />
-                                : <Check strokeWidth={2.5} size={18} />
-                            }
-                        </motion.button>
                     </div>
-
-                    <AnimatePresence>
-                        {feedback === 'wrong' && (
-                            <motion.p
-                                initial={{ opacity: 0, y: -4 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0 }}
-                                className="text-sm text-red-500/80 font-mono"
-                            >
-                                {t.tryAgain} <span className="text-neutral-500">{t.tryAgainHint}</span>
-                            </motion.p>
-                        )}
-                    </AnimatePresence>
                 </div>
+            </div>
 
-                {/* UTF-8 reference */}
-                <div className="text-xs font-mono text-neutral-500 space-y-0.5 text-center">
-                    <p>1B: 0xxxxxxx &nbsp;&nbsp; 2B: 110xxxxx 10xxxxxx</p>
-                    <p>3B: 1110xxxx 10xxxxxx 10xxxxxx &nbsp;&nbsp; 4B: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx</p>
-                </div>
+            {/* Bottom bar: UTF-8 reference + submit */}
+            <div className="h-16 px-8 border-t border-neutral-800/60 flex items-center gap-4 shrink-0">
+                <p className="text-xs font-mono text-neutral-600 hidden lg:block">
+                    1B: 0xxxxxxx &nbsp; 2B: 110xxxxx 10xxxxxx &nbsp; 3B: 1110xxxx 10xxxxxx 10xxxxxx &nbsp; 4B: 11110xxx 10xxxxxx×3
+                </p>
+
+                <AnimatePresence>
+                    {feedback === 'wrong' && (
+                        <motion.p
+                            initial={{ opacity: 0, x: -8 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0 }}
+                            className="text-base text-red-500/80 font-mono"
+                        >
+                            {t.tryAgain}
+                        </motion.p>
+                    )}
+                </AnimatePresence>
+
+                <motion.button
+                    onClick={handleCheck}
+                    disabled={isSubmitting || !userAnswer.trim()}
+                    whileTap={{ scale: 0.95 }}
+                    className={`ml-auto flex items-center gap-2 px-5 py-2.5 rounded-md text-base font-semibold transition-all ${
+                        !userAnswer.trim() || isSubmitting
+                            ? 'text-neutral-600 bg-neutral-900 cursor-not-allowed'
+                            : feedback === 'wrong'
+                                ? 'text-red-400 bg-red-500/10 hover:bg-red-500/20'
+                                : 'text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20'
+                    }`}
+                >
+                    {feedback === 'wrong'
+                        ? <><X strokeWidth={2.5} size={18} /> Falsch</>
+                        : <><Check strokeWidth={2.5} size={18} /> Prüfen</>
+                    }
+                </motion.button>
             </div>
         </div>
     );
