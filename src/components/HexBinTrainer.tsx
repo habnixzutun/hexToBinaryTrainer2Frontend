@@ -95,14 +95,17 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
     const [fromLabel, toLabel] = activeMode.split('To') as [string, string];
 
     return (
-        <div className="flex flex-col h-full">
-            {/* Top bar */}
-            <div className="flex items-center border-b border-outline-faint h-16 px-6 shrink-0 gap-1">
+        <div className="flex flex-col h-full" role="region" aria-label="Hex/Binary trainer">
+            {/* Top bar - mode selector and bits stepper */}
+            <div className="flex items-center border-b border-outline-faint h-16 px-4 sm:px-6 shrink-0 gap-1 overflow-x-auto" role="tablist" aria-label="Conversion modes">
                 {modes.map((m) => (
                     <button
                         key={m}
                         onClick={() => setActiveMode(m)}
-                        className={`px-3 h-full text-sm font-medium transition-colors border-b-2 -mb-px ${
+                        role="tab"
+                        aria-selected={activeMode === m}
+                        aria-label={`${m.split('To')[0]} to ${m.split('To')[1]}`}
+                        className={`px-3 h-full text-sm font-medium transition-colors border-b-2 -mb-px whitespace-nowrap ${
                             activeMode === m
                                 ? 'text-on-surface border-accent'
                                 : 'text-on-surface-faint border-transparent hover:text-on-surface-dim'
@@ -114,35 +117,45 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
 
                 {/* Bits stepper */}
                 <div className="ml-auto flex items-center gap-2 shrink-0">
-                    <span className="text-sm text-on-surface-faint uppercase tracking-wider">{t.bits}</span>
-                    <div className="flex items-center">
+                    <span className="text-sm text-on-surface-faint uppercase tracking-wider" id="bits-label">{t.bits}</span>
+                    <div className="flex items-center" role="group" aria-labelledby="bits-label">
                         <button
                             onClick={() => adjustBits(-4)}
-                            className="w-8 h-8 flex items-center justify-center text-on-surface-faint hover:text-on-surface-dim transition-colors"
+                            aria-label={`Decrease bits by 4, currently ${bits}`}
+                            disabled={bits <= 4}
+                            className="w-8 h-8 flex items-center justify-center text-on-surface-faint hover:text-on-surface-dim transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            <ChevronLeft strokeWidth={2} size={16} />
+                            <ChevronLeft strokeWidth={2} size={16} aria-hidden="true" />
                         </button>
-                        <span className="w-8 text-center text-base font-mono text-on-surface-dim">{bits}</span>
+                        <span className="w-8 text-center text-base font-mono text-on-surface-dim" aria-live="polite" aria-atomic="true">
+                            {bits}
+                        </span>
                         <button
                             onClick={() => adjustBits(4)}
-                            className="w-8 h-8 flex items-center justify-center text-on-surface-faint hover:text-on-surface-dim transition-colors"
+                            aria-label={`Increase bits by 4, currently ${bits}`}
+                            disabled={bits >= 32}
+                            className="w-8 h-8 flex items-center justify-center text-on-surface-faint hover:text-on-surface-dim transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            <ChevronRight strokeWidth={2} size={16} />
+                            <ChevronRight strokeWidth={2} size={16} aria-hidden="true" />
                         </button>
                     </div>
                 </div>
             </div>
 
-            {/* Two-column question area */}
-            <div className="flex-1 flex items-center justify-center px-8 gap-0">
-                <div className="flex items-stretch gap-8 w-full max-w-3xl">
-
+            {/* Two-column question area - responsive */}
+            <div className="flex-1 flex items-center justify-center px-4 sm:px-8 py-4 gap-0">
+                <div className="flex flex-col md:flex-row items-stretch gap-4 md:gap-8 w-full max-w-3xl">
                     {/* Left: source value */}
-                    <div className="flex-1 flex flex-col">
-                        <p className="text-sm font-semibold uppercase tracking-widest text-on-surface-faint mb-4">
+                    <div className="flex-1 flex flex-col min-w-0">
+                        <label className="text-sm font-semibold uppercase tracking-widest text-on-surface-faint mb-4" htmlFor="source-value">
                             {fromLabel}
-                        </p>
-                        <div className="flex-1 flex items-center justify-center rounded-lg border border-outline bg-surface-alt min-h-36 px-6 py-8">
+                        </label>
+                        <div
+                            id="source-value"
+                            className="flex-1 flex items-center justify-center rounded-lg border border-outline bg-surface-alt min-h-36 px-4 sm:px-6 py-8"
+                            aria-live="polite"
+                            aria-atomic="true"
+                        >
                             <AnimatePresence mode="wait">
                                 <motion.span
                                     key={question}
@@ -150,7 +163,7 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, y: 8 }}
                                     transition={{ duration: 0.15 }}
-                                    className="font-mono text-4xl tracking-widest text-on-surface select-none break-all text-center leading-snug"
+                                    className="font-mono text-2xl sm:text-3xl md:text-4xl tracking-widest text-on-surface select-none break-all text-center leading-snug"
                                 >
                                     {question}
                                 </motion.span>
@@ -158,59 +171,80 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
                         </div>
                     </div>
 
-                    {/* Arrow */}
-                    <div className="flex items-center justify-center pt-10 shrink-0">
-                        <ArrowRight strokeWidth={1.5} size={32} className="text-on-surface-subtle" />
+                    {/* Arrow - hide on small screens */}
+                    <div className="hidden md:flex items-center justify-center pt-10 shrink-0">
+                        <ArrowRight strokeWidth={1.5} size={32} className="text-on-surface-subtle" aria-hidden="true" />
                     </div>
 
                     {/* Right: answer input */}
-                    <div className="flex-1 flex flex-col">
-                        <p className="text-sm font-semibold uppercase tracking-widest text-on-surface-faint mb-4">
+                    <div className="flex-1 flex flex-col min-w-0">
+                        <label className="text-sm font-semibold uppercase tracking-widest text-on-surface-faint mb-4" htmlFor="answer-input">
                             {toLabel}
-                        </p>
-                        <div className={`flex-1 flex items-center justify-center rounded-lg border min-h-36 px-6 py-8 transition-colors ${
+                        </label>
+                        <div className={`flex-1 flex items-center justify-center rounded-lg border min-h-36 px-4 sm:px-6 py-8 transition-colors ${
                             feedback === 'wrong' ? 'border-red-500/60 bg-error-muted' :
                             feedback === 'correct' ? 'border-emerald-500/60 bg-accent-muted' :
-                            'border-outline bg-surface-alt focus-within:border-outline'
+                            'border-outline bg-surface-alt focus-within:border-accent'
                         }`}>
                             <input
-                                id="game-input-field"
-                                name="binary-input-unique"
+                                id="answer-input"
                                 ref={inputRef}
                                 type="text"
-                                autoComplete="one-time-code"
+                                autoComplete="off"
                                 autoFocus
                                 disabled={isSubmitting}
                                 value={userAnswer}
                                 onChange={handleInputChange}
                                 onKeyDown={e => e.key === 'Enter' && handleCheck()}
                                 placeholder={t.inputPlaceholder(toLabel ?? '')}
-                                className="w-full bg-transparent text-2xl font-mono text-on-surface placeholder-on-surface-subtle focus:outline-none text-center tracking-widest leading-snug"
+                                aria-label={`${toLabel} answer`}
+                                aria-describedby="input-help"
+                                className="w-full bg-transparent text-xl sm:text-2xl font-mono text-on-surface placeholder-on-surface-subtle focus:outline-none text-center tracking-widest leading-snug"
                             />
                         </div>
+                        <span id="input-help" className="sr-only">
+                            Enter your answer in {toLabel} format
+                        </span>
                     </div>
                 </div>
             </div>
 
             {/* Bottom bar: feedback + submit */}
-            <div className="h-16 px-8 border-t border-outline-faint flex items-center justify-between shrink-0">
-                <AnimatePresence>
-                    {feedback === 'wrong' && (
-                        <motion.p
-                            initial={{ opacity: 0, x: -8 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0 }}
-                            className="text-base text-error-text font-mono"
-                        >
-                            {t.tryAgain}
-                        </motion.p>
-                    )}
-                </AnimatePresence>
+            <div className="h-16 px-4 sm:px-8 border-t border-outline-faint flex items-center justify-between shrink-0 gap-4">
+                <div className="flex-1 min-w-0">
+                    <AnimatePresence>
+                        {feedback === 'wrong' && (
+                            <motion.p
+                                initial={{ opacity: 0, x: -8 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0 }}
+                                className="text-base text-error-text font-mono truncate"
+                                role="alert"
+                                aria-live="assertive"
+                            >
+                                {t.tryAgain}
+                            </motion.p>
+                        )}
+                        {feedback === 'correct' && (
+                            <motion.p
+                                initial={{ opacity: 0, x: -8 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0 }}
+                                className="text-base text-accent font-mono truncate"
+                                role="status"
+                                aria-live="polite"
+                            >
+                                ✓ Correct!
+                            </motion.p>
+                        )}
+                    </AnimatePresence>
+                </div>
                 <motion.button
                     onClick={handleCheck}
                     disabled={isSubmitting || !userAnswer.trim()}
                     whileTap={{ scale: 0.95 }}
-                    className={`ml-auto flex items-center gap-2 px-5 py-2.5 rounded-md text-base font-semibold transition-all ${
+                    aria-label={feedback === 'wrong' ? 'Check answer (incorrect)' : 'Check answer'}
+                    className={`shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-md text-base font-semibold transition-all ${
                         !userAnswer.trim() || isSubmitting
                             ? 'text-on-surface-subtle bg-surface-raised cursor-not-allowed'
                             : feedback === 'wrong'
@@ -219,8 +253,8 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
                     }`}
                 >
                     {feedback === 'wrong'
-                        ? <><X strokeWidth={2.5} size={18} /> Falsch</>
-                        : <><Check strokeWidth={2.5} size={18} /> Prüfen</>
+                        ? <><X strokeWidth={2.5} size={18} aria-hidden="true" /> Falsch</>
+                        : <><Check strokeWidth={2.5} size={18} aria-hidden="true" /> Prüfen</>
                     }
                 </motion.button>
             </div>

@@ -24,65 +24,87 @@ export default function WelcomeScreen({ onJoin }: Props) {
         if (name.trim().length >= 2) onJoin(name.trim());
     };
 
+    const isNameValid = name.trim().length >= 2;
+
     return (
-        <div className="min-h-screen bg-surface flex items-center justify-center p-4">
+        <div className="min-h-screen bg-surface flex items-center justify-center p-4" role="main">
             {/* Top-right controls: theme toggle + language toggle */}
-            <div className="fixed top-4 right-4 flex items-center gap-1.5">
+            <div className="fixed top-4 right-4 flex items-center gap-1.5" role="toolbar" aria-label="Settings">
                 <motion.button
                     onClick={toggleTheme}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className="flex items-center justify-center w-8 h-8 border border-outline hover:border-on-surface-subtle rounded text-on-surface-faint hover:text-on-surface-dim transition-colors"
+                    className="flex items-center justify-center w-9 h-9 border border-outline hover:border-on-surface-subtle rounded text-on-surface-faint hover:text-on-surface-dim transition-colors"
+                    aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
                     title={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
                 >
                     {theme === 'dark'
-                        ? <Sun strokeWidth={1.5} size={13} />
-                        : <Moon strokeWidth={1.5} size={13} />
+                        ? <Sun strokeWidth={1.5} size={13} aria-hidden="true" />
+                        : <Moon strokeWidth={1.5} size={13} aria-hidden="true" />
                     }
                 </motion.button>
                 <motion.button
                     onClick={toggleLocale}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className="flex items-center gap-1.5 px-2.5 h-8 border border-outline hover:border-on-surface-subtle rounded text-[10px] font-semibold text-on-surface-faint hover:text-on-surface-dim transition-colors"
+                    className="flex items-center gap-1.5 px-2.5 h-9 border border-outline hover:border-on-surface-subtle rounded text-[10px] font-semibold text-on-surface-faint hover:text-on-surface-dim transition-colors"
+                    aria-label={locale === 'de' ? 'Switch to English' : 'Auf Deutsch wechseln'}
                 >
-                    <Globe strokeWidth={1.5} size={11} />
-                    {locale === 'de' ? 'EN' : 'DE'}
+                    <Globe strokeWidth={1.5} size={11} aria-hidden="true" />
+                    <span>{locale === 'de' ? 'EN' : 'DE'}</span>
                 </motion.button>
             </div>
 
-            <main className="w-full max-w-xs">
+            <main className="w-full max-w-xs" aria-labelledby="welcome-heading">
                 <div className="flex items-center gap-2 mb-8">
-                    <Terminal strokeWidth={1.5} size={16} className="text-accent" />
+                    <Terminal strokeWidth={1.5} size={16} className="text-accent" aria-hidden="true" />
                     <span className="text-xs font-bold tracking-wider text-on-surface-faint uppercase">IT Trainer</span>
                 </div>
 
-                <h1 className="text-2xl font-bold tracking-tight text-on-surface mb-2">{t.welcomeTitle}</h1>
-                <p className="text-sm text-on-surface-faint mb-8 leading-relaxed">{t.welcomeSubtitle}</p>
+                <h1 id="welcome-heading" className="text-2xl font-bold tracking-tight text-on-surface mb-2">
+                    {t.welcomeTitle}
+                </h1>
+                <p className="text-sm text-on-surface-faint mb-8 leading-relaxed">
+                    {t.welcomeSubtitle}
+                </p>
 
-                <form onSubmit={handleSubmit} className="space-y-3">
-                    <div className="border-b border-outline focus-within:border-on-surface-subtle transition-colors">
+                <form onSubmit={handleSubmit} className="space-y-3" aria-label="Login form">
+                    <div className="border-b border-outline focus-within:border-accent transition-colors">
+                        <label htmlFor="username-input" className="sr-only">
+                            Username
+                        </label>
                         <input
-                            id="game-input-field"
-                            name="binary-input-unique"
+                            id="username-input"
                             type="text"
-                            autoComplete="one-time-code"
+                            autoComplete="username"
                             autoFocus
                             value={name}
                             onChange={e => setName(e.target.value)}
                             placeholder={t.usernamePlaceholder}
+                            aria-required="true"
+                            aria-invalid={!isNameValid && name.length > 0}
+                            aria-describedby="username-help"
                             className="w-full bg-transparent py-2 text-sm text-on-surface placeholder-on-surface-subtle focus:outline-none"
                         />
+                        <span id="username-help" className="sr-only">
+                            Enter your username (minimum 2 characters)
+                        </span>
                     </div>
+                    {!isNameValid && name.length > 0 && (
+                        <p className="text-xs text-error-text" role="alert">
+                            {locale === 'de' ? 'Mindestens 2 Zeichen erforderlich' : 'Minimum 2 characters required'}
+                        </p>
+                    )}
                     <motion.button
                         type="submit"
-                        disabled={name.trim().length < 2}
-                        whileHover={{ scale: name.trim().length >= 2 ? 1.02 : 1 }}
-                        whileTap={{ scale: name.trim().length >= 2 ? 0.98 : 1 }}
+                        disabled={!isNameValid}
+                        whileHover={{ scale: isNameValid ? 1.02 : 1 }}
+                        whileTap={{ scale: isNameValid ? 0.98 : 1 }}
+                        aria-label={t.startButton}
                         className="w-full flex items-center justify-center gap-2 bg-accent hover:bg-accent-bright disabled:bg-surface-raised disabled:text-on-surface-subtle text-white font-semibold py-2 rounded text-sm transition-all mt-4"
                     >
-                        {t.startButton}
-                        <ArrowRight strokeWidth={2} size={13} />
+                        <span>{t.startButton}</span>
+                        <ArrowRight strokeWidth={2} size={13} aria-hidden="true" />
                     </motion.button>
                 </form>
             </main>

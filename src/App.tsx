@@ -46,6 +46,11 @@ export default function App() {
 
     return (
         <div className="flex flex-col md:flex-row h-screen bg-surface text-on-surface-dim overflow-hidden font-sans">
+            {/* Skip link for keyboard navigation */}
+            <a href="#main-content" className="skip-link">
+                Skip to main content
+            </a>
+
             <Sidebar
                 activeApp={activeApp}
                 setActiveApp={setActiveApp}
@@ -57,7 +62,7 @@ export default function App() {
             <div className="flex flex-1 min-w-0 overflow-hidden">
                 {/* Trainer area — hidden when leaderboard is active on small viewports */}
                 {!isLeaderboardActive && (
-                    <main className="flex-1 overflow-y-auto border-r border-outline-faint">
+                    <main id="main-content" className="flex-1 overflow-y-auto border-r border-outline-faint" role="main">
                         <AnimatePresence mode="wait">
                             <motion.div
                                 key={activeApp}

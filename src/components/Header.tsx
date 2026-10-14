@@ -21,33 +21,37 @@ export default function Header({ activeApp, setActiveApp, username, onLogout }: 
     };
 
     return (
-        <nav className="bg-surface/90 backdrop-blur-md sticky top-0 z-50 border-b border-outline">
-            <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
-
-                <div className="flex items-center gap-3">
-                    <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-accent-muted border border-accent/20">
-                        <Terminal strokeWidth={1.5} size={16} className="text-accent" />
+        <header className="bg-surface/90 backdrop-blur-md sticky top-0 z-30 border-b border-outline" role="banner">
+            <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
+                {/* Logo and user info */}
+                <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-accent-muted border border-accent/20 shrink-0">
+                        <Terminal strokeWidth={1.5} size={16} className="text-accent" aria-hidden="true" />
                     </div>
-                    <div className="flex flex-col">
-                        <span className="text-sm font-bold tracking-tight text-on-surface leading-none">
+                    <div className="flex flex-col min-w-0">
+                        <span className="text-sm font-bold tracking-tight text-on-surface leading-none truncate">
                             IT <span className="text-on-surface-subtle">{t.appTitleAccent}</span>
                         </span>
                         <div className="flex items-center gap-1.5 mt-0.5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
-                            <span className="text-[9px] text-on-surface-faint uppercase tracking-widest font-semibold">
+                            <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse shrink-0" aria-hidden="true" />
+                            <span className="text-[9px] text-on-surface-faint uppercase tracking-widest font-semibold truncate">
                                 {username}
                             </span>
                         </div>
                     </div>
                 </div>
 
+                {/* Actions - responsive layout */}
                 <div className="flex items-center gap-2">
-                    <div className="flex bg-surface-raised p-0.5 rounded-lg border border-outline">
+                    {/* Tab switcher - hide on very small screens */}
+                    <nav className="hidden sm:flex bg-surface-raised p-0.5 rounded-lg border border-outline" aria-label="Trainer modes">
                         {(['hex', 'unicode'] as const).map((app) => (
                             <motion.button
                                 key={app}
                                 onClick={() => setActiveApp(app)}
                                 whileTap={{ scale: 0.97 }}
+                                aria-label={app === 'hex' ? 'Hex/Binary trainer' : 'Unicode trainer'}
+                                aria-current={activeApp === app ? 'page' : undefined}
                                 className={`relative px-4 py-1.5 rounded-md font-semibold text-xs transition-colors ${
                                     activeApp === app
                                         ? 'text-on-surface'
@@ -66,43 +70,49 @@ export default function Header({ activeApp, setActiveApp, username, onLogout }: 
                                 </span>
                             </motion.button>
                         ))}
-                    </div>
+                    </nav>
 
+                    {/* Theme toggle */}
                     <motion.button
                         onClick={toggleTheme}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
-                        className="flex items-center justify-center w-8 h-8 rounded-lg bg-surface-raised border border-outline hover:border-on-surface-subtle transition-colors text-on-surface-faint hover:text-on-surface-dim"
+                        className="flex items-center justify-center w-9 h-9 rounded-lg bg-surface-raised border border-outline hover:border-on-surface-subtle transition-colors text-on-surface-faint hover:text-on-surface-dim"
+                        aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
                         title={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
                     >
                         {theme === 'dark'
-                            ? <Sun strokeWidth={1.5} size={13} />
-                            : <Moon strokeWidth={1.5} size={13} />
+                            ? <Sun strokeWidth={1.5} size={13} aria-hidden="true" />
+                            : <Moon strokeWidth={1.5} size={13} aria-hidden="true" />
                         }
                     </motion.button>
 
+                    {/* Language toggle */}
                     <motion.button
                         onClick={toggleLocale}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
-                        className="flex items-center gap-1 w-auto px-2.5 h-8 rounded-lg bg-surface-raised border border-outline hover:border-on-surface-subtle transition-colors text-xs font-semibold text-on-surface-faint hover:text-on-surface-dim"
+                        className="flex items-center gap-1 w-auto px-2.5 h-9 rounded-lg bg-surface-raised border border-outline hover:border-on-surface-subtle transition-colors text-xs font-semibold text-on-surface-faint hover:text-on-surface-dim"
+                        aria-label={locale === 'de' ? 'Switch to English' : 'Auf Deutsch wechseln'}
                         title={locale === 'de' ? 'Switch to English' : 'Auf Deutsch wechseln'}
                     >
-                        <Globe strokeWidth={1.5} size={13} />
-                        {locale === 'de' ? 'EN' : 'DE'}
+                        <Globe strokeWidth={1.5} size={13} aria-hidden="true" />
+                        <span>{locale === 'de' ? 'EN' : 'DE'}</span>
                     </motion.button>
 
+                    {/* Logout */}
                     <motion.button
                         onClick={onLogout}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
-                        className="flex items-center justify-center w-8 h-8 rounded-lg bg-surface-raised border border-outline hover:border-red-500/60 hover:bg-error-muted transition-colors group"
+                        className="flex items-center justify-center w-9 h-9 rounded-lg bg-surface-raised border border-outline hover:border-red-500/60 hover:bg-error-muted transition-colors group"
+                        aria-label={t.logoutTitle}
                         title={t.logoutTitle}
                     >
-                        <LogOut strokeWidth={1.5} size={14} className="text-on-surface-faint group-hover:text-error-text transition-colors" />
+                        <LogOut strokeWidth={1.5} size={14} className="text-on-surface-faint group-hover:text-error-text transition-colors" aria-hidden="true" />
                     </motion.button>
                 </div>
             </div>
-        </nav>
+        </header>
     );
 }
