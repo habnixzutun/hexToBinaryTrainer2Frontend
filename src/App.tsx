@@ -15,16 +15,22 @@ export default function App() {
     const [refreshKey, setRefreshKey] = useState(0);
 
     const handleJoin = async (name: string): Promise<void> => {
-        const userStats = await api.getUser(name);
-        localStorage.setItem('trainer_name', name);
-        setCurrentUser(userStats);
+        try {
+            const userStats = await api.getUser(name);
+            localStorage.setItem('trainer_name', name);
+            setCurrentUser(userStats);
+        } catch {
+            // API unavailable — create offline user
+            localStorage.setItem('trainer_name', name);
+            setCurrentUser({ name, correct: 0, incorrect: 0, points: 0 });
+        }
     };
 
     useEffect(() => {
         const savedName = localStorage.getItem('trainer_name');
         if (savedName) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            handleJoin(savedName);
+            // Load user data asynchronously — don't block initial render
+            void handleJoin(savedName);
         }
     }, []);
 

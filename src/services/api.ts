@@ -26,18 +26,23 @@ export interface ResultResponse {
 export const api = {
     // Holt die aktuelle Bestenliste
     async getUser(username: string): Promise<UserType> {
-        const response = await fetch(`${BASE_URL}/api/user`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                name: username
-            }),
-        });
-        if (!response.ok) {
-            // Fallback, falls der User neu ist und das Backend z.B. 404 wirft
+        try {
+            const response = await fetch(`${BASE_URL}/api/user`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: username
+                }),
+            });
+            if (!response.ok) {
+                // Fallback, falls der User neu ist und das Backend z.B. 404 wirft
+                return { name: username, correct: 0, incorrect: 0, points: 0 };
+            }
+            return await response.json();
+        } catch {
+            // Network error or backend unavailable — return default user
             return { name: username, correct: 0, incorrect: 0, points: 0 };
         }
-        return await response.json();
     },
 
     // Holt die Bestenliste
