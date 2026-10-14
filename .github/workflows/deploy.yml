@@ -12,12 +12,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup SSH config
+      - name: Fetch and accept host keys
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          echo "Host *" > ~/.ssh/config
-          echo "  StrictHostKeyChecking no" >> ~/.ssh/config
+          echo "Trying ssh-keyscan for ${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_PORT }}"
+          ssh-keyscan -p "${{ secrets.SERVER_PORT }}" -t ecdsa,ssh-rsa "${{ secrets.SERVER_HOST }}" >> ~/.ssh/known_hosts 2>&1 || true
+          cat ~/.ssh/known_hosts | head -1
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.2.0
