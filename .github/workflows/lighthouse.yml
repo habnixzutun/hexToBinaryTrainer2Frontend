@@ -24,9 +24,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install serve
-        run: npm install -g serve
-
       - name: Build application
         run: npm run build
         env:
@@ -35,13 +32,19 @@ jobs:
       - name: Install LHCI CLI
         run: npm install -g @lhci/cli@0.15.1
 
-      - name: Run Lighthouse CI
-        run: npx lhci autorun --config=.lighthouserc.json
+      - name: Run Lighthouse Collect
+        run: npx lhci collect --config=.lighthouserc.json
 
-      - name: Upload Lighthouse results
+      - name: Upload Lighthouse reports
         uses: actions/upload-artifact@v4
-        if: always()
+        if: success() || failure()
         with:
           name: lighthouse-results
           path: '.lighthouseci'
           retention-days: 30
+
+      - name: Run Assertions
+        run: npx lhci assert --config=.lighthouserc.json
+
+      - name: Upload to Google Storage
+        run: npx lhci upload --config=.lighthouserc.json
