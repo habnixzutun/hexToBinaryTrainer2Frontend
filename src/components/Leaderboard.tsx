@@ -36,20 +36,20 @@ export default function Leaderboard({ currentUser, refreshTrigger }: Props) {
     return (
         <div className="h-full flex flex-col">
             {/* Header */}
-            <div className="flex items-center justify-between h-16 px-5 border-b border-neutral-800/60 shrink-0">
-                <span className="text-sm font-semibold uppercase tracking-widest text-neutral-400">
+            <div className="flex items-center justify-between h-16 px-5 border-b border-outline-faint shrink-0">
+                <span className="text-sm font-semibold uppercase tracking-widest text-on-surface-faint">
                     {t.leaderboardTitle}
                 </span>
-                {loading && <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />}
+                {loading && <span className="w-2 h-2 rounded-full bg-accent animate-ping" />}
             </div>
 
             {/* Column headers */}
             <div className="flex items-center px-5 py-3 shrink-0">
                 <span className="w-8 shrink-0" />
-                <span className="flex-1 text-xs font-semibold uppercase tracking-widest text-neutral-500">{t.name}</span>
-                <span className="w-10 text-xs font-semibold uppercase tracking-widest text-neutral-500 text-right">✓</span>
-                <span className="w-10 text-xs font-semibold uppercase tracking-widest text-neutral-500 text-right">✗</span>
-                <span className="w-16 text-xs font-semibold uppercase tracking-widest text-neutral-500 text-right">PTS</span>
+                <span className="flex-1 text-xs font-semibold uppercase tracking-widest text-on-surface-faint">{t.name}</span>
+                <span className="w-10 text-xs font-semibold uppercase tracking-widest text-on-surface-faint text-right">✓</span>
+                <span className="w-10 text-xs font-semibold uppercase tracking-widest text-on-surface-faint text-right">✗</span>
+                <span className="w-16 text-xs font-semibold uppercase tracking-widest text-on-surface-faint text-right">PTS</span>
             </div>
 
             {/* Rows */}
@@ -63,33 +63,33 @@ export default function Leaderboard({ currentUser, refreshTrigger }: Props) {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             transition={{ delay: idx * 0.04 }}
-                            className={`flex items-center px-5 py-3.5 border-b border-neutral-800/30 transition-colors ${
-                                isMe ? 'bg-emerald-500/5' : 'hover:bg-neutral-900/60'
+                            className={`flex items-center px-5 py-3.5 border-b border-outline-faint transition-colors ${
+                                isMe ? 'bg-accent-muted' : 'hover:bg-surface-alt'
                             }`}
                         >
                             {/* Rank */}
                             <span className="w-8 shrink-0 text-base">
                                 {idx in MEDALS
                                     ? <span>{MEDALS[idx]}</span>
-                                    : <span className="text-neutral-500 font-mono text-sm">{idx + 1}</span>
+                                    : <span className="text-on-surface-faint font-mono text-sm">{idx + 1}</span>
                                 }
                             </span>
 
                             {/* Name */}
                             <span className={`flex-1 text-base font-medium truncate ${
-                                isMe ? 'text-emerald-400' : 'text-neutral-300'
+                                isMe ? 'text-accent' : 'text-on-surface-dim'
                             }`}>
                                 {entry.name}
-                                {isMe && <span className="ml-1.5 text-neutral-500 font-normal text-sm">{t.me}</span>}
+                                {isMe && <span className="ml-1.5 text-on-surface-faint font-normal text-sm">{t.me}</span>}
                             </span>
 
                             {/* Correct */}
-                            <span className="w-10 text-sm font-mono text-neutral-400 text-right">
+                            <span className="w-10 text-sm font-mono text-on-surface-faint text-right">
                                 {entry.correct}
                             </span>
 
                             {/* Incorrect */}
-                            <span className="w-10 text-sm font-mono text-neutral-400 text-right">
+                            <span className="w-10 text-sm font-mono text-on-surface-faint text-right">
                                 {entry.incorrect}
                             </span>
 
@@ -98,10 +98,10 @@ export default function Leaderboard({ currentUser, refreshTrigger }: Props) {
                                 <Zap
                                     strokeWidth={1.5}
                                     size={13}
-                                    className={isMe ? 'text-emerald-500' : 'text-amber-500/60'}
+                                    className={isMe ? 'text-accent' : 'text-amber-500/60'}
                                 />
                                 <span className={`text-base font-bold font-mono ${
-                                    isMe ? 'text-emerald-400' : 'text-neutral-300'
+                                    isMe ? 'text-accent' : 'text-on-surface-dim'
                                 }`}>
                                     {entry.points.toLocaleString()}
                                 </span>

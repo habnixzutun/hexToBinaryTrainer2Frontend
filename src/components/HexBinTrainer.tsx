@@ -97,15 +97,15 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
     return (
         <div className="flex flex-col h-full">
             {/* Top bar */}
-            <div className="flex items-center border-b border-neutral-800/60 h-16 px-6 shrink-0 gap-1">
+            <div className="flex items-center border-b border-outline-faint h-16 px-6 shrink-0 gap-1">
                 {modes.map((m) => (
                     <button
                         key={m}
                         onClick={() => setActiveMode(m)}
                         className={`px-3 h-full text-sm font-medium transition-colors border-b-2 -mb-px ${
                             activeMode === m
-                                ? 'text-white border-emerald-500'
-                                : 'text-neutral-500 border-transparent hover:text-neutral-300'
+                                ? 'text-on-surface border-accent'
+                                : 'text-on-surface-faint border-transparent hover:text-on-surface-dim'
                         }`}
                     >
                         {m}
@@ -114,18 +114,18 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
 
                 {/* Bits stepper */}
                 <div className="ml-auto flex items-center gap-2 shrink-0">
-                    <span className="text-sm text-neutral-500 uppercase tracking-wider">{t.bits}</span>
+                    <span className="text-sm text-on-surface-faint uppercase tracking-wider">{t.bits}</span>
                     <div className="flex items-center">
                         <button
                             onClick={() => adjustBits(-4)}
-                            className="w-8 h-8 flex items-center justify-center text-neutral-500 hover:text-neutral-200 transition-colors"
+                            className="w-8 h-8 flex items-center justify-center text-on-surface-faint hover:text-on-surface-dim transition-colors"
                         >
                             <ChevronLeft strokeWidth={2} size={16} />
                         </button>
-                        <span className="w-8 text-center text-base font-mono text-neutral-300">{bits}</span>
+                        <span className="w-8 text-center text-base font-mono text-on-surface-dim">{bits}</span>
                         <button
                             onClick={() => adjustBits(4)}
-                            className="w-8 h-8 flex items-center justify-center text-neutral-500 hover:text-neutral-200 transition-colors"
+                            className="w-8 h-8 flex items-center justify-center text-on-surface-faint hover:text-on-surface-dim transition-colors"
                         >
                             <ChevronRight strokeWidth={2} size={16} />
                         </button>
@@ -139,10 +139,10 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
 
                     {/* Left: source value */}
                     <div className="flex-1 flex flex-col">
-                        <p className="text-sm font-semibold uppercase tracking-widest text-neutral-500 mb-4">
+                        <p className="text-sm font-semibold uppercase tracking-widest text-on-surface-faint mb-4">
                             {fromLabel}
                         </p>
-                        <div className="flex-1 flex items-center justify-center rounded-lg border border-neutral-800 bg-neutral-950 min-h-36 px-6 py-8">
+                        <div className="flex-1 flex items-center justify-center rounded-lg border border-outline bg-surface-alt min-h-36 px-6 py-8">
                             <AnimatePresence mode="wait">
                                 <motion.span
                                     key={question}
@@ -150,7 +150,7 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, y: 8 }}
                                     transition={{ duration: 0.15 }}
-                                    className="font-mono text-4xl tracking-widest text-white select-none break-all text-center leading-snug"
+                                    className="font-mono text-4xl tracking-widest text-on-surface select-none break-all text-center leading-snug"
                                 >
                                     {question}
                                 </motion.span>
@@ -160,18 +160,18 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
 
                     {/* Arrow */}
                     <div className="flex items-center justify-center pt-10 shrink-0">
-                        <ArrowRight strokeWidth={1.5} size={32} className="text-neutral-600" />
+                        <ArrowRight strokeWidth={1.5} size={32} className="text-on-surface-subtle" />
                     </div>
 
                     {/* Right: answer input */}
                     <div className="flex-1 flex flex-col">
-                        <p className="text-sm font-semibold uppercase tracking-widest text-neutral-500 mb-4">
+                        <p className="text-sm font-semibold uppercase tracking-widest text-on-surface-faint mb-4">
                             {toLabel}
                         </p>
                         <div className={`flex-1 flex items-center justify-center rounded-lg border min-h-36 px-6 py-8 transition-colors ${
-                            feedback === 'wrong' ? 'border-red-500/60 bg-red-500/5' :
-                            feedback === 'correct' ? 'border-emerald-500/60 bg-emerald-500/5' :
-                            'border-neutral-800 bg-neutral-950 focus-within:border-neutral-700'
+                            feedback === 'wrong' ? 'border-red-500/60 bg-error-muted' :
+                            feedback === 'correct' ? 'border-emerald-500/60 bg-accent-muted' :
+                            'border-outline bg-surface-alt focus-within:border-outline'
                         }`}>
                             <input
                                 id="game-input-field"
@@ -185,7 +185,7 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
                                 onChange={handleInputChange}
                                 onKeyDown={e => e.key === 'Enter' && handleCheck()}
                                 placeholder={t.inputPlaceholder(toLabel ?? '')}
-                                className="w-full bg-transparent text-2xl font-mono text-white placeholder-neutral-700 focus:outline-none text-center tracking-widest leading-snug"
+                                className="w-full bg-transparent text-2xl font-mono text-on-surface placeholder-on-surface-subtle focus:outline-none text-center tracking-widest leading-snug"
                             />
                         </div>
                     </div>
@@ -193,14 +193,14 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
             </div>
 
             {/* Bottom bar: feedback + submit */}
-            <div className="h-16 px-8 border-t border-neutral-800/60 flex items-center justify-between shrink-0">
+            <div className="h-16 px-8 border-t border-outline-faint flex items-center justify-between shrink-0">
                 <AnimatePresence>
                     {feedback === 'wrong' && (
                         <motion.p
                             initial={{ opacity: 0, x: -8 }}
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0 }}
-                            className="text-base text-red-500/80 font-mono"
+                            className="text-base text-error-text font-mono"
                         >
                             {t.tryAgain}
                         </motion.p>
@@ -212,10 +212,10 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
                     whileTap={{ scale: 0.95 }}
                     className={`ml-auto flex items-center gap-2 px-5 py-2.5 rounded-md text-base font-semibold transition-all ${
                         !userAnswer.trim() || isSubmitting
-                            ? 'text-neutral-600 bg-neutral-900 cursor-not-allowed'
+                            ? 'text-on-surface-subtle bg-surface-raised cursor-not-allowed'
                             : feedback === 'wrong'
-                                ? 'text-red-400 bg-red-500/10 hover:bg-red-500/20'
-                                : 'text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20'
+                                ? 'text-error-text bg-error-muted hover:bg-red-500/20'
+                                : 'text-accent bg-accent-muted hover:bg-emerald-500/20'
                     }`}
                 >
                     {feedback === 'wrong'
