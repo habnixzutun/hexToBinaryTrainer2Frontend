@@ -1,0 +1,50 @@
+{
+  "ci": {
+    "collect": {
+      "staticDistDir": "./dist",
+      "numberOfRuns": 3,
+      "settings": {
+        "preset": "desktop"
+      }
+    },
+    "assert": {
+      "assertions": {
+        "categories:performance": {
+          "minScore": 0.9,
+          "aggregationMethod": "median-run"
+        },
+        "categories:accessibility": {
+          "minScore": 1,
+          "aggregationMethod": "median-run"
+        },
+        "categories:best-practices": {
+          "minScore": 0.9,
+          "aggregationMethod": "median-run"
+        },
+        "categories:seo": {
+          "minScore": 0.9,
+          "aggregationMethod": "median-run"
+        },
+        "first-contentful-paint": {
+          "maxNumericValue": 2000,
+          "aggregationMethod": "median-run"
+        },
+        "largest-contentful-paint": {
+          "maxNumericValue": 2500,
+          "aggregationMethod": "median-run"
+        },
+        "cumulative-layout-shift": {
+          "maxNumericValue": 0.1,
+          "aggregationMethod": "median-run"
+        },
+        "total-blocking-time": {
+          "maxNumericValue": 200,
+          "aggregationMethod": "median-run"
+        }
+      }
+    },
+    "upload": {
+      "target": "temporary-public-storage"
+    }
+  }
+}
