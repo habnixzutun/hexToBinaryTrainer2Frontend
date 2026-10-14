@@ -1,28 +1,36 @@
 import { useState, useEffect } from 'react';
-import Header from './components/Header.tsx';
-import Footer from './components/Footer.tsx';
+import { AnimatePresence, motion } from 'framer-motion';
+import Sidebar from './components/Sidebar.tsx';
 import HexBinTrainer from './components/HexBinTrainer.tsx';
 import UnicodeTrainer from './components/UnicodeTrainer.tsx';
 import Leaderboard from './components/Leaderboard.tsx';
 import WelcomeScreen from './components/WelcomeScreen.tsx';
 import { api, type UserType } from './services/api.ts';
 
+export type ActiveApp = 'hex' | 'unicode' | 'leaderboard';
+
 export default function App() {
-    const [activeApp, setActiveApp] = useState<'hex' | 'unicode'>('hex');
+    const [activeApp, setActiveApp] = useState<ActiveApp>('hex');
     const [currentUser, setCurrentUser] = useState<UserType | null>(null);
     const [refreshKey, setRefreshKey] = useState(0);
 
     const handleJoin = async (name: string): Promise<void> => {
-        const userStats = await api.getUser(name);
-        localStorage.setItem('trainer_name', name);
-        setCurrentUser(userStats);
+        try {
+            const userStats = await api.getUser(name);
+            localStorage.setItem('trainer_name', name);
+            setCurrentUser(userStats);
+        } catch {
+            // API unavailable — create offline user
+            localStorage.setItem('trainer_name', name);
+            setCurrentUser({ name, correct: 0, incorrect: 0, points: 0 });
+        }
     };
 
     useEffect(() => {
         const savedName = localStorage.getItem('trainer_name');
         if (savedName) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            handleJoin(savedName);
+            // Load user data asynchronously — don't block initial render
+            void handleJoin(savedName);
         }
     }, []);
 
@@ -40,27 +48,53 @@ export default function App() {
         return <WelcomeScreen onJoin={handleJoin} />;
     }
 
+    const isLeaderboardActive = activeApp === 'leaderboard';
+
     return (
-        <div className="min-h-screen bg-slate-900 text-slate-200 font-sans flex flex-col">
-            <Header
+        <div className="flex flex-col md:flex-row h-screen bg-surface text-on-surface-dim overflow-hidden font-sans">
+            {/* Skip link for keyboard navigation */}
+            <a href="#main-content" className="skip-link">
+                Skip to main content
+            </a>
+
+            <Sidebar
                 activeApp={activeApp}
                 setActiveApp={setActiveApp}
-                username={currentUser.name}
+                user={currentUser}
                 onLogout={handleLogout}
             />
 
-            <main className="max-w-4xl mx-auto w-full p-4 py-8 flex-grow">
-                <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-                    {activeApp === 'hex' ? (
-                        <HexBinTrainer user={currentUser} onUpdate={updateUserData} />
-                    ) : (
-                        <UnicodeTrainer user={currentUser} onUpdate={updateUserData} />
-                    )}
-                    <Leaderboard currentUser={currentUser} refreshTrigger={refreshKey} />
-                </div>
-            </main>
+            {/* Main content */}
+            <div className="flex flex-1 min-w-0 overflow-hidden">
+                {/* Trainer area — hidden when leaderboard is active on small viewports */}
+                {!isLeaderboardActive && (
+                    <main id="main-content" className="flex-1 overflow-y-auto border-r border-outline-faint" role="main">
+                        <AnimatePresence mode="wait">
+                            <motion.div
+                                key={activeApp}
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 0.15 }}
+                                className="h-full"
+                            >
+                                {activeApp === 'hex' ? (
+                                    <HexBinTrainer user={currentUser} onUpdate={updateUserData} />
+                                ) : (
+                                    <UnicodeTrainer user={currentUser} onUpdate={updateUserData} />
+                                )}
+                            </motion.div>
+                        </AnimatePresence>
+                    </main>
+                )}
 
-            <Footer />
+                {/* Leaderboard panel — always visible on lg+, full-width when active */}
+                <aside className={`shrink-0 overflow-y-auto ${
+                    isLeaderboardActive ? 'flex-1' : 'hidden md:block w-80'
+                }`}>
+                    <Leaderboard currentUser={currentUser} refreshTrigger={refreshKey} />
+                </aside>
+            </div>
         </div>
     );
 }

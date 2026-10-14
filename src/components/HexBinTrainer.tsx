@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Check, X, ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
 import { api, type UserType } from '../services/api.ts';
 import { useI18n } from '../i18n/useI18n.ts';
 
@@ -20,66 +22,49 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
     const [userAnswer, setUserAnswer] = useState('');
     const [feedback, setFeedback] = useState<'none' | 'correct' | 'wrong'>('none');
     const [isSubmitting, setIsSubmitting] = useState(false);
-
     const inputRef = useRef<HTMLInputElement>(null);
 
     const generateQuestion = useCallback((): void => {
         const max = Math.pow(2, bits) - 1;
         const min = Math.pow(2, bits - 4) - 1;
         const v = Math.floor(Math.random() * (max - min + 1) + min);
-
         const hex = v.toString(16).toUpperCase();
         const bin = v.toString(2).padStart(bits, '0');
         const dec = v.toString(10);
-
         const qa: Record<Mode, [string, string]> = {
-            HexToBin: [hex, bin],
-            HexToDec: [hex, dec],
-            BinToHex: [bin, hex],
-            BinToDec: [bin, dec],
-            DecToHex: [dec, hex],
-            DecToBin: [dec, bin],
+            HexToBin: [hex, bin], HexToDec: [hex, dec],
+            BinToHex: [bin, hex], BinToDec: [bin, dec],
+            DecToHex: [dec, hex], DecToBin: [dec, bin],
         };
-
         const [q, a] = qa[activeMode];
         setQuestion(q);
         setCorrectAnswer(a);
         setUserAnswer('');
         setFeedback('none');
-
         setTimeout(() => inputRef.current?.focus(), 0);
     }, [activeMode, bits]);
 
     useEffect(() => { generateQuestion(); }, [generateQuestion]);
 
     useEffect(() => {
-        if (!isSubmitting && inputRef.current) {
-            inputRef.current.focus();
-        }
+        if (!isSubmitting) inputRef.current?.focus();
     }, [isSubmitting]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
         const targetFormat = activeMode.split('To')[1];
         const raw = e.target.value;
-
         const FILTERS: Partial<Record<string, RegExp>> = {
-            Bin: /[^01]/g,
-            Dec: /[^0-9]/g,
-            Hex: /[^0-9a-fA-F]/g,
+            Bin: /[^01]/g, Dec: /[^0-9]/g, Hex: /[^0-9a-fA-F]/g,
         };
         const pattern = targetFormat !== undefined ? FILTERS[targetFormat] : undefined;
-        const val = pattern !== undefined ? raw.replace(pattern, '') : raw;
-
-        setUserAnswer(val);
+        setUserAnswer(pattern !== undefined ? raw.replace(pattern, '') : raw);
     };
 
     const handleCheck = async (): Promise<void> => {
         if (isSubmitting || !userAnswer.trim()) return;
         setIsSubmitting(true);
-
-        const normalize = (str: string): string => str.trim().toUpperCase().replace(/^0+/, '');
+        const normalize = (s: string) => s.trim().toUpperCase().replace(/^0+/, '');
         const isCorrect = normalize(userAnswer) === normalize(correctAnswer);
-
         try {
             if (isCorrect) {
                 setFeedback('correct');
@@ -93,8 +78,8 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
                 setTimeout(() => setFeedback('none'), 1000);
             }
         } catch (e: unknown) {
-            const message = e instanceof Error ? e.message : 'Unbekannter Fehler';
-            throw new Error(`Fehler beim Senden ans Backend: ${message}`);
+            const msg = e instanceof Error ? e.message : 'Fehler';
+            throw new Error(msg);
         } finally {
             setIsSubmitting(false);
         }
@@ -107,88 +92,171 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
         });
     };
 
+    const [fromLabel, toLabel] = activeMode.split('To') as [string, string];
+
     return (
-        <div className="transition-opacity duration-300">
-            <div className="flex flex-nowrap gap-2 mb-6">
-                {modes.map(m => (
+        <div className="flex flex-col h-full" role="region" aria-label="Hex/Binary trainer">
+            {/* Top bar - mode selector and bits stepper */}
+            <div className="flex items-center border-b border-outline-faint h-16 px-4 sm:px-6 shrink-0 gap-1 overflow-x-auto" role="tablist" aria-label="Conversion modes">
+                {modes.map((m) => (
                     <button
                         key={m}
                         onClick={() => setActiveMode(m)}
-                        className={`px-4 py-2 rounded-lg font-medium text-sm transition-all w-full ${
-                            activeMode === m ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                        role="tab"
+                        aria-selected={activeMode === m}
+                        aria-label={`${m.split('To')[0]} to ${m.split('To')[1]}`}
+                        className={`px-3 h-full text-sm font-medium transition-colors border-b-2 -mb-px whitespace-nowrap ${
+                            activeMode === m
+                                ? 'text-on-surface border-accent'
+                                : 'text-on-surface-faint border-transparent hover:text-on-surface-dim'
                         }`}
                     >
                         {m}
                     </button>
                 ))}
-            </div>
 
-            <div className={`bg-slate-800 p-6 md:p-8 rounded-xl shadow-lg border-2 transition-colors duration-300 ${
-                feedback === 'correct' ? 'border-green-500' :
-                    feedback === 'wrong' ? 'border-red-500' : 'border-slate-700'
-            }`}>
-
-                <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8 bg-slate-900/50 p-4 rounded-lg">
-                    <div className="flex items-center gap-4">
-                        <span className="font-semibold text-slate-400">{t.bits}</span>
-                        <div className="flex items-center gap-1 bg-slate-800 rounded-lg p-1 border border-slate-700">
-                            <button onClick={() => adjustBits(-4)} className="w-8 h-8 flex items-center justify-center rounded hover:bg-slate-700 text-indigo-400 font-bold text-xl">-</button>
-                            <span className="w-10 text-center font-mono text-lg text-white">{bits}</span>
-                            <button onClick={() => adjustBits(4)} className="w-8 h-8 flex items-center justify-center rounded hover:bg-slate-700 text-indigo-400 font-bold text-xl">+</button>
-                        </div>
-                    </div>
-
-                    <div className="flex gap-6 text-lg font-mono bg-slate-800 px-4 py-2 rounded-lg border border-slate-700">
-                        <div className="flex flex-col items-center">
-                            <span className="text-xs text-slate-500 uppercase">{t.correct}</span>
-                            <span className="text-green-400 font-bold">{user.correct}</span>
-                        </div>
-                        <div className="flex flex-col items-center">
-                            <span className="text-xs text-slate-500 uppercase">{t.wrong}</span>
-                            <span className="text-red-400 font-bold">{user.incorrect}</span>
-                        </div>
-                        <div className="flex flex-col items-center">
-                            <span className="text-xs text-slate-500 uppercase">{t.score}</span>
-                            <span className="text-yellow-400 font-bold">{user.points}</span>
-                        </div>
+                {/* Bits stepper */}
+                <div className="ml-auto flex items-center gap-2 shrink-0">
+                    <span className="text-sm text-on-surface-faint uppercase tracking-wider" id="bits-label">{t.bits}</span>
+                    <div className="flex items-center" role="group" aria-labelledby="bits-label">
+                        <button
+                            onClick={() => adjustBits(-4)}
+                            aria-label={`Decrease bits by 4, currently ${bits}`}
+                            disabled={bits <= 4}
+                            className="w-8 h-8 flex items-center justify-center text-on-surface-faint hover:text-on-surface-dim transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <ChevronLeft strokeWidth={2} size={16} aria-hidden="true" />
+                        </button>
+                        <span className="w-8 text-center text-base font-mono text-on-surface-dim" aria-live="polite" aria-atomic="true">
+                            {bits}
+                        </span>
+                        <button
+                            onClick={() => adjustBits(4)}
+                            aria-label={`Increase bits by 4, currently ${bits}`}
+                            disabled={bits >= 32}
+                            className="w-8 h-8 flex items-center justify-center text-on-surface-faint hover:text-on-surface-dim transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <ChevronRight strokeWidth={2} size={16} aria-hidden="true" />
+                        </button>
                     </div>
                 </div>
+            </div>
 
-                <div className="text-center py-4">
-                    <div className="text-slate-500 text-sm mb-2 uppercase tracking-widest font-semibold">
-                        {t.translateFrom} {activeMode.split('To')[0]}
+            {/* Two-column question area - responsive */}
+            <div className="flex-1 flex items-center justify-center px-4 sm:px-8 py-4 gap-0">
+                <div className="flex flex-col md:flex-row items-stretch gap-4 md:gap-8 w-full max-w-3xl">
+                    {/* Left: source value */}
+                    <div className="flex-1 flex flex-col min-w-0">
+                        <label className="text-sm font-semibold uppercase tracking-widest text-on-surface-faint mb-4" htmlFor="source-value">
+                            {fromLabel}
+                        </label>
+                        <div
+                            id="source-value"
+                            className="flex-1 flex items-center justify-center rounded-lg border border-outline bg-surface-alt min-h-36 px-4 sm:px-6 py-8"
+                            aria-live="polite"
+                            aria-atomic="true"
+                        >
+                            <AnimatePresence mode="wait">
+                                <motion.span
+                                    key={question}
+                                    initial={{ opacity: 0, y: -8 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: 8 }}
+                                    transition={{ duration: 0.15 }}
+                                    className="font-mono text-2xl sm:text-3xl md:text-4xl tracking-widest text-on-surface select-none break-all text-center leading-snug"
+                                >
+                                    {question}
+                                </motion.span>
+                            </AnimatePresence>
+                        </div>
                     </div>
-                    <div className="text-5xl md:text-7xl font-mono tracking-wider text-white mb-10 break-all select-none">
-                        {question}
+
+                    {/* Arrow - hide on small screens */}
+                    <div className="hidden md:flex items-center justify-center pt-10 shrink-0">
+                        <ArrowRight strokeWidth={1.5} size={32} className="text-on-surface-subtle" aria-hidden="true" />
                     </div>
-                    <div className="flex flex-col items-center gap-4">
-                        <div className="flex justify-center gap-3 w-full max-w-md">
+
+                    {/* Right: answer input */}
+                    <div className="flex-1 flex flex-col min-w-0">
+                        <label className="text-sm font-semibold uppercase tracking-widest text-on-surface-faint mb-4" htmlFor="answer-input">
+                            {toLabel}
+                        </label>
+                        <div className={`flex-1 flex items-center justify-center rounded-lg border min-h-36 px-4 sm:px-6 py-8 transition-colors ${
+                            feedback === 'wrong' ? 'border-red-500/60 bg-error-muted' :
+                            feedback === 'correct' ? 'border-emerald-500/60 bg-accent-muted' :
+                            'border-outline bg-surface-alt focus-within:border-accent'
+                        }`}>
                             <input
-                                id="game-input-field"
-                                name="binary-input-unique"
+                                id="answer-input"
                                 ref={inputRef}
                                 type="text"
-                                autoComplete="one-time-code"
+                                autoComplete="off"
                                 autoFocus
                                 disabled={isSubmitting}
                                 value={userAnswer}
                                 onChange={handleInputChange}
                                 onKeyDown={e => e.key === 'Enter' && handleCheck()}
-                                placeholder={t.inputPlaceholder(activeMode.split('To')[1] ?? '')}
-                                className={`bg-slate-900 border-2 rounded-lg px-6 py-4 text-2xl font-mono text-white focus:outline-none w-full text-center shadow-inner transition-colors ${
-                                    feedback === 'wrong' ? 'border-red-500 bg-red-900/10' : 'border-slate-600 focus:border-indigo-500'
-                                }`}
+                                placeholder={t.inputPlaceholder(toLabel ?? '')}
+                                aria-label={`${toLabel} answer`}
+                                aria-describedby="input-help"
+                                className="w-full bg-transparent text-xl sm:text-2xl font-mono text-on-surface placeholder-on-surface-subtle focus:outline-none text-center tracking-widest leading-snug"
                             />
-                            <button
-                                onClick={handleCheck}
-                                disabled={isSubmitting || !userAnswer.trim()}
-                                className="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-3 rounded-lg text-2xl font-bold transition-all active:scale-95 shadow-lg disabled:opacity-50"
-                            >
-                                ✓
-                            </button>
                         </div>
+                        <span id="input-help" className="sr-only">
+                            Enter your answer in {toLabel} format
+                        </span>
                     </div>
                 </div>
+            </div>
+
+            {/* Bottom bar: feedback + submit */}
+            <div className="h-16 px-4 sm:px-8 border-t border-outline-faint flex items-center justify-between shrink-0 gap-4">
+                <div className="flex-1 min-w-0">
+                    <AnimatePresence>
+                        {feedback === 'wrong' && (
+                            <motion.p
+                                initial={{ opacity: 0, x: -8 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0 }}
+                                className="text-base text-error-text font-mono truncate"
+                                role="alert"
+                                aria-live="assertive"
+                            >
+                                {t.tryAgain}
+                            </motion.p>
+                        )}
+                        {feedback === 'correct' && (
+                            <motion.p
+                                initial={{ opacity: 0, x: -8 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0 }}
+                                className="text-base text-accent font-mono truncate"
+                                role="status"
+                                aria-live="polite"
+                            >
+                                ✓ Correct!
+                            </motion.p>
+                        )}
+                    </AnimatePresence>
+                </div>
+                <motion.button
+                    onClick={handleCheck}
+                    disabled={isSubmitting || !userAnswer.trim()}
+                    whileTap={{ scale: 0.95 }}
+                    aria-label={feedback === 'wrong' ? 'Check answer (incorrect)' : 'Check answer'}
+                    className={`shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-md text-base font-semibold transition-all ${
+                        !userAnswer.trim() || isSubmitting
+                            ? 'text-on-surface-subtle bg-surface-raised cursor-not-allowed'
+                            : feedback === 'wrong'
+                                ? 'text-error-text bg-error-muted hover:bg-red-500/20'
+                                : 'text-accent bg-accent-muted hover:bg-emerald-500/20'
+                    }`}
+                >
+                    {feedback === 'wrong'
+                        ? <><X strokeWidth={2.5} size={18} aria-hidden="true" /> Falsch</>
+                        : <><Check strokeWidth={2.5} size={18} aria-hidden="true" /> Prüfen</>
+                    }
+                </motion.button>
             </div>
         </div>
     );

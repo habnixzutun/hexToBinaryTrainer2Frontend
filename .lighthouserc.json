@@ -1,0 +1,42 @@
+{
+  "ci": {
+    "collect": {
+      "staticDistDir": "./dist",
+      "startServerCommand": "npx serve dist -l 5000",
+      "url": ["http://localhost:5000"],
+      "numberOfRuns": 1,
+      "settings": {
+        "preset": "desktop",
+        "chromeFlags": "--no-sandbox --disable-dev-shm-usage --disable-gpu --disable-web-security --disable-features=IsolateOrigins,site-per-process",
+        "maxWaitForFcp": 30000,
+        "maxWaitForLoad": 45000,
+        "skipAudits": [
+          "bf-cache",
+          "is-crawlable",
+          "robots-txt",
+          "http-status-code",
+          "valid-source-maps"
+        ]
+      }
+    },
+    "assert": {
+      "assertions": {
+        "categories:Performance": {
+          "minScore": 0.85
+        },
+        "categories:Accessibility": {
+          "minScore": 0.80
+        },
+        "categories:Best Practices": {
+          "minScore": 0.85
+        },
+        "categories:SEO": {
+          "minScore": 0.85
+        }
+      }
+    },
+    "upload": {
+      "target": "temporary-public-storage"
+    }
+  }
+}

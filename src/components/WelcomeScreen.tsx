@@ -1,6 +1,9 @@
 import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Terminal, ArrowRight, Globe, Sun, Moon } from 'lucide-react';
 import { useI18n } from '../i18n/useI18n.ts';
 import { type Locale } from '../i18n/translations.ts';
+import { useTheme } from '../theme/useTheme.ts';
 
 interface Props {
     onJoin: (name: string) => void;
@@ -9,6 +12,7 @@ interface Props {
 export default function WelcomeScreen({ onJoin }: Props) {
     const [name, setName] = useState('');
     const { t, locale, setLocale } = useI18n();
+    const { theme, toggleTheme } = useTheme();
 
     const toggleLocale = (): void => {
         const next: Locale = locale === 'de' ? 'en' : 'de';
@@ -17,47 +21,93 @@ export default function WelcomeScreen({ onJoin }: Props) {
 
     const handleSubmit = (e: React.FormEvent): void => {
         e.preventDefault();
-        if (name.trim().length >= 2) {
-            onJoin(name.trim());
-        }
+        if (name.trim().length >= 2) onJoin(name.trim());
     };
 
-    return (
-        <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
-            <button
-                onClick={toggleLocale}
-                className="fixed top-4 right-4 flex items-center justify-center w-9 h-9 rounded-xl bg-slate-700/50 border border-slate-600 hover:border-indigo-500/50 hover:bg-indigo-500/10 transition-all duration-300 text-xs font-bold text-slate-400 hover:text-indigo-400"
-                title={locale === 'de' ? 'Switch to English' : 'Auf Deutsch wechseln'}
-            >
-                {locale === 'de' ? 'EN' : 'DE'}
-            </button>
+    const isNameValid = name.trim().length >= 2;
 
-            <div className="bg-slate-800 border border-slate-700 p-8 rounded-2xl shadow-2xl max-w-md w-full text-center">
-                <h1 className="text-4xl font-black bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent mb-2">
+    return (
+        <div className="min-h-screen bg-surface flex items-center justify-center p-4" role="main">
+            {/* Top-right controls: theme toggle + language toggle */}
+            <div className="fixed top-4 right-4 flex items-center gap-1.5" role="toolbar" aria-label="Settings">
+                <motion.button
+                    onClick={toggleTheme}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="flex items-center justify-center w-9 h-9 border border-outline hover:border-on-surface-subtle rounded text-on-surface-faint hover:text-on-surface-dim transition-colors"
+                    aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                    title={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+                >
+                    {theme === 'dark'
+                        ? <Sun strokeWidth={1.5} size={13} aria-hidden="true" />
+                        : <Moon strokeWidth={1.5} size={13} aria-hidden="true" />
+                    }
+                </motion.button>
+                <motion.button
+                    onClick={toggleLocale}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="flex items-center gap-1.5 px-2.5 h-9 border border-outline hover:border-on-surface-subtle rounded text-[10px] font-semibold text-on-surface-faint hover:text-on-surface-dim transition-colors"
+                    aria-label={locale === 'de' ? 'Switch to English' : 'Auf Deutsch wechseln'}
+                >
+                    <Globe strokeWidth={1.5} size={11} aria-hidden="true" />
+                    <span>{locale === 'de' ? 'EN' : 'DE'}</span>
+                </motion.button>
+            </div>
+
+            <main className="w-full max-w-xs" aria-labelledby="welcome-heading">
+                <div className="flex items-center gap-2 mb-8">
+                    <Terminal strokeWidth={1.5} size={16} className="text-accent" aria-hidden="true" />
+                    <span className="text-xs font-bold tracking-wider text-on-surface-faint uppercase">IT Trainer</span>
+                </div>
+
+                <h1 id="welcome-heading" className="text-2xl font-bold tracking-tight text-on-surface mb-2">
                     {t.welcomeTitle}
                 </h1>
-                <p className="text-slate-400 mb-8">{t.welcomeSubtitle}</p>
+                <p className="text-sm text-on-surface-faint mb-8 leading-relaxed">
+                    {t.welcomeSubtitle}
+                </p>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <input
-                        id="game-input-field"
-                        name="binary-input-unique"
-                        type="text"
-                        autoComplete="one-time-code"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder={t.usernamePlaceholder}
-                        className="w-full bg-slate-900 border-2 border-slate-700 rounded-xl px-6 py-4 text-white text-xl focus:outline-none focus:border-blue-500 transition-colors text-center"
-                    />
-                    <button
+                <form onSubmit={handleSubmit} className="space-y-3" aria-label="Login form">
+                    <div className="border-b border-outline focus-within:border-accent transition-colors">
+                        <label htmlFor="username-input" className="sr-only">
+                            Username
+                        </label>
+                        <input
+                            id="username-input"
+                            type="text"
+                            autoComplete="username"
+                            autoFocus
+                            value={name}
+                            onChange={e => setName(e.target.value)}
+                            placeholder={t.usernamePlaceholder}
+                            aria-required="true"
+                            aria-invalid={!isNameValid && name.length > 0}
+                            aria-describedby="username-help"
+                            className="w-full bg-transparent py-2 text-sm text-on-surface placeholder-on-surface-subtle focus:outline-none"
+                        />
+                        <span id="username-help" className="sr-only">
+                            Enter your username (minimum 2 characters)
+                        </span>
+                    </div>
+                    {!isNameValid && name.length > 0 && (
+                        <p className="text-xs text-error-text" role="alert">
+                            {locale === 'de' ? 'Mindestens 2 Zeichen erforderlich' : 'Minimum 2 characters required'}
+                        </p>
+                    )}
+                    <motion.button
                         type="submit"
-                        disabled={name.trim().length < 2}
-                        className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:hover:bg-blue-600 text-white font-bold py-4 rounded-xl text-xl transition-all active:scale-95 shadow-lg shadow-blue-900/20"
+                        disabled={!isNameValid}
+                        whileHover={{ scale: isNameValid ? 1.02 : 1 }}
+                        whileTap={{ scale: isNameValid ? 0.98 : 1 }}
+                        aria-label={t.startButton}
+                        className="w-full flex items-center justify-center gap-2 bg-accent hover:bg-accent-bright disabled:bg-surface-raised disabled:text-on-surface-subtle text-white font-semibold py-2 rounded text-sm transition-all mt-4"
                     >
-                        {t.startButton}
-                    </button>
+                        <span>{t.startButton}</span>
+                        <ArrowRight strokeWidth={2} size={13} aria-hidden="true" />
+                    </motion.button>
                 </form>
-            </div>
+            </main>
         </div>
     );
 }

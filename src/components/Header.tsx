@@ -1,4 +1,7 @@
+import { motion } from 'framer-motion';
+import { Terminal, LogOut, Globe, Sun, Moon } from 'lucide-react';
 import { useI18n } from '../i18n/useI18n.ts';
+import { useTheme } from '../theme/useTheme.ts';
 import { type Locale } from '../i18n/translations.ts';
 
 interface HeaderProps {
@@ -10,6 +13,7 @@ interface HeaderProps {
 
 export default function Header({ activeApp, setActiveApp, username, onLogout }: HeaderProps) {
     const { t, locale, setLocale } = useI18n();
+    const { theme, toggleTheme } = useTheme();
 
     const toggleLocale = (): void => {
         const next: Locale = locale === 'de' ? 'en' : 'de';
@@ -17,70 +21,98 @@ export default function Header({ activeApp, setActiveApp, username, onLogout }: 
     };
 
     return (
-        <nav className="bg-slate-800/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-700 shadow-xl">
-            <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
-
-                <div className="flex flex-col">
-                    <h1 className="text-xl font-black bg-gradient-to-r from-indigo-400 to-indigo-400 bg-clip-text text-transparent tracking-tight">
-                        IT <span className="text-white/20">{t.appTitleAccent}</span>
-                    </h1>
-                    <div className="flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                        <span className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">
-                            {username}
+        <header className="bg-surface/90 backdrop-blur-md sticky top-0 z-30 border-b border-outline" role="banner">
+            <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
+                {/* Logo and user info */}
+                <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-accent-muted border border-accent/20 shrink-0">
+                        <Terminal strokeWidth={1.5} size={16} className="text-accent" aria-hidden="true" />
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                        <span className="text-sm font-bold tracking-tight text-on-surface leading-none truncate">
+                            IT <span className="text-on-surface-subtle">{t.appTitleAccent}</span>
                         </span>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse shrink-0" aria-hidden="true" />
+                            <span className="text-[9px] text-on-surface-faint uppercase tracking-widest font-semibold truncate">
+                                {username}
+                            </span>
+                        </div>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-4">
-                    <div className="flex bg-slate-950/50 p-1 rounded-xl border border-slate-700/50">
-                        <button
-                            onClick={() => setActiveApp('hex')}
-                            className={`px-4 py-1.5 rounded-lg font-bold transition-all text-xs ${
-                                activeApp === 'hex'
-                                    ? 'bg-indigo-600 text-white shadow-lg shadow-blue-900/40'
-                                    : 'text-slate-500 hover:text-slate-300'
-                            }`}
-                        >
-                            {t.navHexBin}
-                        </button>
-                        <button
-                            onClick={() => setActiveApp('unicode')}
-                            className={`px-4 py-1.5 rounded-lg font-bold transition-all text-xs ${
-                                activeApp === 'unicode'
-                                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/40'
-                                    : 'text-slate-500 hover:text-slate-300'
-                            }`}
-                        >
-                            {t.navUnicode}
-                        </button>
-                    </div>
+                {/* Actions - responsive layout */}
+                <div className="flex items-center gap-2">
+                    {/* Tab switcher - hide on very small screens */}
+                    <nav className="hidden sm:flex bg-surface-raised p-0.5 rounded-lg border border-outline" aria-label="Trainer modes">
+                        {(['hex', 'unicode'] as const).map((app) => (
+                            <motion.button
+                                key={app}
+                                onClick={() => setActiveApp(app)}
+                                whileTap={{ scale: 0.97 }}
+                                aria-label={app === 'hex' ? 'Hex/Binary trainer' : 'Unicode trainer'}
+                                aria-current={activeApp === app ? 'page' : undefined}
+                                className={`relative px-4 py-1.5 rounded-md font-semibold text-xs transition-colors ${
+                                    activeApp === app
+                                        ? 'text-on-surface'
+                                        : 'text-on-surface-faint hover:text-on-surface-dim'
+                                }`}
+                            >
+                                {activeApp === app && (
+                                    <motion.div
+                                        layoutId="activeTab"
+                                        className="absolute inset-0 bg-accent rounded-md"
+                                        transition={{ type: 'spring', bounce: 0.2, duration: 0.35 }}
+                                    />
+                                )}
+                                <span className="relative z-10">
+                                    {app === 'hex' ? t.navHexBin : t.navUnicode}
+                                </span>
+                            </motion.button>
+                        ))}
+                    </nav>
 
-                    <button
+                    {/* Theme toggle */}
+                    <motion.button
+                        onClick={toggleTheme}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="flex items-center justify-center w-9 h-9 rounded-lg bg-surface-raised border border-outline hover:border-on-surface-subtle transition-colors text-on-surface-faint hover:text-on-surface-dim"
+                        aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                        title={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+                    >
+                        {theme === 'dark'
+                            ? <Sun strokeWidth={1.5} size={13} aria-hidden="true" />
+                            : <Moon strokeWidth={1.5} size={13} aria-hidden="true" />
+                        }
+                    </motion.button>
+
+                    {/* Language toggle */}
+                    <motion.button
                         onClick={toggleLocale}
-                        className="flex items-center justify-center w-9 h-9 rounded-xl bg-slate-700/50 border border-slate-600 hover:border-indigo-500/50 hover:bg-indigo-500/10 transition-all duration-300 text-xs font-bold text-slate-400 hover:text-indigo-400"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="flex items-center gap-1 w-auto px-2.5 h-9 rounded-lg bg-surface-raised border border-outline hover:border-on-surface-subtle transition-colors text-xs font-semibold text-on-surface-faint hover:text-on-surface-dim"
+                        aria-label={locale === 'de' ? 'Switch to English' : 'Auf Deutsch wechseln'}
                         title={locale === 'de' ? 'Switch to English' : 'Auf Deutsch wechseln'}
                     >
-                        {locale === 'de' ? 'EN' : 'DE'}
-                    </button>
+                        <Globe strokeWidth={1.5} size={13} aria-hidden="true" />
+                        <span>{locale === 'de' ? 'EN' : 'DE'}</span>
+                    </motion.button>
 
-                    <button
+                    {/* Logout */}
+                    <motion.button
                         onClick={onLogout}
-                        className="group flex items-center justify-center w-9 h-9 rounded-xl bg-slate-700/50 border border-slate-600 hover:border-red-500/50 hover:bg-red-500/10 transition-all duration-300"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="flex items-center justify-center w-9 h-9 rounded-lg bg-surface-raised border border-outline hover:border-red-500/60 hover:bg-error-muted transition-colors group"
+                        aria-label={t.logoutTitle}
                         title={t.logoutTitle}
                     >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-5 w-5 text-slate-400 group-hover:text-red-400 transition-colors"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                        >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                        </svg>
-                    </button>
+                        <LogOut strokeWidth={1.5} size={14} className="text-on-surface-faint group-hover:text-error-text transition-colors" aria-hidden="true" />
+                    </motion.button>
                 </div>
             </div>
-        </nav>
+        </header>
     );
 }
