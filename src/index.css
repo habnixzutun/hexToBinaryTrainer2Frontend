@@ -107,3 +107,9 @@ html {
 .skip-link:focus {
     top: 0;
 }
+
+/* Scroll hint for horizontally scrollable elements */
+.mask-r-fade {
+    mask-image: linear-gradient(to right, black 90%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, black 90%, transparent 100%);
+}
