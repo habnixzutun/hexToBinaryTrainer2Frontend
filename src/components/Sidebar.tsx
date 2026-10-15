@@ -127,7 +127,7 @@ export default function Sidebar({ activeApp, setActiveApp, user, onLogout }: Pro
                             <div className="text-xs text-on-surface-faint uppercase tracking-wide" aria-label="Wrong answers">ERR</div>
                         </div>
                         <div>
-                            <div className="text-lg font-bold text-amber-500">{user.points}</div>
+                            <div className="text-lg font-bold text-points">{user.points}</div>
                             <div className="text-xs text-on-surface-faint uppercase tracking-wide" aria-label="Points">PTS</div>
                         </div>
                     </div>

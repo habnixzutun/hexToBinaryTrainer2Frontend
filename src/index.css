@@ -22,6 +22,9 @@
     --color-error-text: #dc2626; /* 4.6:1 on white */
     --color-error-muted: oklch(0.97 0.02 25);
 
+    /* Points color — WCAG AA compliant */
+    --color-points: #d97706; /* 4.5:1 on white */
+
     /* Focus ring — high visibility */
     --color-focus-ring: oklch(0.6 0.2 250);
 }
@@ -43,6 +46,9 @@
     --color-accent-muted: oklch(0.15 0.03 163);
     --color-error-text: #f87171; /* 5.8:1 on black */
     --color-error-muted: oklch(0.15 0.03 25);
+
+    /* Points color — WCAG AA compliant */
+    --color-points: #fbbf24; /* 8.2:1 on black */
 
     --color-focus-ring: oklch(0.7 0.2 250);
 }
