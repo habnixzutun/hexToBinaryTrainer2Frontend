@@ -84,7 +84,7 @@ export default function Sidebar({ activeApp, setActiveApp, user, onLogout }: Pro
                 {/* Nav */}
                 <nav className="flex-1 px-3 py-4" aria-label="Application modes">
                     <p className="px-2 mb-2 text-xs font-semibold uppercase tracking-widest text-on-surface-faint" id="nav-heading">
-                        Modus
+                        {t.modus}
                     </p>
                     <ul className="space-y-1" role="list" aria-labelledby="nav-heading">
                         {navItems.map(({ id, label, icon: Icon, ariaLabel }) => (

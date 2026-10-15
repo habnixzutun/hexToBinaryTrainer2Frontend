@@ -41,6 +41,9 @@ export const translations = {
         name: 'Name',
         points: 'Punkte ✨',
         me: '(Du)',
+
+        // Sidebar
+        modus: 'Modus',
     },
     en: {
         // Header
@@ -82,6 +85,9 @@ export const translations = {
         name: 'Name',
         points: 'Points ✨',
         me: '(You)',
+
+        // Sidebar
+        modus: 'Mode',
     },
 } as const satisfies Record<Locale, object>;
 
@@ -114,4 +120,5 @@ export type Translations = {
     name: string;
     points: string;
     me: string;
+    modus: string;
 };
