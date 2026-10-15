@@ -61,10 +61,10 @@ export default function Leaderboard({ currentUser, refreshTrigger }: Props) {
                     {t.name}
                 </span>
                 <span className="w-10 text-xs font-semibold uppercase tracking-widest text-on-surface-faint text-right" role="columnheader" aria-label="Correct answers">
-                    ✓
+                    <span aria-hidden="true">✓</span>
                 </span>
                 <span className="w-10 text-xs font-semibold uppercase tracking-widest text-on-surface-faint text-right" role="columnheader" aria-label="Wrong answers">
-                    ✗
+                    <span aria-hidden="true">✗</span>
                 </span>
                 <span className="w-16 text-xs font-semibold uppercase tracking-widest text-on-surface-faint text-right" role="columnheader">
                     PTS

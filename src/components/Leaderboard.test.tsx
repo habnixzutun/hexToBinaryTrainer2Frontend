@@ -71,4 +71,24 @@ describe('Leaderboard', () => {
       expect(rank4).toBeInTheDocument()
     })
   })
+
+  it('has accessible column headers for correct and wrong answers', async () => {
+    render(<Leaderboard currentUser={currentUser} refreshTrigger={0} />)
+
+    await waitFor(() => {
+      // Column headers should have aria-labels that screen readers can announce
+      const correctHeader = screen.getByLabelText(/correct answers/i)
+      const wrongHeader = screen.getByLabelText(/wrong answers/i)
+
+      expect(correctHeader).toBeInTheDocument()
+      expect(wrongHeader).toBeInTheDocument()
+
+      // The visual characters ✓ and ✗ should be hidden from screen readers (wrapped in aria-hidden spans)
+      const correctSpan = correctHeader.querySelector('span[aria-hidden]')
+      const wrongSpan = wrongHeader.querySelector('span[aria-hidden]')
+
+      expect(correctSpan).toBeInTheDocument()
+      expect(wrongSpan).toBeInTheDocument()
+    })
+  })
 })
