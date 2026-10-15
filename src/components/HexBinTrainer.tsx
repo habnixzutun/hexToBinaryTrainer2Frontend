@@ -227,7 +227,7 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
                                 value={userAnswer}
                                 onChange={handleInputChange}
                                 onKeyDown={e => e.key === 'Enter' && handleCheck()}
-                                placeholder={t.inputPlaceholder(toLabel ?? '')}
+                                placeholder={t.inputPlaceholder(toLabel)}
                                 aria-label={`${toLabel} answer`}
                                 aria-describedby="input-help"
                                 className="w-full bg-transparent text-xl sm:text-2xl font-mono text-on-surface placeholder-on-surface-subtle focus:outline-none text-center tracking-widest leading-snug"
