@@ -24,6 +24,13 @@ export default defineConfig({
       reporter: ['text', 'json-summary', 'json'],
       include: ['src/**/*.{ts,tsx}'],
       exclude: ['node_modules/', 'dist/', '**/*.test.{ts,tsx}'],
+      // Coverage-Schwelle ab Sprint 1 erzwungen (Sprint 0: nur Messung)
+      thresholds: {
+        lines: 80,
+        functions: 80,
+        branches: 80,
+        statements: 80,
+      },
     },
   },
 })
