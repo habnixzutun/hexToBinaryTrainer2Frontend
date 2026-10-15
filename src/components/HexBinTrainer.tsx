@@ -22,7 +22,29 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
     const [userAnswer, setUserAnswer] = useState('');
     const [feedback, setFeedback] = useState<'none' | 'correct' | 'wrong'>('none');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [canScrollRight, setCanScrollRight] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
+    const tabListRef = useRef<HTMLDivElement>(null);
+
+    // Check if tab bar can scroll right and show gradient hint
+    useEffect(() => {
+        const tabList = tabListRef.current;
+        if (!tabList) return;
+
+        const checkScroll = () => {
+            const { scrollLeft, scrollWidth, clientWidth } = tabList;
+            setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 1);
+        };
+
+        checkScroll();
+        tabList.addEventListener('scroll', checkScroll);
+        window.addEventListener('resize', checkScroll);
+
+        return () => {
+            tabList.removeEventListener('scroll', checkScroll);
+            window.removeEventListener('resize', checkScroll);
+        };
+    }, []);
 
     const generateQuestion = useCallback((): void => {
         const max = Math.pow(2, bits) - 1;
@@ -97,7 +119,14 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
     return (
         <div className="flex flex-col h-full" role="region" aria-label="Hex/Binary trainer">
             {/* Top bar - mode selector and bits stepper */}
-            <div className="flex items-center border-b border-outline-faint h-16 px-4 sm:px-6 shrink-0 gap-1 overflow-x-auto" role="tablist" aria-label="Conversion modes">
+            <div
+                ref={tabListRef}
+                className={`flex items-center border-b border-outline-faint h-16 px-4 sm:px-6 shrink-0 gap-1 overflow-x-auto ${
+                    canScrollRight ? 'mask-r-fade' : ''
+                }`}
+                role="tablist"
+                aria-label="Conversion modes"
+            >
                 {modes.map((m) => (
                     <button
                         key={m}
