@@ -123,7 +123,7 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
                             onClick={() => adjustBits(-4)}
                             aria-label={`Decrease bits by 4, currently ${bits}`}
                             disabled={bits <= 4}
-                            className="w-8 h-8 flex items-center justify-center text-on-surface-faint hover:text-on-surface-dim transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-11 h-11 flex items-center justify-center text-on-surface-faint hover:text-on-surface-dim transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <ChevronLeft strokeWidth={2} size={16} aria-hidden="true" />
                         </button>
@@ -134,7 +134,7 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
                             onClick={() => adjustBits(4)}
                             aria-label={`Increase bits by 4, currently ${bits}`}
                             disabled={bits >= 32}
-                            className="w-8 h-8 flex items-center justify-center text-on-surface-faint hover:text-on-surface-dim transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-11 h-11 flex items-center justify-center text-on-surface-faint hover:text-on-surface-dim transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <ChevronRight strokeWidth={2} size={16} aria-hidden="true" />
                         </button>
