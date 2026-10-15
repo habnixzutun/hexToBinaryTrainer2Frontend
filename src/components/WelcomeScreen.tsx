@@ -34,7 +34,7 @@ export default function WelcomeScreen({ onJoin }: Props) {
                     onClick={toggleTheme}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className="flex items-center justify-center w-9 h-9 border border-outline hover:border-on-surface-subtle rounded text-on-surface-faint hover:text-on-surface-dim transition-colors"
+                    className="flex items-center justify-center w-11 h-11 border border-outline hover:border-on-surface-subtle rounded text-on-surface-faint hover:text-on-surface-dim transition-colors"
                     aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
                     title={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
                 >
@@ -47,7 +47,7 @@ export default function WelcomeScreen({ onJoin }: Props) {
                     onClick={toggleLocale}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className="flex items-center gap-1.5 px-2.5 h-9 border border-outline hover:border-on-surface-subtle rounded text-[10px] font-semibold text-on-surface-faint hover:text-on-surface-dim transition-colors"
+                    className="flex items-center gap-1.5 px-2.5 min-h-[44px] border border-outline hover:border-on-surface-subtle rounded text-[10px] font-semibold text-on-surface-faint hover:text-on-surface-dim transition-colors"
                     aria-label={locale === 'de' ? 'Switch to English' : 'Auf Deutsch wechseln'}
                 >
                     <Globe strokeWidth={1.5} size={11} aria-hidden="true" />
