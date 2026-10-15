@@ -92,7 +92,7 @@ export default function WelcomeScreen({ onJoin }: Props) {
                     </div>
                     {!isNameValid && name.length > 0 && (
                         <p className="text-xs text-error-text" role="alert">
-                            {locale === 'de' ? 'Mindestens 2 Zeichen erforderlich' : 'Minimum 2 characters required'}
+                            {t.usernameValidationError}
                         </p>
                     )}
                     <motion.button
