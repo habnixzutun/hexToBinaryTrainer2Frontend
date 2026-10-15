@@ -14,6 +14,7 @@ export const translations = {
         welcomeSubtitle: 'Gib deinen Namen ein, um dein Training zu starten und in die Bestenliste einzusteigen.',
         usernamePlaceholder: 'Dein Username...',
         startButton: "Los geht's!",
+        usernameValidationError: 'Mindestens 2 Zeichen erforderlich',
 
         // Stats
         correct: 'Richtig',
@@ -54,6 +55,7 @@ export const translations = {
         welcomeSubtitle: 'Enter your name to start training and join the leaderboard.',
         usernamePlaceholder: 'Your username...',
         startButton: "Let's go!",
+        usernameValidationError: 'Minimum 2 characters required',
 
         // Stats
         correct: 'Correct',
@@ -93,6 +95,7 @@ export type Translations = {
     welcomeSubtitle: string;
     usernamePlaceholder: string;
     startButton: string;
+    usernameValidationError: string;
     correct: string;
     wrong: string;
     score: string;
