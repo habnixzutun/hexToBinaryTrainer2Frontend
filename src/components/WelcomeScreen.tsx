@@ -27,7 +27,7 @@ export default function WelcomeScreen({ onJoin }: Props) {
     const isNameValid = name.trim().length >= 2;
 
     return (
-        <div className="min-h-screen bg-surface flex items-center justify-center p-4" role="main">
+        <div className="min-h-screen bg-surface flex items-center justify-center p-4">
             {/* Top-right controls: theme toggle + language toggle */}
             <div className="fixed top-4 right-4 flex items-center gap-1.5" role="toolbar" aria-label="Settings">
                 <motion.button
