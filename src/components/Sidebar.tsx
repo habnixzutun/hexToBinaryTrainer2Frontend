@@ -137,7 +137,7 @@ export default function Sidebar({ activeApp, setActiveApp, user, onLogout }: Pro
                         <motion.button
                             onClick={toggleTheme}
                             whileTap={{ scale: 0.95 }}
-                            className="flex items-center gap-1.5 px-2.5 py-2 rounded text-sm text-on-surface-faint hover:text-on-surface-dim transition-colors"
+                            className="flex items-center gap-1.5 px-2.5 min-h-[44px] rounded text-sm text-on-surface-faint hover:text-on-surface-dim transition-colors"
                             aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
                             title={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
                         >
@@ -149,7 +149,7 @@ export default function Sidebar({ activeApp, setActiveApp, user, onLogout }: Pro
                         <motion.button
                             onClick={toggleLocale}
                             whileTap={{ scale: 0.95 }}
-                            className="flex items-center gap-1.5 px-2.5 py-2 rounded text-sm font-semibold text-on-surface-faint hover:text-on-surface-dim transition-colors"
+                            className="flex items-center gap-1.5 px-2.5 min-h-[44px] rounded text-sm font-semibold text-on-surface-faint hover:text-on-surface-dim transition-colors"
                             aria-label={locale === 'de' ? 'Switch to English' : 'Auf Deutsch wechseln'}
                         >
                             <Globe strokeWidth={1.5} size={15} aria-hidden="true" />
@@ -158,7 +158,7 @@ export default function Sidebar({ activeApp, setActiveApp, user, onLogout }: Pro
                         <motion.button
                             onClick={onLogout}
                             whileTap={{ scale: 0.95 }}
-                            className="flex items-center gap-1.5 px-2.5 py-2 rounded text-sm text-on-surface-faint hover:text-error-text transition-colors ml-auto"
+                            className="flex items-center gap-1.5 px-2.5 min-h-[44px] rounded text-sm text-on-surface-faint hover:text-error-text transition-colors ml-auto"
                             aria-label={t.logoutTitle}
                             title={t.logoutTitle}
                         >
