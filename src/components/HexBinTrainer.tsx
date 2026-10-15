@@ -20,7 +20,7 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
     const [question, setQuestion] = useState('');
     const [correctAnswer, setCorrectAnswer] = useState('');
     const [userAnswer, setUserAnswer] = useState('');
-    const [feedback, setFeedback] = useState<'none' | 'correct' | 'wrong'>('none');
+    const [feedback, setFeedback] = useState<'none' | 'correct' | 'wrong' | 'error'>('none');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [canScrollRight, setCanScrollRight] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -100,8 +100,9 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
                 setTimeout(() => setFeedback('none'), 1000);
             }
         } catch (e: unknown) {
-            const msg = e instanceof Error ? e.message : 'Fehler';
-            throw new Error(msg);
+            console.error('API error:', e);
+            setFeedback('error');
+            setTimeout(() => setFeedback('none'), 2000);
         } finally {
             setIsSubmitting(false);
         }
@@ -213,6 +214,7 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
                         <div className={`flex-1 flex items-center justify-center rounded-lg border min-h-36 px-4 sm:px-6 py-8 transition-colors ${
                             feedback === 'wrong' ? 'border-red-500/60 bg-error-muted' :
                             feedback === 'correct' ? 'border-emerald-500/60 bg-accent-muted' :
+                            feedback === 'error' ? 'border-red-500/60 bg-error-muted' :
                             'border-outline bg-surface-alt focus-within:border-accent'
                         }`}>
                             <input
@@ -265,6 +267,19 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
                             >
                                 <Check size={18} strokeWidth={2.5} className="inline mr-1" aria-hidden="true" />
                                 Correct!
+                            </motion.p>
+                        )}
+                        {feedback === 'error' && (
+                            <motion.p
+                                initial={{ opacity: 0, x: -8 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0 }}
+                                className="text-base text-error-text font-mono truncate"
+                                role="alert"
+                                aria-live="assertive"
+                            >
+                                <X size={18} strokeWidth={2.5} className="inline mr-1" aria-hidden="true" />
+                                Error saving result. Please try again.
                             </motion.p>
                         )}
                     </AnimatePresence>
