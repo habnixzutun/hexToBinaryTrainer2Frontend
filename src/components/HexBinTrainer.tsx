@@ -234,7 +234,8 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
                                 role="status"
                                 aria-live="polite"
                             >
-                                ✓ Correct!
+                                <Check size={18} strokeWidth={2.5} className="inline mr-1" aria-hidden="true" />
+                                Correct!
                             </motion.p>
                         )}
                     </AnimatePresence>
