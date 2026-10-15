@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Zap } from 'lucide-react';
+import { Zap, Award } from 'lucide-react';
 import { api, type UserType } from '../services/api.ts';
 import { useI18n } from '../i18n/useI18n.ts';
 
@@ -9,7 +9,12 @@ interface Props {
     refreshTrigger: number;
 }
 
-const MEDALS: Record<number, string> = { 0: '🥇', 1: '🥈', 2: '🥉' };
+// Medal icons for top 3 ranks using Lucide SVG icons (accessible, scalable)
+const MEDAL_ICONS: Record<number, { icon: typeof Award; color: string }> = {
+    0: { icon: Award, color: 'text-yellow-500' },
+    1: { icon: Award, color: 'text-gray-400' },
+    2: { icon: Award, color: 'text-amber-600' },
+};
 
 export default function Leaderboard({ currentUser, refreshTrigger }: Props) {
     const [data, setData] = useState<UserType[]>([]);
@@ -91,8 +96,17 @@ export default function Leaderboard({ currentUser, refreshTrigger }: Props) {
                         >
                             {/* Rank */}
                             <span className="w-8 shrink-0 text-base" aria-label={`Rank ${idx + 1}`}>
-                                {idx in MEDALS
-                                    ? <span aria-label={`Medal: rank ${idx + 1}`}>{MEDALS[idx]}</span>
+                                {idx in MEDAL_ICONS
+                                    ? (() => {
+                                        const MedalIcon = MEDAL_ICONS[idx]!.icon;
+                                        return (
+                                            <MedalIcon
+                                                size={18}
+                                                className={MEDAL_ICONS[idx]!.color}
+                                                aria-label={`Medal: rank ${idx + 1}`}
+                                            />
+                                        );
+                                    })()
                                     : <span className="text-on-surface-faint font-mono text-sm">{idx + 1}</span>
                                 }
                             </span>
