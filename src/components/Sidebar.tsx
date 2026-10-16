@@ -1,12 +1,16 @@
-import { motion } from 'framer-motion';
-import { Terminal, Hash, Binary, LogOut, Globe, Trophy, Sun, Moon } from 'lucide-react';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Terminal, Hash, Binary, LogOut, Globe, Trophy, Sun, Moon, ChevronDown } from 'lucide-react';
 import { useI18n } from '../i18n/useI18n.ts';
 import { type Locale } from '../i18n/translations.ts';
 import { useTheme } from '../theme/useTheme.ts';
 import { type UserType } from '../services/api.ts';
-import { type ActiveApp } from '../App.tsx';
+import { type ActiveApp, type HexBinMode } from '../App.tsx';
+import BitByteSelector from './BitByteSelector.tsx';
 
-const HEX_BIN_MODES = ['HexToBin', 'HexToDec', 'BinToHex', 'BinToDec', 'DecToHex', 'DecToBin'] as const;
+const HEX_BIN_MODES: HexBinMode[] = ['HexToBin', 'HexToDec', 'BinToHex', 'BinToDec', 'DecToHex', 'DecToBin'];
+const BIT_OPTIONS = [4, 8, 16, 32];
+const BYTE_OPTIONS = [1, 2, 3, 4];
 
 interface Props {
     activeApp: ActiveApp;
@@ -16,8 +20,13 @@ interface Props {
     isMobileMenuOpen: boolean;
     setIsMobileMenuOpen: (open: boolean) => void;
     hideLeaderboardNav: boolean;
-    activeHexMode?: string;
-    onHexModeChange?: (mode: string) => void;
+    activeHexMode?: HexBinMode;
+    onHexModeChange?: (mode: HexBinMode) => void;
+    isMobile: boolean;
+    bits?: number;
+    onBitsChange?: (bits: number) => void;
+    bytes?: number;
+    onBytesChange?: (bytes: number) => void;
 }
 
 export default function Sidebar({
@@ -30,9 +39,15 @@ export default function Sidebar({
     hideLeaderboardNav,
     activeHexMode,
     onHexModeChange,
+    isMobile,
+    bits,
+    onBitsChange,
+    bytes,
+    onBytesChange,
 }: Props) {
     const { t, locale, setLocale } = useI18n();
     const { theme, toggleTheme } = useTheme();
+    const [isHexExpanded, setIsHexExpanded] = useState(true);
 
     const toggleLocale = (): void => {
         const next: Locale = locale === 'de' ? 'en' : 'de';
@@ -53,7 +68,7 @@ export default function Sidebar({
         setIsMobileMenuOpen(false);
     };
 
-    const handleHexModeChange = (mode: string): void => {
+    const handleHexModeChange = (mode: HexBinMode): void => {
         if (onHexModeChange) {
             onHexModeChange(mode);
         }
@@ -78,6 +93,7 @@ export default function Sidebar({
                     w-64 flex flex-col border-r border-outline-faint bg-surface
                     transform transition-transform duration-300 ease-in-out
                     ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+                    ${isMobile ? 'pt-14' : ''}
                 `}
                 aria-label="Main navigation"
             >
@@ -97,50 +113,114 @@ export default function Sidebar({
                     <ul className="space-y-1" role="list" aria-labelledby="nav-heading">
                         {navItems.map(({ id, label, icon: Icon, ariaLabel }) => (
                             <li key={id}>
-                                <motion.button
-                                    onClick={() => handleNavClick(id)}
-                                    whileTap={{ scale: 0.98 }}
-                                    aria-label={ariaLabel}
-                                    aria-current={activeApp === id ? 'page' : undefined}
-                                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-base font-medium transition-colors ${
-                                        activeApp === id
-                                            ? 'bg-surface-raised text-on-surface'
-                                            : 'text-on-surface-faint hover:text-on-surface-dim hover:bg-surface-alt'
-                                    }`}
-                                >
-                                    <Icon strokeWidth={1.5} size={17} className={activeApp === id ? 'text-accent' : ''} aria-hidden="true" />
-                                    {label}
-                                </motion.button>
-                            </li>
-                        ))}
-                    </ul>
-
-                    {/* Hex/Bin Modes sub-section — only when hex trainer is active */}
-                    {activeApp === 'hex' && onHexModeChange && (
-                        <div className="mt-4">
-                            <p className="px-2 mb-2 text-xs font-semibold uppercase tracking-widest text-on-surface-faint" id="modes-heading">
-                                {t.hexBinModes}
-                            </p>
-                            <ul className="space-y-0.5" role="list" aria-labelledby="modes-heading">
-                                {HEX_BIN_MODES.map((m) => (
-                                    <li key={m}>
+                                {id === 'hex' ? (
+                                    <div>
                                         <motion.button
-                                            onClick={() => handleHexModeChange(m)}
+                                            onClick={() => {
+                                                setActiveApp(id);
+                                                setIsHexExpanded(prev => !prev);
+                                            }}
                                             whileTap={{ scale: 0.98 }}
-                                            aria-label={`Mode: ${m}`}
-                                            className={`w-full flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                                                activeHexMode === m
+                                            aria-label={ariaLabel}
+                                            aria-expanded={isHexExpanded}
+                                            aria-current={activeApp === id ? 'page' : undefined}
+                                            className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-md text-base font-medium transition-colors ${
+                                                activeApp === id
                                                     ? 'bg-surface-raised text-on-surface'
                                                     : 'text-on-surface-faint hover:text-on-surface-dim hover:bg-surface-alt'
                                             }`}
                                         >
-                                            <span className="pl-0.5">
-                                                {t[`mode${m}` as keyof typeof t] as string}
+                                            <span className="flex items-center gap-3">
+                                                <Icon strokeWidth={1.5} size={17} className={activeApp === id ? 'text-accent' : ''} aria-hidden="true" />
+                                                {label}
                                             </span>
+                                            <ChevronDown
+                                                strokeWidth={2}
+                                                size={14}
+                                                className={`transition-transform ${isHexExpanded ? 'rotate-180' : ''}`}
+                                                aria-hidden="true"
+                                            />
                                         </motion.button>
-                                    </li>
-                                ))}
-                            </ul>
+                                        <AnimatePresence initial={false}>
+                                            {isHexExpanded && activeApp === 'hex' && onHexModeChange && (
+                                                <motion.ul
+                                                    initial={{ height: 0, opacity: 0 }}
+                                                    animate={{ height: 'auto', opacity: 1 }}
+                                                    exit={{ height: 0, opacity: 0 }}
+                                                    transition={{ duration: 0.2 }}
+                                                    className="overflow-hidden ml-4 mt-1 space-y-0.5"
+                                                    role="list"
+                                                    aria-label={t.hexBinModes}
+                                                >
+                                                    {HEX_BIN_MODES.map((m) => (
+                                                        <li key={m}>
+                                                            <motion.button
+                                                                onClick={() => {
+                                                                    handleHexModeChange(m);
+                                                                    if (isMobile) setIsMobileMenuOpen(false);
+                                                                }}
+                                                                whileTap={{ scale: 0.98 }}
+                                                                aria-label={`Mode: ${m}`}
+                                                                aria-current={activeHexMode === m ? 'true' : undefined}
+                                                                className={`w-full flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                                                                    activeHexMode === m
+                                                                        ? 'bg-surface-raised text-on-surface'
+                                                                        : 'text-on-surface-faint hover:text-on-surface-dim hover:bg-surface-alt'
+                                                                }`}
+                                                            >
+                                                                <span className="pl-0.5">
+                                                                    {t[`mode${m}` as keyof typeof t] as string}
+                                                                </span>
+                                                            </motion.button>
+                                                        </li>
+                                                    ))}
+                                                </motion.ul>
+                                            )}
+                                        </AnimatePresence>
+                                    </div>
+                                ) : (
+                                    <motion.button
+                                        onClick={() => handleNavClick(id)}
+                                        whileTap={{ scale: 0.98 }}
+                                        aria-label={ariaLabel}
+                                        aria-current={activeApp === id ? 'page' : undefined}
+                                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-base font-medium transition-colors ${
+                                            activeApp === id
+                                                ? 'bg-surface-raised text-on-surface'
+                                                : 'text-on-surface-faint hover:text-on-surface-dim hover:bg-surface-alt'
+                                        }`}
+                                    >
+                                        <Icon strokeWidth={1.5} size={17} className={activeApp === id ? 'text-accent' : ''} aria-hidden="true" />
+                                        {label}
+                                    </motion.button>
+                                )}
+                            </li>
+                        ))}
+                    </ul>
+
+                    {/* Unified Bit/Byte selector — mobile only */}
+                    {isMobile && (
+                        (activeApp === 'hex' && bits !== undefined && onBitsChange) ||
+                        (activeApp === 'unicode' && bytes !== undefined && onBytesChange)
+                    ) && (
+                        <div className="mt-4">
+                            {activeApp === 'hex' ? (
+                                <BitByteSelector
+                                    options={BIT_OPTIONS}
+                                    value={bits!}
+                                    onChange={onBitsChange!}
+                                    label={t.bits}
+                                    singularLabel=""
+                                />
+                            ) : (
+                                <BitByteSelector
+                                    options={BYTE_OPTIONS}
+                                    value={bytes!}
+                                    onChange={onBytesChange!}
+                                    label={t.bytes}
+                                    singularLabel={t.byte}
+                                />
+                            )}
                         </div>
                     )}
                 </nav>
