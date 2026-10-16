@@ -17,6 +17,17 @@ export default function App() {
     const [currentUser, setCurrentUser] = useState<UserType | null>(null);
     const [refreshKey, setRefreshKey] = useState(0);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [bits, setBits] = useState(8);
+    const [bytes, setBytes] = useState(1);
+    const [isMobile, setIsMobile] = useState(() =>
+        typeof window !== 'undefined' ? window.innerWidth < 1024 : false
+    );
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 1024);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     const handleJoin = async (name: string): Promise<void> => {
         try {
@@ -85,9 +96,14 @@ export default function App() {
                 onLogout={handleLogout}
                 isMobileMenuOpen={isMobileMenuOpen}
                 setIsMobileMenuOpen={setIsMobileMenuOpen}
-                hideLeaderboardNav={isLeaderboardActive}
+                hideLeaderboardNav={!isMobile && !isLeaderboardActive}
+                isMobile={isMobile}
                 activeHexMode={activeMode}
-                onHexModeChange={(mode: string) => setActiveMode(mode as HexBinMode)}
+                onHexModeChange={(mode: HexBinMode) => setActiveMode(mode)}
+                bits={bits}
+                onBitsChange={setBits}
+                bytes={bytes}
+                onBytesChange={setBytes}
             />
 
             {/* Main content */}
@@ -109,10 +125,16 @@ export default function App() {
                                         user={currentUser}
                                         onUpdate={updateUserData}
                                         activeMode={activeMode}
-                                        onModeChange={setActiveMode}
+                                        bits={bits}
+                                        onBitsChange={setBits}
                                     />
                                 ) : (
-                                    <UnicodeTrainer user={currentUser} onUpdate={updateUserData} />
+                                    <UnicodeTrainer
+                                        user={currentUser}
+                                        onUpdate={updateUserData}
+                                        bytes={bytes}
+                                        onBytesChange={setBytes}
+                                    />
                                 )}
                             </motion.div>
                         </AnimatePresence>
