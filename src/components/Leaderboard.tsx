@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Zap, Award } from 'lucide-react';
+import { Zap, Award, Info } from 'lucide-react';
 import { api, type UserType } from '../services/api.ts';
 import { useI18n } from '../i18n/useI18n.ts';
 
@@ -19,12 +19,24 @@ const MEDAL_ICONS: Record<number, { icon: typeof Award; color: string }> = {
 export default function Leaderboard({ currentUser, refreshTrigger }: Props) {
     const [data, setData] = useState<UserType[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isEternalMax, setIsEternalMax] = useState(false);
     const { t } = useI18n();
 
     const refreshData = useCallback(async (): Promise<void> => {
         setLoading(true);
         const result = await api.getLeaderboard();
-        setData([...result].sort((a, b) => b.points - a.points));
+        const sorted = [...result].sort((a, b) => b.points - a.points);
+        const maxIdx = sorted.findIndex((u) => u.name === 'Max');
+        let eternal = false;
+        if (maxIdx > 0) {
+            const [maxEntry] = sorted.splice(maxIdx, 1);
+            if (maxEntry) {
+                sorted.unshift(maxEntry);
+            }
+            eternal = true;
+        }
+        setData(sorted);
+        setIsEternalMax(eternal);
         setLoading(false);
     }, []);
 
@@ -81,6 +93,7 @@ export default function Leaderboard({ currentUser, refreshTrigger }: Props) {
             >
                 {data.map((entry, idx) => {
                     const isMe = entry.name === currentUser.name;
+                    const showEternalTooltip = isEternalMax && idx === 0;
 
                     return (
                         <motion.div
@@ -117,6 +130,11 @@ export default function Leaderboard({ currentUser, refreshTrigger }: Props) {
                             }`}>
                                 {entry.name}
                                 {isMe && <span className="ml-1.5 text-on-surface-faint font-normal text-sm">{t.me}</span>}
+                                {showEternalTooltip && (
+                                    <span title="Er wird für immer unsere 1 bleiben" className="ml-1.5 inline-flex align-middle">
+                                        <Info size={12} className="text-on-surface-faint" aria-label="Er wird für immer unsere 1 bleiben" />
+                                    </span>
+                                )}
                             </span>
 
                             {/* Correct */}

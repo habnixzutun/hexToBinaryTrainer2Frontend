@@ -36,6 +36,7 @@ describe('Sidebar', () => {
     isMobileMenuOpen: boolean;
     setIsMobileMenuOpen: ReturnType<typeof vi.fn>;
     hideLeaderboardNav: boolean;
+    isMobile: boolean;
     activeHexMode?: string;
     onHexModeChange?: ReturnType<typeof vi.fn>;
   }
@@ -54,6 +55,7 @@ describe('Sidebar', () => {
       isMobileMenuOpen: false,
       setIsMobileMenuOpen: mockSetIsMobileMenuOpen,
       hideLeaderboardNav: false,
+      isMobile: false,
     }
   })
 

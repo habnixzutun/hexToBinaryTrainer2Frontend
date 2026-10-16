@@ -23,7 +23,7 @@ export const translations = {
         score: 'Punkte',
 
         // HexBinTrainer
-        bits: 'Bits:',
+        bits: 'Bits',
         translateFrom: 'Übersetze',
         inputPlaceholder: (format: string) => `${format} eingeben...`,
         correctAnswer: 'Richtig!',
@@ -32,11 +32,11 @@ export const translations = {
 
         // Mode labels
         modeHexToBin: 'Hex → Bin',
-        modeHexToDec: 'Hex → Dez',
+        modeHexToDec: 'Hex → Dec',
         modeBinToHex: 'Bin → Hex',
-        modeBinToDec: 'Bin → Dez',
-        modeDecToHex: 'Dez → Hex',
-        modeDecToBin: 'Dez → Bin',
+        modeBinToDec: 'Bin → Dec',
+        modeDecToHex: 'Dec → Hex',
+        modeDecToBin: 'Dec → Bin',
         hexBinModes: 'Hex/Bin Modi',
 
         // UnicodeTrainer
@@ -85,7 +85,7 @@ export const translations = {
         score: 'Score',
 
         // HexBinTrainer
-        bits: 'Bits:',
+        bits: 'Bits',
         translateFrom: 'Translate',
         inputPlaceholder: (format: string) => `Enter ${format}...`,
         correctAnswer: 'Correct!',

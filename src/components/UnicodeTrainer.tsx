@@ -3,14 +3,19 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Check, X, ArrowRight } from 'lucide-react';
 import { api, type UserType } from '../services/api.ts';
 import { useI18n } from '../i18n/useI18n.ts';
+import AppFooter from './AppFooter.tsx';
 
 interface Props {
     user: UserType;
     onUpdate: (user: UserType) => void;
+    bytes?: number;
+    onBytesChange?: (bytes: number) => void;
 }
 
-export default function UnicodeTrainer({ user, onUpdate }: Props) {
-    const [bytes, setBytes] = useState(1);
+export default function UnicodeTrainer({ user, onUpdate, bytes: externalBytes, onBytesChange }: Props) {
+    const [internalBytes, setInternalBytes] = useState(1);
+    const bytes = externalBytes ?? internalBytes;
+    const setBytes = onBytesChange ?? setInternalBytes;
     const { t } = useI18n();
     const [question, setQuestion] = useState('');
     const [char, setChar] = useState('');
@@ -79,8 +84,12 @@ export default function UnicodeTrainer({ user, onUpdate }: Props) {
 
     return (
         <div className="flex flex-col h-full" role="region" aria-label="Unicode trainer">
-            {/* Top bar */}
-            <div className="flex items-center border-b border-outline-faint h-16 px-4 sm:px-6 shrink-0 gap-1 overflow-x-auto" role="tablist" aria-label="Byte selection">
+            {/* Top bar - byte selector — only visible on lg+ */}
+            <div
+                className="hidden lg:flex items-center border-b border-outline-faint h-16 px-4 sm:px-6 shrink-0 gap-1"
+                role="tablist"
+                aria-label="Byte selection"
+            >
                 {byteOptions.map(b => (
                     <button
                         key={b}
@@ -104,8 +113,8 @@ export default function UnicodeTrainer({ user, onUpdate }: Props) {
                 </div>
             </div>
 
-            {/* Two-column layout - responsive */}
-            <div className="flex-1 flex items-center justify-center px-4 sm:px-8 py-4 gap-0">
+            {/* Question + answer area */}
+            <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-8 py-4 gap-4">
                 <div className="flex flex-col md:flex-row items-stretch gap-4 md:gap-8 w-full max-w-3xl">
                     {/* Left: Unicode codepoint */}
                     <div className="flex-1 flex flex-col min-w-0">
@@ -174,22 +183,16 @@ export default function UnicodeTrainer({ user, onUpdate }: Props) {
                         </span>
                     </div>
                 </div>
-            </div>
 
-            {/* Bottom bar: UTF-8 reference + submit */}
-            <div className="h-16 px-4 sm:px-8 border-t border-outline-faint flex items-center gap-4 shrink-0">
-                <p className="text-xs font-mono text-on-surface-subtle hidden lg:block" aria-label="UTF-8 encoding reference">
-                    1B: 0xxxxxxx &nbsp; 2B: 110xxxxx 10xxxxxx &nbsp; 3B: 1110xxxx 10xxxxxx 10xxxxxx &nbsp; 4B: 11110xxx 10xxxxxx×3
-                </p>
-
-                <div className="flex-1 min-w-0">
+                {/* Feedback + Check button below boxes */}
+                <div className="flex flex-col items-center gap-3 w-full max-w-3xl">
                     <AnimatePresence>
                         {feedback === 'wrong' && (
                             <motion.p
-                                initial={{ opacity: 0, x: -8 }}
-                                animate={{ opacity: 1, x: 0 }}
+                                initial={{ opacity: 0, y: -4 }}
+                                animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0 }}
-                                className="text-base text-error-text font-mono truncate"
+                                className="text-base text-error-text font-mono"
                                 role="alert"
                                 aria-live="assertive"
                             >
@@ -198,50 +201,53 @@ export default function UnicodeTrainer({ user, onUpdate }: Props) {
                         )}
                         {feedback === 'correct' && (
                             <motion.p
-                                initial={{ opacity: 0, x: -8 }}
-                                animate={{ opacity: 1, x: 0 }}
+                                initial={{ opacity: 0, y: -4 }}
+                                animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0 }}
-                                className="text-base text-accent font-mono truncate"
+                                className="text-base text-accent font-mono"
                                 role="status"
                                 aria-live="polite"
                             >
-                                ✓ {t.correctAnswer}
+                                <Check size={18} strokeWidth={2.5} className="inline mr-1" aria-hidden="true" />
+                                {t.correctAnswer}
                             </motion.p>
                         )}
                         {feedback === 'error' && (
                             <motion.p
-                                initial={{ opacity: 0, x: -8 }}
-                                animate={{ opacity: 1, x: 0 }}
+                                initial={{ opacity: 0, y: -4 }}
+                                animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0 }}
-                                className="text-base text-error-text font-mono truncate"
+                                className="text-base text-error-text font-mono"
                                 role="alert"
                                 aria-live="assertive"
                             >
+                                <X size={18} strokeWidth={2.5} className="inline mr-1" aria-hidden="true" />
                                 {t.errorSaving}
                             </motion.p>
                         )}
                     </AnimatePresence>
+                    <motion.button
+                        onClick={handleCheck}
+                        disabled={isSubmitting || !userAnswer.trim()}
+                        whileTap={{ scale: 0.98 }}
+                        aria-label={feedback === 'wrong' ? 'Check answer (incorrect)' : 'Check answer'}
+                        className={`w-full flex items-center justify-center gap-2.5 px-8 py-3.5 rounded-lg text-lg font-semibold transition-all duration-200 ${
+                            !userAnswer.trim() || isSubmitting
+                                ? 'text-on-surface-subtle bg-surface-raised cursor-not-allowed'
+                                : feedback === 'wrong'
+                                    ? 'text-white bg-error-text hover:bg-error-text/90 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-error-text focus-visible:ring-offset-2 focus-visible:ring-offset-surface'
+                                    : 'text-emerald-100 bg-emerald-800 hover:bg-emerald-700 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface'
+                        }`}
+                    >
+                        {feedback === 'wrong'
+                            ? <><X strokeWidth={2} size={20} aria-hidden="true" /> {t.wrong}</>
+                            : <><Check strokeWidth={2} size={20} aria-hidden="true" /> {t.check}</>
+                        }
+                    </motion.button>
                 </div>
-
-                <motion.button
-                    onClick={handleCheck}
-                    disabled={isSubmitting || !userAnswer.trim()}
-                    whileTap={{ scale: 0.95 }}
-                    aria-label={feedback === 'wrong' ? 'Check answer (incorrect)' : 'Check answer'}
-                    className={`shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-md text-base font-semibold transition-all ${
-                        !userAnswer.trim() || isSubmitting
-                            ? 'text-on-surface-subtle bg-surface-raised cursor-not-allowed'
-                            : feedback === 'wrong'
-                                ? 'text-error-text bg-error-muted hover:bg-red-500/20'
-                                : 'text-accent bg-accent-muted hover:bg-emerald-500/20'
-                    }`}
-                >
-                    {feedback === 'wrong'
-                        ? <><X strokeWidth={2.5} size={18} aria-hidden="true" /> {t.wrong}</>
-                        : <><Check strokeWidth={2.5} size={18} aria-hidden="true" /> {t.check}</>
-                    }
-                </motion.button>
             </div>
+
+            <AppFooter />
         </div>
     );
 }
