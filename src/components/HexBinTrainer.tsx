@@ -241,19 +241,19 @@ export default function HexBinTrainer({ user, onUpdate, activeMode: externalMode
                     <motion.button
                         onClick={handleCheck}
                         disabled={isSubmitting || !userAnswer.trim()}
-                        whileTap={{ scale: 0.95 }}
+                        whileTap={{ scale: 0.98 }}
                         aria-label={feedback === 'wrong' ? 'Check answer (incorrect)' : 'Check answer'}
-                        className={`flex items-center gap-2 px-6 py-3 rounded-md text-base font-semibold transition-all ${
+                        className={`w-full flex items-center justify-center gap-2.5 px-8 py-3.5 rounded-lg text-lg font-semibold transition-all duration-200 ${
                             !userAnswer.trim() || isSubmitting
                                 ? 'text-on-surface-subtle bg-surface-raised cursor-not-allowed'
                                 : feedback === 'wrong'
-                                    ? 'text-error-text bg-error-muted hover:bg-red-500/20'
-                                    : 'text-accent bg-accent-muted hover:bg-emerald-500/20'
+                                    ? 'text-white bg-error-text hover:bg-error-text/90 hover:shadow-lg hover:shadow-error-text/20 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-error-text focus-visible:ring-offset-2 focus-visible:ring-offset-surface'
+                                    : 'text-white bg-accent hover:bg-accent-bright hover:shadow-lg hover:shadow-accent/30 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface'
                         }`}
                     >
                         {feedback === 'wrong'
-                            ? <><X strokeWidth={2.5} size={18} aria-hidden="true" /> {t.wrong}</>
-                            : <><Check strokeWidth={2.5} size={18} aria-hidden="true" /> {t.check}</>
+                            ? <><X strokeWidth={2} size={20} aria-hidden="true" /> {t.wrong}</>
+                            : <><Check strokeWidth={2} size={20} aria-hidden="true" /> {t.check}</>
                         }
                     </motion.button>
                 </div>
