@@ -87,7 +87,7 @@ export default function Leaderboard({ currentUser, refreshTrigger }: Props) {
                             key={entry.name}
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
-                            transition={{ delay: idx * 0.04 }}
+                            transition={{ delay: Math.min(idx * 0.04, 0.3) }}
                             role="listitem"
                             aria-label={`Rank ${idx + 1}: ${entry.name}, ${entry.points} points`}
                             className={`flex items-center px-5 py-3.5 border-b border-outline-faint transition-colors ${
