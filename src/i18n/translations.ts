@@ -32,11 +32,11 @@ export const translations = {
 
         // Mode labels
         modeHexToBin: 'Hex → Bin',
-        modeHexToDec: 'Hex → Dez',
+        modeHexToDec: 'Hex → Dec',
         modeBinToHex: 'Bin → Hex',
-        modeBinToDec: 'Bin → Dez',
-        modeDecToHex: 'Dez → Hex',
-        modeDecToBin: 'Dez → Bin',
+        modeBinToDec: 'Bin → Dec',
+        modeDecToHex: 'Dec → Hex',
+        modeDecToBin: 'Dec → Bin',
         hexBinModes: 'Hex/Bin Modi',
 
         // UnicodeTrainer
