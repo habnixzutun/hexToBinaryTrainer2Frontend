@@ -23,7 +23,7 @@ export const translations = {
         score: 'Punkte',
 
         // HexBinTrainer
-        bits: 'Bits:',
+        bits: 'Bits',
         translateFrom: 'Übersetze',
         inputPlaceholder: (format: string) => `${format} eingeben...`,
         correctAnswer: 'Richtig!',
@@ -85,7 +85,7 @@ export const translations = {
         score: 'Score',
 
         // HexBinTrainer
-        bits: 'Bits:',
+        bits: 'Bits',
         translateFrom: 'Translate',
         inputPlaceholder: (format: string) => `Enter ${format}...`,
         correctAnswer: 'Correct!',
