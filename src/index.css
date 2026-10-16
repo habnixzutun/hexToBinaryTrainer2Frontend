@@ -56,18 +56,18 @@
 /* ===== ACCESSIBILITY ENHANCEMENTS ===== */
 
 /* WCAG 2.4.7: Visible focus indicators */
-*:focus-visible {
-    outline: 3px solid var(--color-focus-ring);
-    outline-offset: 2px;
-}
+/**:focus-visible {*/
+/*    outline: 3px solid var(--color-focus-ring);*/
+/*    outline-offset: 2px;*/
+/*}*/
 
-/* Ensure inputs don't suppress focus */
-input:focus-visible,
-button:focus-visible,
-a:focus-visible {
-    outline: 3px solid var(--color-focus-ring);
-    outline-offset: 2px;
-}
+/*!* Ensure inputs don't suppress focus *!*/
+/*input:focus-visible,*/
+/*button:focus-visible,*/
+/*a:focus-visible {*/
+/*    outline: 3px solid var(--color-focus-ring);*/
+/*    outline-offset: 2px;*/
+/*}*/
 
 /* WCAG 2.5.8: Minimum touch target size (44x44px) */
 @media (pointer: coarse) {
