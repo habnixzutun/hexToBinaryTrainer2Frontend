@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Zap, Award } from 'lucide-react';
+import { Zap, Award, Info } from 'lucide-react';
 import { api, type UserType } from '../services/api.ts';
 import { useI18n } from '../i18n/useI18n.ts';
 
@@ -103,16 +103,10 @@ export default function Leaderboard({ currentUser, refreshTrigger }: Props) {
                             transition={{ delay: Math.min(idx * 0.04, 0.3) }}
                             role="listitem"
                             aria-label={`Rank ${idx + 1}: ${entry.name}, ${entry.points} points`}
-                            className={`group relative flex items-center px-5 py-3.5 border-b border-outline-faint transition-colors ${
+                            className={`flex items-center px-5 py-3.5 border-b border-outline-faint transition-colors ${
                                 isMe ? 'bg-accent-muted' : 'hover:bg-surface-alt'
                             }`}
                         >
-                            {showEternalTooltip && (
-                                <span className="absolute left-12 bottom-full mb-1.5 px-2.5 py-1 rounded bg-surface-raised text-xs text-on-surface-dim whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none border border-outline-faint shadow-lg z-10">
-                                    Er wird für immer unsere 1 bleiben
-                                </span>
-                            )}
-
                             {/* Rank */}
                             <span className="w-8 shrink-0 text-base" aria-label={`Rank ${idx + 1}`}>
                                 {idx in MEDAL_ICONS
@@ -136,6 +130,11 @@ export default function Leaderboard({ currentUser, refreshTrigger }: Props) {
                             }`}>
                                 {entry.name}
                                 {isMe && <span className="ml-1.5 text-on-surface-faint font-normal text-sm">{t.me}</span>}
+                                {showEternalTooltip && (
+                                    <span title="Er wird für immer unsere 1 bleiben" className="ml-1.5 inline-flex align-middle">
+                                        <Info size={12} className="text-on-surface-faint" aria-label="Er wird für immer unsere 1 bleiben" />
+                                    </span>
+                                )}
                             </span>
 
                             {/* Correct */}
