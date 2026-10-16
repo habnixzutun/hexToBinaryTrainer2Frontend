@@ -87,14 +87,14 @@ export default function UnicodeTrainer({ user, onUpdate }: Props) {
                         onClick={() => setBytes(b)}
                         role="tab"
                         aria-selected={bytes === b}
-                        aria-label={`${b} ${b === 1 ? 'byte' : 'bytes'}`}
+                        aria-label={`${b} ${b === 1 ? t.byte : t.bytes}`}
                         className={`px-4 h-full text-sm font-medium transition-colors border-b-2 -mb-px whitespace-nowrap ${
                             bytes === b
                                 ? 'text-on-surface border-accent'
                                 : 'text-on-surface-faint border-transparent hover:text-on-surface-dim'
                         }`}
                     >
-                        {b} {b === 1 ? 'Byte' : 'Bytes'}
+                        {b} {b === 1 ? t.byte : t.bytes}
                     </button>
                 ))}
                 <div className="ml-auto shrink-0">
@@ -170,7 +170,7 @@ export default function UnicodeTrainer({ user, onUpdate }: Props) {
                             />
                         </div>
                         <span id="utf8-help" className="sr-only">
-                            Enter the UTF-8 binary representation using 0s and 1s
+                            {typeof t.srUtf8Binary === 'string' ? t.srUtf8Binary : 'Enter the UTF-8 binary representation using 0s and 1s'}
                         </span>
                     </div>
                 </div>
@@ -193,7 +193,7 @@ export default function UnicodeTrainer({ user, onUpdate }: Props) {
                                 role="alert"
                                 aria-live="assertive"
                             >
-                                {t.tryAgain}
+                                {t.wrong}
                             </motion.p>
                         )}
                         {feedback === 'correct' && (
@@ -205,7 +205,7 @@ export default function UnicodeTrainer({ user, onUpdate }: Props) {
                                 role="status"
                                 aria-live="polite"
                             >
-                                ✓ Correct!
+                                ✓ {t.correctAnswer}
                             </motion.p>
                         )}
                         {feedback === 'error' && (
@@ -217,7 +217,7 @@ export default function UnicodeTrainer({ user, onUpdate }: Props) {
                                 role="alert"
                                 aria-live="assertive"
                             >
-                                Error saving result. Please try again.
+                                {t.errorSaving}
                             </motion.p>
                         )}
                     </AnimatePresence>
@@ -237,8 +237,8 @@ export default function UnicodeTrainer({ user, onUpdate }: Props) {
                     }`}
                 >
                     {feedback === 'wrong'
-                        ? <><X strokeWidth={2.5} size={18} aria-hidden="true" /> Falsch</>
-                        : <><Check strokeWidth={2.5} size={18} aria-hidden="true" /> Prüfen</>
+                        ? <><X strokeWidth={2.5} size={18} aria-hidden="true" /> {t.wrong}</>
+                        : <><Check strokeWidth={2.5} size={18} aria-hidden="true" /> {t.check}</>
                     }
                 </motion.button>
             </div>

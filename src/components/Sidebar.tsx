@@ -1,23 +1,38 @@
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Terminal, Hash, Binary, LogOut, Globe, Trophy, Sun, Moon, Menu, X } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Terminal, Hash, Binary, LogOut, Globe, Trophy, Sun, Moon } from 'lucide-react';
 import { useI18n } from '../i18n/useI18n.ts';
 import { type Locale } from '../i18n/translations.ts';
 import { useTheme } from '../theme/useTheme.ts';
 import { type UserType } from '../services/api.ts';
 import { type ActiveApp } from '../App.tsx';
 
+const HEX_BIN_MODES = ['HexToBin', 'HexToDec', 'BinToHex', 'BinToDec', 'DecToHex', 'DecToBin'] as const;
+
 interface Props {
     activeApp: ActiveApp;
     setActiveApp: (app: ActiveApp) => void;
     user: UserType;
     onLogout: () => void;
+    isMobileMenuOpen: boolean;
+    setIsMobileMenuOpen: (open: boolean) => void;
+    hideLeaderboardNav: boolean;
+    activeHexMode?: string;
+    onHexModeChange?: (mode: string) => void;
 }
 
-export default function Sidebar({ activeApp, setActiveApp, user, onLogout }: Props) {
+export default function Sidebar({
+    activeApp,
+    setActiveApp,
+    user,
+    onLogout,
+    isMobileMenuOpen,
+    setIsMobileMenuOpen,
+    hideLeaderboardNav,
+    activeHexMode,
+    onHexModeChange,
+}: Props) {
     const { t, locale, setLocale } = useI18n();
     const { theme, toggleTheme } = useTheme();
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     const toggleLocale = (): void => {
         const next: Locale = locale === 'de' ? 'en' : 'de';
@@ -27,7 +42,10 @@ export default function Sidebar({ activeApp, setActiveApp, user, onLogout }: Pro
     const navItems = [
         { id: 'hex' as const, label: t.navHexBin, icon: Hash, ariaLabel: 'Hex/Binary trainer' },
         { id: 'unicode' as const, label: t.navUnicode, icon: Binary, ariaLabel: 'Unicode trainer' },
-        { id: 'leaderboard' as const, label: t.leaderboardTitle, icon: Trophy, ariaLabel: 'Leaderboard' },
+        ...(hideLeaderboardNav
+            ? []
+            : [{ id: 'leaderboard' as const, label: t.leaderboardTitle, icon: Trophy, ariaLabel: 'Leaderboard' }]
+        ),
     ];
 
     const handleNavClick = (id: ActiveApp) => {
@@ -35,46 +53,36 @@ export default function Sidebar({ activeApp, setActiveApp, user, onLogout }: Pro
         setIsMobileMenuOpen(false);
     };
 
+    const handleHexModeChange = (mode: string): void => {
+        if (onHexModeChange) {
+            onHexModeChange(mode);
+        }
+    };
+
     return (
         <>
-            {/* Mobile menu button - visible on small screens */}
-            <button
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="md:hidden fixed top-4 left-4 z-50 w-11 h-11 flex items-center justify-center rounded-lg bg-surface-raised border border-outline shadow-lg"
-                aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
-                aria-expanded={isMobileMenuOpen}
-                aria-controls="mobile-navigation"
-            >
-                {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-            </button>
-
             {/* Mobile overlay */}
-            <AnimatePresence>
-                {isMobileMenuOpen && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="md:hidden fixed inset-0 bg-black/50 z-40"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        aria-hidden="true"
-                    />
-                )}
-            </AnimatePresence>
+            <motion.div
+                initial={false}
+                animate={{ opacity: isMobileMenuOpen ? 1 : 0 }}
+                className="lg:hidden fixed inset-0 bg-black/50 z-40 pointer-events-none"
+                style={{ pointerEvents: isMobileMenuOpen ? 'auto' : 'none' }}
+                onClick={() => setIsMobileMenuOpen(false)}
+                aria-hidden="true"
+            />
 
             {/* Sidebar */}
             <aside
-                id="mobile-navigation"
                 className={`
-                    fixed md:static inset-y-0 left-0 z-40
+                    fixed lg:static inset-y-0 left-0 z-40
                     w-64 flex flex-col border-r border-outline-faint bg-surface
                     transform transition-transform duration-300 ease-in-out
-                    ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+                    ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
                 `}
                 aria-label="Main navigation"
             >
-                {/* Logo */}
-                <div className="flex items-center gap-3 px-5 h-16 border-b border-outline-faint">
+                {/* Logo — only visible on lg+ (on mobile it's in the global header) */}
+                <div className="lg:flex hidden items-center gap-3 px-5 h-16 border-b border-outline-faint">
                     <Terminal strokeWidth={1.5} size={18} className="text-accent shrink-0" aria-hidden="true" />
                     <span className="text-base font-bold tracking-wider text-on-surface-dim uppercase">
                         IT Trainer
@@ -82,7 +90,7 @@ export default function Sidebar({ activeApp, setActiveApp, user, onLogout }: Pro
                 </div>
 
                 {/* Nav */}
-                <nav className="flex-1 px-3 py-4" aria-label="Application modes">
+                <nav className="flex-1 px-3 py-4 overflow-y-auto" aria-label="Application modes">
                     <p className="px-2 mb-2 text-xs font-semibold uppercase tracking-widest text-on-surface-faint" id="nav-heading">
                         {t.modus}
                     </p>
@@ -106,6 +114,35 @@ export default function Sidebar({ activeApp, setActiveApp, user, onLogout }: Pro
                             </li>
                         ))}
                     </ul>
+
+                    {/* Hex/Bin Modes sub-section — only when hex trainer is active */}
+                    {activeApp === 'hex' && onHexModeChange && (
+                        <div className="mt-4">
+                            <p className="px-2 mb-2 text-xs font-semibold uppercase tracking-widest text-on-surface-faint" id="modes-heading">
+                                {t.hexBinModes}
+                            </p>
+                            <ul className="space-y-0.5" role="list" aria-labelledby="modes-heading">
+                                {HEX_BIN_MODES.map((m) => (
+                                    <li key={m}>
+                                        <motion.button
+                                            onClick={() => handleHexModeChange(m)}
+                                            whileTap={{ scale: 0.98 }}
+                                            aria-label={`Mode: ${m}`}
+                                            className={`w-full flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                                                activeHexMode === m
+                                                    ? 'bg-surface-raised text-on-surface'
+                                                    : 'text-on-surface-faint hover:text-on-surface-dim hover:bg-surface-alt'
+                                            }`}
+                                        >
+                                            <span className="pl-0.5">
+                                                {t[`mode${m}` as keyof typeof t] as string}
+                                            </span>
+                                        </motion.button>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
                 </nav>
 
                 {/* User section */}

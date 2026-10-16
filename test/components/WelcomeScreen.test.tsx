@@ -51,7 +51,7 @@ describe('WelcomeScreen', () => {
     render(<WelcomeScreen onJoin={mockOnJoin} />)
 
     const submitButton = screen.getByRole('button', { name: /los geht's/i })
-    const nameInput = screen.getByLabelText(/username/i)
+    const nameInput = screen.getByLabelText(/(username|benutzername)/i)
 
     // Initially disabled (empty name)
     expect(submitButton).toBeDisabled()
@@ -68,7 +68,7 @@ describe('WelcomeScreen', () => {
   it('calls onJoin with trimmed name on form submit', () => {
     render(<WelcomeScreen onJoin={mockOnJoin} />)
 
-    const nameInput = screen.getByLabelText(/username/i)
+    const nameInput = screen.getByLabelText(/(username|benutzername)/i)
     const submitButton = screen.getByRole('button', { name: /los geht's/i })
 
     // Type name with surrounding whitespace
@@ -83,7 +83,7 @@ describe('WelcomeScreen', () => {
   it('shows validation error with role=alert for short names', () => {
     render(<WelcomeScreen onJoin={mockOnJoin} />)
 
-    const nameInput = screen.getByLabelText(/username/i)
+    const nameInput = screen.getByLabelText(/(username|benutzername)/i)
 
     // No error initially (empty input)
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
@@ -106,7 +106,7 @@ describe('WelcomeScreen', () => {
   it('does not call onJoin when submitting invalid name via Enter key', () => {
     render(<WelcomeScreen onJoin={mockOnJoin} />)
 
-    const nameInput = screen.getByLabelText(/username/i)
+    const nameInput = screen.getByLabelText(/(username|benutzername)/i)
 
     // Type single character and press Enter
     fireEvent.change(nameInput, { target: { value: 'A' } })
@@ -139,7 +139,7 @@ describe('WelcomeScreen', () => {
     expect(screen.getByText('EN')).toBeInTheDocument()
 
     // Trigger German validation error
-    const nameInput = screen.getByLabelText(/username/i)
+    const nameInput = screen.getByLabelText(/(username|benutzername)/i)
     fireEvent.change(nameInput, { target: { value: 'A' } })
     expect(screen.getByText(/mindestens 2 zeichen/i)).toBeInTheDocument()
 
@@ -161,7 +161,7 @@ describe('WelcomeScreen', () => {
     expect(screen.getByRole('form', { name: /login form/i })).toBeInTheDocument()
 
     // Input is required and described by help text
-    const nameInput = screen.getByLabelText(/username/i)
+    const nameInput = screen.getByLabelText(/(username|benutzername)/i)
     expect(nameInput).toHaveAttribute('aria-required', 'true')
     expect(nameInput).toHaveAttribute('aria-describedby', 'username-help')
 

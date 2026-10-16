@@ -2,7 +2,7 @@ import { render, screen, waitFor } from '../../src/test-utils.tsx'
 import Leaderboard from '../../src/components/Leaderboard.tsx'
 
 // Mock the api module
-vi.mock('../services/api', () => ({
+vi.mock('../../src/services/api', () => ({
   api: {
     getLeaderboard: vi.fn().mockResolvedValue([
       { name: 'Alice', correct: 10, incorrect: 2, points: 100 },
@@ -46,20 +46,21 @@ describe('Leaderboard', () => {
     render(<Leaderboard currentUser={currentUser} refreshTrigger={0} />)
 
     await waitFor(() => {
-      // Top 3 should have SVG icons, not emoji text
-      expect(screen.queryByText('🥇')).not.toBeInTheDocument()
-      expect(screen.queryByText('🥈')).not.toBeInTheDocument()
-      expect(screen.queryByText('🥉')).not.toBeInTheDocument()
+      // Check that rank labels are accessible (full aria-label includes name and points)
+      const rank1 = screen.getByLabelText(/rank 1: alice/i)
+      const rank2 = screen.getByLabelText(/rank 2: bob/i)
+      const rank3 = screen.getByLabelText(/rank 3: charlie/i)
+
+      expect(rank1).toBeInTheDocument()
+      expect(rank2).toBeInTheDocument()
+      expect(rank3).toBeInTheDocument()
+
+      // Top 3 should have SVG medal icons (Award from lucide-react)
+      // Check that each rank container has an SVG element with medal aria-label
+      expect(rank1.querySelector('svg[aria-label="Medal: rank 1"]')).toBeInTheDocument()
+      expect(rank2.querySelector('svg[aria-label="Medal: rank 2"]')).toBeInTheDocument()
+      expect(rank3.querySelector('svg[aria-label="Medal: rank 3"]')).toBeInTheDocument()
     })
-
-    // Check that rank labels are accessible (full aria-label includes name and points)
-    const rank1 = screen.getByLabelText(/rank 1: alice/i)
-    const rank2 = screen.getByLabelText(/rank 2: bob/i)
-    const rank3 = screen.getByLabelText(/rank 3: charlie/i)
-
-    expect(rank1).toBeInTheDocument()
-    expect(rank2).toBeInTheDocument()
-    expect(rank3).toBeInTheDocument()
   })
 
   it('renders numeric ranks for positions below 3', async () => {

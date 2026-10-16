@@ -27,23 +27,38 @@ const mockUser = { name: 'TestUser', correct: 5, incorrect: 2, points: 50 }
 describe('Sidebar', () => {
   let mockSetActiveApp: ReturnType<typeof vi.fn>
   let mockOnLogout: ReturnType<typeof vi.fn>
+  let mockSetIsMobileMenuOpen: ReturnType<typeof vi.fn>
+  let defaultProps: {
+    activeApp: 'hex' | 'unicode' | 'leaderboard';
+    setActiveApp: ReturnType<typeof vi.fn>;
+    user: typeof mockUser;
+    onLogout: ReturnType<typeof vi.fn>;
+    isMobileMenuOpen: boolean;
+    setIsMobileMenuOpen: ReturnType<typeof vi.fn>;
+    hideLeaderboardNav: boolean;
+    activeHexMode?: string;
+    onHexModeChange?: ReturnType<typeof vi.fn>;
+  }
 
   beforeEach(() => {
     vi.clearAllMocks()
     localStorageMock.clear()
     mockSetActiveApp = vi.fn()
     mockOnLogout = vi.fn()
+    mockSetIsMobileMenuOpen = vi.fn()
+    defaultProps = {
+      activeApp: 'hex',
+      setActiveApp: mockSetActiveApp,
+      user: mockUser,
+      onLogout: mockOnLogout,
+      isMobileMenuOpen: false,
+      setIsMobileMenuOpen: mockSetIsMobileMenuOpen,
+      hideLeaderboardNav: false,
+    }
   })
 
   it('renders user name and stats correctly', () => {
-    render(
-      <Sidebar
-        activeApp="hex"
-        setActiveApp={mockSetActiveApp}
-        user={mockUser}
-        onLogout={mockOnLogout}
-      />
-    )
+    render(<Sidebar {...defaultProps} />)
 
     // Should show user name
     expect(screen.getByText('TestUser')).toBeInTheDocument()
@@ -60,14 +75,7 @@ describe('Sidebar', () => {
   })
 
   it('renders three navigation buttons with correct aria-labels', () => {
-    render(
-      <Sidebar
-        activeApp="hex"
-        setActiveApp={mockSetActiveApp}
-        user={mockUser}
-        onLogout={mockOnLogout}
-      />
-    )
+    render(<Sidebar {...defaultProps} />)
 
     // Should have three nav buttons
     expect(screen.getByLabelText('Hex/Binary trainer')).toBeInTheDocument()
@@ -75,15 +83,17 @@ describe('Sidebar', () => {
     expect(screen.getByLabelText('Leaderboard')).toBeInTheDocument()
   })
 
+  it('hides leaderboard nav when hideLeaderboardNav is true', () => {
+    render(<Sidebar {...defaultProps} hideLeaderboardNav={true} />)
+
+    // Should only have two nav buttons (no leaderboard)
+    expect(screen.getByLabelText('Hex/Binary trainer')).toBeInTheDocument()
+    expect(screen.getByLabelText('Unicode trainer')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Leaderboard')).not.toBeInTheDocument()
+  })
+
   it('marks active navigation item with aria-current="page"', () => {
-    render(
-      <Sidebar
-        activeApp="hex"
-        setActiveApp={mockSetActiveApp}
-        user={mockUser}
-        onLogout={mockOnLogout}
-      />
-    )
+    render(<Sidebar {...defaultProps} />)
 
     const hexButton = screen.getByLabelText('Hex/Binary trainer')
     expect(hexButton).toHaveAttribute('aria-current', 'page')
@@ -93,81 +103,60 @@ describe('Sidebar', () => {
   })
 
   it('calls setActiveApp when navigation button is clicked', () => {
-    render(
-      <Sidebar
-        activeApp="hex"
-        setActiveApp={mockSetActiveApp}
-        user={mockUser}
-        onLogout={mockOnLogout}
-      />
-    )
+    render(<Sidebar {...defaultProps} />)
 
     const leaderboardButton = screen.getByLabelText('Leaderboard')
     fireEvent.click(leaderboardButton)
 
     expect(mockSetActiveApp).toHaveBeenCalledWith('leaderboard')
-  })
-
-  it('toggles mobile menu on hamburger button click', () => {
-    render(
-      <Sidebar
-        activeApp="hex"
-        setActiveApp={mockSetActiveApp}
-        user={mockUser}
-        onLogout={mockOnLogout}
-      />
-    )
-
-    const hamburgerButton = screen.getByLabelText('Open menu')
-
-    // Initially closed
-    expect(hamburgerButton).toHaveAttribute('aria-expanded', 'false')
-
-    // Click to open
-    fireEvent.click(hamburgerButton)
-    expect(hamburgerButton).toHaveAttribute('aria-expanded', 'true')
-    expect(hamburgerButton).toHaveAttribute('aria-label', 'Close menu')
-
-    // Click to close
-    fireEvent.click(hamburgerButton)
-    expect(hamburgerButton).toHaveAttribute('aria-expanded', 'false')
-    expect(hamburgerButton).toHaveAttribute('aria-label', 'Open menu')
+    expect(mockSetIsMobileMenuOpen).toHaveBeenCalledWith(false)
   })
 
   it('closes mobile menu when navigation item is clicked', () => {
-    render(
-      <Sidebar
-        activeApp="hex"
-        setActiveApp={mockSetActiveApp}
-        user={mockUser}
-        onLogout={mockOnLogout}
-      />
-    )
-
-    const hamburgerButton = screen.getByLabelText('Open menu')
-
-    // Open menu
-    fireEvent.click(hamburgerButton)
-    expect(hamburgerButton).toHaveAttribute('aria-expanded', 'true')
+    render(<Sidebar {...defaultProps} isMobileMenuOpen={true} />)
 
     // Click nav item
     const unicodeButton = screen.getByLabelText('Unicode trainer')
     fireEvent.click(unicodeButton)
 
-    // Menu should close
-    expect(hamburgerButton).toHaveAttribute('aria-expanded', 'false')
+    // Should close menu
+    expect(mockSetIsMobileMenuOpen).toHaveBeenCalledWith(false)
     expect(mockSetActiveApp).toHaveBeenCalledWith('unicode')
   })
 
+  it('renders hex/bin mode sub-section when hex trainer is active', () => {
+    const mockOnHexModeChange = vi.fn()
+    render(<Sidebar {...defaultProps} onHexModeChange={mockOnHexModeChange} activeHexMode="HexToBin" />)
+
+    // Should show mode heading
+    expect(screen.getByText('Hex/Bin Modi')).toBeInTheDocument()
+
+    // Should show 6 mode buttons
+    expect(screen.getByLabelText('Mode: HexToBin')).toBeInTheDocument()
+    expect(screen.getByLabelText('Mode: HexToDec')).toBeInTheDocument()
+    expect(screen.getByLabelText('Mode: BinToHex')).toBeInTheDocument()
+    expect(screen.getByLabelText('Mode: BinToDec')).toBeInTheDocument()
+    expect(screen.getByLabelText('Mode: DecToHex')).toBeInTheDocument()
+    expect(screen.getByLabelText('Mode: DecToBin')).toBeInTheDocument()
+  })
+
+  it('calls onHexModeChange when mode button is clicked', () => {
+    const mockOnHexModeChange = vi.fn()
+    render(<Sidebar {...defaultProps} onHexModeChange={mockOnHexModeChange} activeHexMode="HexToBin" />)
+
+    fireEvent.click(screen.getByLabelText('Mode: HexToDec'))
+    expect(mockOnHexModeChange).toHaveBeenCalledWith('HexToDec')
+  })
+
+  it('does not render mode sub-section when not in hex app', () => {
+    const mockOnHexModeChange = vi.fn()
+    render(<Sidebar {...defaultProps} activeApp="unicode" onHexModeChange={mockOnHexModeChange} />)
+
+    expect(screen.queryByText('Hex/Bin Modi')).not.toBeInTheDocument()
+  })
+
   it('toggles theme and updates aria-label', () => {
-    render(
-      <Sidebar
-        activeApp="hex"
-        setActiveApp={mockSetActiveApp}
-        user={mockUser}
-        onLogout={mockOnLogout}
-      />
-    )
+    render(<Sidebar {...defaultProps} />)
 
     // Find theme toggle button (initially dark theme based on ThemeProvider default)
     const themeButton = screen.getByLabelText(/switch to light mode/i)
@@ -181,14 +170,7 @@ describe('Sidebar', () => {
   })
 
   it('toggles locale and updates button text', () => {
-    render(
-      <Sidebar
-        activeApp="hex"
-        setActiveApp={mockSetActiveApp}
-        user={mockUser}
-        onLogout={mockOnLogout}
-      />
-    )
+    render(<Sidebar {...defaultProps} />)
 
     // Find locale toggle button (initially 'de' locale, shows "EN")
     const localeButton = screen.getByLabelText(/switch to english/i)
@@ -204,14 +186,7 @@ describe('Sidebar', () => {
   })
 
   it('calls onLogout when logout button is clicked', () => {
-    render(
-      <Sidebar
-        activeApp="hex"
-        setActiveApp={mockSetActiveApp}
-        user={mockUser}
-        onLogout={mockOnLogout}
-      />
-    )
+    render(<Sidebar {...defaultProps} />)
 
     // Find logout button (German locale is default)
     const logoutButton = screen.getByLabelText(/sitzung beenden/i)
@@ -221,14 +196,7 @@ describe('Sidebar', () => {
   })
 
   it('shows online status dot with proper aria-label', () => {
-    render(
-      <Sidebar
-        activeApp="hex"
-        setActiveApp={mockSetActiveApp}
-        user={mockUser}
-        onLogout={mockOnLogout}
-      />
-    )
+    render(<Sidebar {...defaultProps} />)
 
     // Should have status dot with aria-label
     const statusDot = screen.getByRole('status', { name: /online/i })

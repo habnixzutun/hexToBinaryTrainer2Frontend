@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { Terminal, Menu, X } from 'lucide-react';
 import Sidebar from './components/Sidebar.tsx';
 import HexBinTrainer from './components/HexBinTrainer.tsx';
 import UnicodeTrainer from './components/UnicodeTrainer.tsx';
@@ -8,11 +9,14 @@ import WelcomeScreen from './components/WelcomeScreen.tsx';
 import { api, type UserType } from './services/api.ts';
 
 export type ActiveApp = 'hex' | 'unicode' | 'leaderboard';
+export type HexBinMode = 'HexToBin' | 'HexToDec' | 'BinToHex' | 'BinToDec' | 'DecToHex' | 'DecToBin';
 
 export default function App() {
     const [activeApp, setActiveApp] = useState<ActiveApp>('hex');
+    const [activeMode, setActiveMode] = useState<HexBinMode>('HexToBin');
     const [currentUser, setCurrentUser] = useState<UserType | null>(null);
     const [refreshKey, setRefreshKey] = useState(0);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     const handleJoin = async (name: string): Promise<void> => {
         try {
@@ -51,22 +55,44 @@ export default function App() {
     const isLeaderboardActive = activeApp === 'leaderboard';
 
     return (
-        <div className="flex flex-col md:flex-row h-screen bg-surface text-on-surface-dim overflow-hidden font-sans">
+        <div className="flex flex-col lg:flex-row h-screen bg-surface text-on-surface-dim overflow-hidden font-sans">
             {/* Skip link for keyboard navigation */}
             <a href="#main-content" className="skip-link">
                 Skip to main content
             </a>
+
+            {/* Global mobile header — visible below lg */}
+            <header className="lg:hidden flex items-center h-14 px-4 border-b border-outline-faint bg-surface shrink-0 z-50">
+                <button
+                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                    className="w-11 h-11 flex items-center justify-center rounded-lg text-on-surface-faint hover:text-on-surface-dim transition-colors"
+                    aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
+                    aria-expanded={isMobileMenuOpen}
+                    aria-controls="sidebar-navigation"
+                >
+                    {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+                </button>
+                <Terminal strokeWidth={1.5} size={18} className="text-accent ml-2" aria-hidden="true" />
+                <span className="ml-2 text-base font-bold tracking-wider text-on-surface-dim uppercase">
+                    IT Trainer
+                </span>
+            </header>
 
             <Sidebar
                 activeApp={activeApp}
                 setActiveApp={setActiveApp}
                 user={currentUser}
                 onLogout={handleLogout}
+                isMobileMenuOpen={isMobileMenuOpen}
+                setIsMobileMenuOpen={setIsMobileMenuOpen}
+                hideLeaderboardNav={isLeaderboardActive}
+                activeHexMode={activeMode}
+                onHexModeChange={(mode: string) => setActiveMode(mode as HexBinMode)}
             />
 
             {/* Main content */}
             <div className="flex flex-1 min-w-0 overflow-hidden">
-                {/* Trainer area — hidden when leaderboard is active on small viewports */}
+                {/* Trainer area — hidden when leaderboard is active on large viewports */}
                 {!isLeaderboardActive && (
                     <main id="main-content" className="flex-1 overflow-y-auto border-r border-outline-faint" role="main">
                         <AnimatePresence mode="wait">
@@ -79,7 +105,12 @@ export default function App() {
                                 className="h-full"
                             >
                                 {activeApp === 'hex' ? (
-                                    <HexBinTrainer user={currentUser} onUpdate={updateUserData} />
+                                    <HexBinTrainer
+                                        user={currentUser}
+                                        onUpdate={updateUserData}
+                                        activeMode={activeMode}
+                                        onModeChange={setActiveMode}
+                                    />
                                 ) : (
                                     <UnicodeTrainer user={currentUser} onUpdate={updateUserData} />
                                 )}
@@ -90,7 +121,7 @@ export default function App() {
 
                 {/* Leaderboard panel — always visible on lg+, full-width when active */}
                 <aside className={`shrink-0 overflow-y-auto ${
-                    isLeaderboardActive ? 'flex-1' : 'hidden md:block w-80'
+                    isLeaderboardActive ? 'flex-1' : 'hidden lg:block w-80'
                 }`}>
                     <Leaderboard currentUser={currentUser} refreshTrigger={refreshKey} />
                 </aside>
