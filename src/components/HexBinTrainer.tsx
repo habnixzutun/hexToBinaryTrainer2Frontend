@@ -212,9 +212,9 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
                             {toLabel}
                         </label>
                         <div className={`flex-1 flex items-center justify-center rounded-lg border min-h-36 px-4 sm:px-6 py-8 transition-colors ${
-                            feedback === 'wrong' ? 'border-red-500/60 bg-error-muted' :
-                            feedback === 'correct' ? 'border-emerald-500/60 bg-accent-muted' :
-                            feedback === 'error' ? 'border-red-500/60 bg-error-muted' :
+                            feedback === 'wrong' ? 'border-error-text/60 bg-error-muted' :
+                            feedback === 'correct' ? 'border-accent/60 bg-accent-muted' :
+                            feedback === 'error' ? 'border-error-text/60 bg-error-muted' :
                             'border-outline bg-surface-alt focus-within:border-accent'
                         }`}>
                             <input
