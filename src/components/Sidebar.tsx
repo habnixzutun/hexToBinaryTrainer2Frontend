@@ -112,7 +112,7 @@ export default function Sidebar({ activeApp, setActiveApp, user, onLogout }: Pro
                 <div className="border-t border-outline-faint px-5 py-4 space-y-4">
                     {/* User info */}
                     <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-accent shrink-0" aria-hidden="true" />
+                        <span className="w-2 h-2 rounded-full bg-accent shrink-0" role="status" aria-label="Online" />
                         <span className="text-base text-on-surface-dim font-medium truncate">{user.name}</span>
                     </div>
 
