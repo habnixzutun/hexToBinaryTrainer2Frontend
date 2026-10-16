@@ -3,12 +3,16 @@ import HexBinTrainer from '../../src/components/HexBinTrainer.tsx'
 import { api } from '../../src/services/api.ts'
 
 // Mock the api module
-vi.mock('../services/api', () => ({
+vi.mock('../../src/services/api', () => ({
   api: {
     updateUserCorrect: vi.fn(),
     updateUserIncorrect: vi.fn(),
   },
 }))
+
+// Helper to cast mocked API functions
+const mockUpdateUserCorrect = api.updateUserCorrect as ReturnType<typeof vi.fn>
+const mockUpdateUserIncorrect = api.updateUserIncorrect as ReturnType<typeof vi.fn>
 
 // Mock localStorage
 const localStorageMock = (() => {
@@ -34,7 +38,7 @@ Object.defineProperty(window, 'localStorage', {
 const mockUser = { name: 'TestUser', correct: 5, incorrect: 2, points: 50 }
 
 describe('HexBinTrainer', () => {
-  let mockOnUpdate: ReturnType<typeof vi.fn>
+  let mockOnUpdate: ReturnType<typeof vi.fn<(user: { name: string; correct: number; incorrect: number; points: number }) => void>>
 
   beforeEach(() => {
     vi.clearAllMocks()
@@ -46,11 +50,11 @@ describe('HexBinTrainer', () => {
     vi.spyOn(Math, 'random').mockReturnValue(0.5)
 
     // Setup default API mock responses
-    vi.mocked(api.updateUserCorrect).mockResolvedValue({
+    mockUpdateUserCorrect.mockResolvedValue({
       message: 'Correct',
       user: { name: 'TestUser', correct: 6, incorrect: 2, points: 60 },
     })
-    vi.mocked(api.updateUserIncorrect).mockResolvedValue({
+    mockUpdateUserIncorrect.mockResolvedValue({
       message: 'Incorrect',
       user: { name: 'TestUser', correct: 5, incorrect: 3, points: 50 },
     })
@@ -70,7 +74,9 @@ describe('HexBinTrainer', () => {
   it('shows mode tabs with correct aria-labels', () => {
     render(<HexBinTrainer user={mockUser} onUpdate={mockOnUpdate} />)
 
-    // Should show 6 mode tabs
+    // On lg+ screens, should show 6 mode tabs in the top bar
+    // In jsdom (no lg breakpoint), tabs are hidden with hidden lg:flex
+    // But they still exist in the DOM
     const tabs = screen.getAllByRole('tab')
     expect(tabs).toHaveLength(6)
 
@@ -119,11 +125,11 @@ describe('HexBinTrainer', () => {
     // Should show correct feedback
     await waitFor(() => {
       expect(screen.getByRole('status')).toBeInTheDocument()
-      expect(screen.getByText(/correct/i)).toBeInTheDocument()
+      expect(screen.getByText(/Richtig/i)).toBeInTheDocument()
     })
 
     // Should call API with correct parameters (bits=8)
-    expect(api.updateUserCorrect).toHaveBeenCalledWith('TestUser', 8)
+    expect(mockUpdateUserCorrect).toHaveBeenCalledWith('TestUser', 8)
 
     // Should call onUpdate with new user data
     await waitFor(() => {
@@ -150,13 +156,14 @@ describe('HexBinTrainer', () => {
 
     // Should show wrong feedback with alert role
     await waitFor(() => {
-      expect(screen.getByRole('alert')).toBeInTheDocument()
-      // German locale is default, so check for "Versuch's nochmal!"
-      expect(screen.getByText(/versuch's nochmal/i)).toBeInTheDocument()
+      const alert = screen.getByRole('alert')
+      expect(alert).toBeInTheDocument()
+      // German locale is default, so check for "Falsch"
+      expect(alert).toHaveTextContent(/Falsch/i)
     })
 
     // Should call API with correct parameters (bits=8)
-    expect(api.updateUserIncorrect).toHaveBeenCalledWith('TestUser', 8)
+    expect(mockUpdateUserIncorrect).toHaveBeenCalledWith('TestUser', 8)
 
     // Should call onUpdate with new user data
     await waitFor(() => {
@@ -171,7 +178,7 @@ describe('HexBinTrainer', () => {
 
   it('handles API failure gracefully with error feedback', async () => {
     // Mock API to reject
-    vi.mocked(api.updateUserCorrect).mockRejectedValue(new Error('Network error'))
+    mockUpdateUserCorrect.mockRejectedValue(new Error('Network error'))
 
     render(<HexBinTrainer user={mockUser} onUpdate={mockOnUpdate} />)
 
@@ -187,7 +194,7 @@ describe('HexBinTrainer', () => {
     // Should show error feedback
     await waitFor(() => {
       expect(screen.getByRole('alert')).toBeInTheDocument()
-      expect(screen.getByText(/error saving result/i)).toBeInTheDocument()
+      expect(screen.getByText(/Fehler beim Speichern/i)).toBeInTheDocument()
     })
 
     // Should NOT call onUpdate
@@ -207,7 +214,7 @@ describe('HexBinTrainer', () => {
 
     // Should trigger submit and call API
     await waitFor(() => {
-      expect(api.updateUserCorrect).toHaveBeenCalledWith('TestUser', 8)
+      expect(mockUpdateUserCorrect).toHaveBeenCalledWith('TestUser', 8)
     })
   })
 

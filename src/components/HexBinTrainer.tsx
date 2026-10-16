@@ -6,16 +6,21 @@ import { useI18n } from '../i18n/useI18n.ts';
 
 type Mode = 'HexToBin' | 'HexToDec' | 'BinToHex' | 'BinToDec' | 'DecToHex' | 'DecToBin';
 
+const ALL_MODES: Mode[] = ['HexToBin', 'HexToDec', 'BinToHex', 'BinToDec', 'DecToHex', 'DecToBin'];
+
 interface Props {
     user: UserType;
     onUpdate: (user: UserType) => void;
+    activeMode?: Mode;
+    onModeChange?: (mode: Mode) => void;
 }
 
-export default function HexBinTrainer({ user, onUpdate }: Props) {
-    const modes: Mode[] = ['HexToBin', 'HexToDec', 'BinToHex', 'BinToDec', 'DecToHex', 'DecToBin'];
+export default function HexBinTrainer({ user, onUpdate, activeMode: externalMode, onModeChange }: Props) {
     const { t } = useI18n();
 
-    const [activeMode, setActiveMode] = useState<Mode>('HexToBin');
+    const [internalMode, setInternalMode] = useState<Mode>('HexToBin');
+    const activeMode = externalMode ?? internalMode;
+
     const [bits, setBits] = useState(8);
     const [question, setQuestion] = useState('');
     const [correctAnswer, setCorrectAnswer] = useState('');
@@ -115,23 +120,31 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
         });
     };
 
+    const handleModeChange = (mode: Mode): void => {
+        if (onModeChange) {
+            onModeChange(mode);
+        } else {
+            setInternalMode(mode);
+        }
+    };
+
     const [fromLabel, toLabel] = activeMode.split('To') as [string, string];
 
     return (
         <div className="flex flex-col h-full" role="region" aria-label="Hex/Binary trainer">
-            {/* Top bar - mode selector and bits stepper */}
+            {/* Top bar - mode selector and bits stepper — only visible on lg+ */}
             <div
                 ref={tabListRef}
-                className={`flex items-center border-b border-outline-faint h-16 px-4 sm:px-6 shrink-0 gap-1 overflow-x-auto ${
+                className={`hidden lg:flex items-center border-b border-outline-faint h-16 px-4 sm:px-6 shrink-0 gap-1 overflow-x-auto ${
                     canScrollRight ? 'mask-r-fade' : ''
                 }`}
                 role="tablist"
                 aria-label="Conversion modes"
             >
-                {modes.map((m) => (
+                {ALL_MODES.map((m) => (
                     <button
                         key={m}
-                        onClick={() => setActiveMode(m)}
+                        onClick={() => handleModeChange(m)}
                         role="tab"
                         aria-selected={activeMode === m}
                         aria-label={`${m.split('To')[0]} to ${m.split('To')[1]}`}
@@ -141,7 +154,7 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
                                 : 'text-on-surface-faint border-transparent hover:text-on-surface-dim'
                         }`}
                     >
-                        {m}
+                        {t[`mode${m}` as keyof typeof t] as string}
                     </button>
                 ))}
 
@@ -234,7 +247,7 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
                             />
                         </div>
                         <span id="input-help" className="sr-only">
-                            Enter your answer in {toLabel} format
+                            {typeof t.srAnswerFormat === 'function' ? t.srAnswerFormat(toLabel) : `Enter your answer in ${toLabel} format`}
                         </span>
                     </div>
                 </div>
@@ -253,7 +266,7 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
                                 role="alert"
                                 aria-live="assertive"
                             >
-                                {t.tryAgain}
+                                {t.wrong}
                             </motion.p>
                         )}
                         {feedback === 'correct' && (
@@ -266,7 +279,7 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
                                 aria-live="polite"
                             >
                                 <Check size={18} strokeWidth={2.5} className="inline mr-1" aria-hidden="true" />
-                                Correct!
+                                {t.correctAnswer}
                             </motion.p>
                         )}
                         {feedback === 'error' && (
@@ -279,7 +292,7 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
                                 aria-live="assertive"
                             >
                                 <X size={18} strokeWidth={2.5} className="inline mr-1" aria-hidden="true" />
-                                Error saving result. Please try again.
+                                {t.errorSaving}
                             </motion.p>
                         )}
                     </AnimatePresence>
@@ -298,8 +311,8 @@ export default function HexBinTrainer({ user, onUpdate }: Props) {
                     }`}
                 >
                     {feedback === 'wrong'
-                        ? <><X strokeWidth={2.5} size={18} aria-hidden="true" /> Falsch</>
-                        : <><Check strokeWidth={2.5} size={18} aria-hidden="true" /> Prüfen</>
+                        ? <><X strokeWidth={2.5} size={18} aria-hidden="true" /> {t.wrong}</>
+                        : <><Check strokeWidth={2.5} size={18} aria-hidden="true" /> {t.check}</>
                     }
                 </motion.button>
             </div>

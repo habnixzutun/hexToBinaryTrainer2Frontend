@@ -1,5 +1,5 @@
 import { ThemeProvider } from '../src/theme/ThemeProvider.tsx'
-import { I18nProvider } from '../src/i18n/i18nContext.ts'
+import { I18nProvider } from '../src/i18n/I18nContext.tsx'
 
 describe('imports', () => {
   it('checks ThemeProvider', () => {

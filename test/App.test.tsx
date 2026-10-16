@@ -3,7 +3,7 @@ import App from '../src/App.tsx'
 import { api } from '../src/services/api.ts'
 
 // Mock the api module
-vi.mock('./services/api', () => ({
+vi.mock('../src/services/api', () => ({
   api: {
     getUser: vi.fn(),
     getLeaderboard: vi.fn(),
@@ -11,6 +11,11 @@ vi.mock('./services/api', () => ({
     updateUserIncorrect: vi.fn(),
   },
 }))
+
+const mockGetUser = api.getUser as ReturnType<typeof vi.fn>
+const mockGetLeaderboard = api.getLeaderboard as ReturnType<typeof vi.fn>
+const mockUpdateUserCorrect = api.updateUserCorrect as ReturnType<typeof vi.fn>
+const mockUpdateUserIncorrect = api.updateUserIncorrect as ReturnType<typeof vi.fn>
 
 // Mock localStorage
 const localStorageMock = (() => {
@@ -42,21 +47,21 @@ describe('App', () => {
     vi.spyOn(Math, 'random').mockReturnValue(0.5)
 
     // Setup default API mock responses
-    vi.mocked(api.getUser).mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       name: 'TestUser',
       correct: 5,
       incorrect: 2,
       points: 50,
     })
-    vi.mocked(api.getLeaderboard).mockResolvedValue([
+    mockGetLeaderboard.mockResolvedValue([
       { name: 'Alice', correct: 10, incorrect: 2, points: 100 },
       { name: 'Bob', correct: 8, incorrect: 3, points: 80 },
     ])
-    vi.mocked(api.updateUserCorrect).mockResolvedValue({
+    mockUpdateUserCorrect.mockResolvedValue({
       message: 'Correct',
       user: { name: 'TestUser', correct: 6, incorrect: 2, points: 60 },
     })
-    vi.mocked(api.updateUserIncorrect).mockResolvedValue({
+    mockUpdateUserIncorrect.mockResolvedValue({
       message: 'Incorrect',
       user: { name: 'TestUser', correct: 5, incorrect: 3, points: 50 },
     })
@@ -74,13 +79,13 @@ describe('App', () => {
     expect(screen.getByRole('form', { name: /login form/i })).toBeInTheDocument()
 
     // Should NOT call getUser
-    expect(api.getUser).not.toHaveBeenCalled()
+    expect(mockGetUser).not.toHaveBeenCalled()
   })
 
   it('loads user from localStorage on mount and shows trainer', async () => {
     // Arrange: saved name in localStorage
     localStorageMock.getItem.mockReturnValue('SavedUser')
-    vi.mocked(api.getUser).mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       name: 'SavedUser',
       correct: 10,
       incorrect: 5,
@@ -92,7 +97,7 @@ describe('App', () => {
 
     // Assert: should call getUser with saved name
     await waitFor(() => {
-      expect(api.getUser).toHaveBeenCalledWith('SavedUser')
+      expect(mockGetUser).toHaveBeenCalledWith('SavedUser')
     })
 
     // Should show trainer interface (Sidebar + HexBinTrainer by default)
@@ -105,7 +110,7 @@ describe('App', () => {
   it('creates offline user when API fails on mount', async () => {
     // Arrange: saved name but API rejects
     localStorageMock.getItem.mockReturnValue('OfflineUser')
-    vi.mocked(api.getUser).mockRejectedValue(new Error('Network error'))
+    mockGetUser.mockRejectedValue(new Error('Network error'))
 
     // Act
     render(<App />)
@@ -127,7 +132,7 @@ describe('App', () => {
     render(<App />)
 
     // Type valid name
-    const nameInput = screen.getByLabelText(/username/i)
+    const nameInput = screen.getByLabelText(/(username|benutzername)/i)
     fireEvent.change(nameInput, { target: { value: 'Alice' } })
 
     // Submit form
@@ -136,7 +141,7 @@ describe('App', () => {
 
     // Should call getUser and save to localStorage
     await waitFor(() => {
-      expect(api.getUser).toHaveBeenCalledWith('Alice')
+      expect(mockGetUser).toHaveBeenCalledWith('Alice')
       expect(localStorageMock.setItem).toHaveBeenCalledWith('trainer_name', 'Alice')
     })
 
@@ -184,7 +189,7 @@ describe('App', () => {
     // Initially shows HexBinTrainer
     expect(screen.getByRole('region', { name: /hex\/binary trainer/i })).toBeInTheDocument()
 
-    // Click Unicode trainer nav (use role=button to avoid matching leaderboard heading)
+    // Click Unicode trainer nav
     const unicodeButton = screen.getByRole('button', { name: 'Unicode trainer' })
     fireEvent.click(unicodeButton)
 
@@ -193,7 +198,7 @@ describe('App', () => {
       expect(screen.getByRole('region', { name: /unicode trainer/i })).toBeInTheDocument()
     })
 
-    // Click Leaderboard nav (use role=button to avoid matching leaderboard heading)
+    // Click Leaderboard nav
     const leaderboardButton = screen.getByRole('button', { name: 'Leaderboard' })
     fireEvent.click(leaderboardButton)
 
@@ -239,7 +244,7 @@ describe('App', () => {
 
     // Should also render leaderboard (getLeaderboard called)
     await waitFor(() => {
-      expect(api.getLeaderboard).toHaveBeenCalled()
+      expect(mockGetLeaderboard).toHaveBeenCalled()
     })
 
     // Should show leaderboard heading

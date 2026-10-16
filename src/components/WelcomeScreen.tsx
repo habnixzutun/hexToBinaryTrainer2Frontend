@@ -71,7 +71,7 @@ export default function WelcomeScreen({ onJoin }: Props) {
                 <form onSubmit={handleSubmit} className="space-y-3" aria-label="Login form">
                     <div className="border-b border-outline focus-within:border-accent transition-colors">
                         <label htmlFor="username-input" className="sr-only">
-                            Username
+                            {typeof t.srUsername === 'string' ? t.srUsername : 'Username'}
                         </label>
                         <input
                             id="username-input"
