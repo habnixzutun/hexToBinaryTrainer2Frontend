@@ -101,7 +101,7 @@ export default function WelcomeScreen({ onJoin }: Props) {
                         whileHover={{ scale: isNameValid ? 1.02 : 1 }}
                         whileTap={{ scale: isNameValid ? 0.98 : 1 }}
                         aria-label={t.startButton}
-                        className="w-full flex items-center justify-center gap-2 bg-accent hover:bg-accent-bright disabled:bg-surface-raised disabled:text-on-surface-subtle text-white font-semibold py-2 rounded text-sm transition-all mt-4"
+                        className="w-full flex items-center justify-center gap-2 bg-emerald-800 hover:bg-emerald-700 disabled:bg-surface-raised disabled:text-on-surface-subtle text-emerald-100 font-semibold py-2 rounded text-sm transition-all mt-4"
                     >
                         <span>{t.startButton}</span>
                         <ArrowRight strokeWidth={2} size={13} aria-hidden="true" />
