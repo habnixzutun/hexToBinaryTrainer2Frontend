@@ -248,7 +248,7 @@ export default function HexBinTrainer({ user, onUpdate, activeMode: externalMode
                                 ? 'text-on-surface-subtle bg-surface-raised cursor-not-allowed'
                                 : feedback === 'wrong'
                                     ? 'text-white bg-error-text hover:bg-error-text/90 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-error-text focus-visible:ring-offset-2 focus-visible:ring-offset-surface'
-                                    : 'text-white bg-accent hover:bg-accent-bright active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface'
+                                    : 'text-emerald-100 bg-emerald-800 hover:bg-emerald-700 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface'
                         }`}
                     >
                         {feedback === 'wrong'

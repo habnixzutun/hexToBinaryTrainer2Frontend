@@ -24,7 +24,7 @@ export default function BitByteSelector({ options, value, onChange, label, singu
                         aria-pressed={value === b}
                         className={`flex-1 h-8 rounded text-xs font-semibold transition-colors ${
                             value === b
-                                ? 'bg-accent text-white'
+                                ? 'bg-emerald-800 text-emerald-100'
                                 : 'bg-surface-alt text-on-surface-faint hover:text-on-surface-dim'
                         }`}
                     >
