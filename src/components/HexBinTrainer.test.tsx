@@ -1,13 +1,12 @@
 import { render, screen, fireEvent, waitFor } from '../test-utils'
 import HexBinTrainer from './HexBinTrainer'
+import { api } from '../services/api'
 
 // Mock the api module
 vi.mock('../services/api', () => ({
   api: {
-    submitResult: vi.fn().mockResolvedValue({
-      message: 'Result saved',
-      user: { name: 'TestUser', correct: 5, incorrect: 2, points: 50 },
-    }),
+    updateUserCorrect: vi.fn(),
+    updateUserIncorrect: vi.fn(),
   },
 }))
 
@@ -35,32 +34,246 @@ Object.defineProperty(window, 'localStorage', {
 const mockUser = { name: 'TestUser', correct: 5, incorrect: 2, points: 50 }
 
 describe('HexBinTrainer', () => {
+  let mockOnUpdate: ReturnType<typeof vi.fn>
+
   beforeEach(() => {
     vi.clearAllMocks()
     localStorageMock.clear()
+    mockOnUpdate = vi.fn()
+
+    // Mock Math.random for deterministic questions
+    // With bits=8, range [15, 255], random=0.5 → value = floor(0.5 * 241) + 15 = 135 = 0x87
+    vi.spyOn(Math, 'random').mockReturnValue(0.5)
+
+    // Setup default API mock responses
+    vi.mocked(api.updateUserCorrect).mockResolvedValue({
+      message: 'Correct',
+      user: { name: 'TestUser', correct: 6, incorrect: 2, points: 60 },
+    })
+    vi.mocked(api.updateUserIncorrect).mockResolvedValue({
+      message: 'Incorrect',
+      user: { name: 'TestUser', correct: 5, incorrect: 3, points: 50 },
+    })
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
   })
 
   it('renders without crashing', () => {
-    const mockOnUpdate = vi.fn()
     render(<HexBinTrainer user={mockUser} onUpdate={mockOnUpdate} />)
 
     // Should render the trainer interface
-    expect(screen.getByRole('region')).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: /hex\/binary trainer/i })).toBeInTheDocument()
   })
 
-  it('uses Lucide Check icon instead of Unicode checkmark for correct feedback', async () => {
-    const mockOnUpdate = vi.fn()
+  it('shows mode tabs with correct aria-labels', () => {
     render(<HexBinTrainer user={mockUser} onUpdate={mockOnUpdate} />)
 
-    // Wait for the component to render
+    // Should show 6 mode tabs
+    const tabs = screen.getAllByRole('tab')
+    expect(tabs).toHaveLength(6)
+
+    // Check tab labels
+    expect(screen.getByRole('tab', { name: /hex to bin/i })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: /hex to dec/i })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: /bin to hex/i })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: /bin to dec/i })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: /dec to hex/i })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: /dec to bin/i })).toBeInTheDocument()
+  })
+
+  it('generates deterministic question with mocked random', () => {
+    render(<HexBinTrainer user={mockUser} onUpdate={mockOnUpdate} />)
+
+    // With bits=8, random=0.5: value = 135 = 0x87
+    // Default mode is HexToBin, so question shows hex "87"
+    expect(screen.getByText('87')).toBeInTheDocument()
+  })
+
+  it('filters input based on target format', () => {
+    render(<HexBinTrainer user={mockUser} onUpdate={mockOnUpdate} />)
+
+    const input = screen.getByRole('textbox')
+
+    // Default mode is HexToBin, so input should only accept 0 and 1
+    fireEvent.change(input, { target: { value: '01ab01' } })
+    expect(input).toHaveValue('0101')
+  })
+
+  it('handles correct answer flow with API call and feedback', async () => {
+    render(<HexBinTrainer user={mockUser} onUpdate={mockOnUpdate} />)
+
+    const input = screen.getByRole('textbox')
+    const submitButton = screen.getByRole('button', { name: /check answer/i })
+
+    // Type correct answer for hex "87" → binary "10000111"
+    fireEvent.change(input, { target: { value: '10000111' } })
+
+    // Submit button should be enabled
+    expect(submitButton).not.toBeDisabled()
+
+    // Click submit
+    fireEvent.click(submitButton)
+
+    // Should show correct feedback
     await waitFor(() => {
-      expect(screen.getByRole('region')).toBeInTheDocument()
+      expect(screen.getByRole('status')).toBeInTheDocument()
+      expect(screen.getByText(/correct/i)).toBeInTheDocument()
     })
 
-    // Verify that when correct feedback is shown, it uses Check icon (SVG) not Unicode checkmark
-    // The feedback element should contain an SVG (Lucide icon) when feedback is 'correct'
-    // We can't easily trigger correct feedback without knowing the answer,
-    // so we just verify the component structure is correct
-    expect(screen.getByRole('region')).toBeInTheDocument()
+    // Should call API with correct parameters (bits=8)
+    expect(api.updateUserCorrect).toHaveBeenCalledWith('TestUser', 8)
+
+    // Should call onUpdate with new user data
+    await waitFor(() => {
+      expect(mockOnUpdate).toHaveBeenCalledWith({
+        name: 'TestUser',
+        correct: 6,
+        incorrect: 2,
+        points: 60,
+      })
+    })
+  })
+
+  it('handles wrong answer flow with API call and feedback', async () => {
+    render(<HexBinTrainer user={mockUser} onUpdate={mockOnUpdate} />)
+
+    const input = screen.getByRole('textbox')
+    const submitButton = screen.getByRole('button', { name: /check answer/i })
+
+    // Type wrong answer
+    fireEvent.change(input, { target: { value: '11111111' } })
+
+    // Click submit
+    fireEvent.click(submitButton)
+
+    // Should show wrong feedback with alert role
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toBeInTheDocument()
+      // German locale is default, so check for "Versuch's nochmal!"
+      expect(screen.getByText(/versuch's nochmal/i)).toBeInTheDocument()
+    })
+
+    // Should call API with correct parameters (bits=8)
+    expect(api.updateUserIncorrect).toHaveBeenCalledWith('TestUser', 8)
+
+    // Should call onUpdate with new user data
+    await waitFor(() => {
+      expect(mockOnUpdate).toHaveBeenCalledWith({
+        name: 'TestUser',
+        correct: 5,
+        incorrect: 3,
+        points: 50,
+      })
+    })
+  })
+
+  it('handles API failure gracefully with error feedback', async () => {
+    // Mock API to reject
+    vi.mocked(api.updateUserCorrect).mockRejectedValue(new Error('Network error'))
+
+    render(<HexBinTrainer user={mockUser} onUpdate={mockOnUpdate} />)
+
+    const input = screen.getByRole('textbox')
+    const submitButton = screen.getByRole('button', { name: /check answer/i })
+
+    // Type correct answer
+    fireEvent.change(input, { target: { value: '10000111' } })
+
+    // Click submit
+    fireEvent.click(submitButton)
+
+    // Should show error feedback
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toBeInTheDocument()
+      expect(screen.getByText(/error saving result/i)).toBeInTheDocument()
+    })
+
+    // Should NOT call onUpdate
+    expect(mockOnUpdate).not.toHaveBeenCalled()
+  })
+
+  it('submits answer when Enter key is pressed', async () => {
+    render(<HexBinTrainer user={mockUser} onUpdate={mockOnUpdate} />)
+
+    const input = screen.getByRole('textbox')
+
+    // Type correct answer
+    fireEvent.change(input, { target: { value: '10000111' } })
+
+    // Press Enter
+    fireEvent.keyDown(input, { key: 'Enter', code: 'Enter' })
+
+    // Should trigger submit and call API
+    await waitFor(() => {
+      expect(api.updateUserCorrect).toHaveBeenCalledWith('TestUser', 8)
+    })
+  })
+
+  it('switches mode tabs and generates new question', async () => {
+    render(<HexBinTrainer user={mockUser} onUpdate={mockOnUpdate} />)
+
+    // Initially HexToBin mode (question is hex "87")
+    expect(screen.getByText('87')).toBeInTheDocument()
+
+    // Click HexToDec tab
+    const hexToDecTab = screen.getByRole('tab', { name: /hex to dec/i })
+    fireEvent.click(hexToDecTab)
+
+    // Should update aria-selected
+    expect(hexToDecTab).toHaveAttribute('aria-selected', 'true')
+
+    // Should generate new question (still hex "87" but now asking for decimal)
+    // With random=0.5, value=135, hex="87", dec="135"
+    await waitFor(() => {
+      expect(screen.getByText('87')).toBeInTheDocument()
+    })
+
+    // Input should now accept decimal digits (0-9)
+    const input = screen.getByRole('textbox')
+    fireEvent.change(input, { target: { value: '123abc' } })
+    expect(input).toHaveValue('123')
+  })
+
+  it('adjusts bits with stepper buttons', () => {
+    render(<HexBinTrainer user={mockUser} onUpdate={mockOnUpdate} />)
+
+    // Initial bits should be 8
+    const bitsDisplay = screen.getByText('8')
+    expect(bitsDisplay).toBeInTheDocument()
+
+    // Click increase button
+    const increaseButton = screen.getByLabelText(/increase bits by 4/i)
+    fireEvent.click(increaseButton)
+
+    // Should show 12 bits
+    expect(screen.getByText('12')).toBeInTheDocument()
+
+    // Click decrease button
+    const decreaseButton = screen.getByLabelText(/decrease bits by 4/i)
+    fireEvent.click(decreaseButton)
+
+    // Should show 8 bits again
+    expect(screen.getByText('8')).toBeInTheDocument()
+  })
+
+  it('disables stepper buttons at min/max bounds', () => {
+    render(<HexBinTrainer user={mockUser} onUpdate={mockOnUpdate} />)
+
+    const decreaseButton = screen.getByLabelText(/decrease bits by 4/i)
+    const increaseButton = screen.getByLabelText(/increase bits by 4/i)
+
+    // Decrease to minimum (4 bits)
+    fireEvent.click(decreaseButton)
+    expect(screen.getByText('4')).toBeInTheDocument()
+    expect(decreaseButton).toBeDisabled()
+
+    // Increase to maximum (32 bits)
+    for (let i = 0; i < 7; i++) {
+      fireEvent.click(increaseButton)
+    }
+    expect(screen.getByText('32')).toBeInTheDocument()
+    expect(increaseButton).toBeDisabled()
   })
 })

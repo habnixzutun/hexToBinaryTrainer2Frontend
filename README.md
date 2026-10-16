@@ -19,6 +19,18 @@ If you are developing a production application, we recommend using TypeScript wi
 
 ## Hex To Binary Trainer
 
+### Frontend Testing
+
+Tests laufen mit Vitest + Testing Library (jsdom). Die Coverage-Schwelle liegt bei **80 %** (Lines, Functions, Branches, Statements) und wird im CI/lokal erzwungen.
+
+```bash
+npm test                # alle Tests einmal ausführen
+npm run test:watch      # Watch-Modus
+npm run test:coverage   # Tests + Coverage-Report (Schwelle 80 %)
+```
+
+Aktueller Stand: **61 Tests in 9 Dateien**, Coverage ~93 % Statements / ~91 % Branches.
+
 ### Backend Deployment
 
 Das Backend (`hexToBinaryTrainer2Backend`) läuft als Docker Compose Stack auf dem Server:
