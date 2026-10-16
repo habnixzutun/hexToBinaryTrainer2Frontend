@@ -1,5 +1,5 @@
-import { render, screen, fireEvent } from '../test-utils'
-import Sidebar from './Sidebar'
+import { render, screen, fireEvent } from '../../src/test-utils.tsx'
+import Sidebar from '../../src/components/Sidebar.tsx'
 
 // Mock localStorage
 const localStorageMock = (() => {

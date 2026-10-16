@@ -1,5 +1,5 @@
-import { render, screen, fireEvent } from '../test-utils'
-import WelcomeScreen from './WelcomeScreen'
+import { render, screen, fireEvent } from '../../src/test-utils.tsx'
+import WelcomeScreen from '../../src/components/WelcomeScreen.tsx'
 
 // Mock localStorage
 const localStorageMock = (() => {

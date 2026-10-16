@@ -29,7 +29,7 @@ describe('main.tsx', () => {
     document.body.innerHTML = '<div id="other"></div>'
 
     // Act & Assert: should throw error when importing main
-    await expect(import('./main')).rejects.toThrow('Failed to find the root element')
+    await expect(import('../src/main.tsx')).rejects.toThrow('Failed to find the root element')
   })
 
   it('renders App with providers when root element exists', async () => {
@@ -37,7 +37,7 @@ describe('main.tsx', () => {
     document.body.innerHTML = '<div id="root"></div>'
 
     // Act: import main (which executes the module code)
-    await import('./main')
+    await import('../src/main.tsx')
 
     // Assert: should call createRoot with root element
     const rootElement = document.getElementById('root')

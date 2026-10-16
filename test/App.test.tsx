@@ -1,6 +1,6 @@
-import { render, screen, fireEvent, waitFor } from './test-utils'
-import App from './App'
-import { api } from './services/api'
+import { render, screen, fireEvent, waitFor } from '../src/test-utils.tsx'
+import App from '../src/App.tsx'
+import { api } from '../src/services/api.ts'
 
 // Mock the api module
 vi.mock('./services/api', () => ({

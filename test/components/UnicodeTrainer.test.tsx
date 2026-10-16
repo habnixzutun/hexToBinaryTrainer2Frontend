@@ -1,6 +1,6 @@
-import { render, screen, fireEvent, waitFor } from '../test-utils'
-import UnicodeTrainer from './UnicodeTrainer'
-import { api } from '../services/api'
+import { render, screen, fireEvent, waitFor } from '../../src/test-utils.tsx'
+import UnicodeTrainer from '../../src/components/UnicodeTrainer.tsx'
+import { api } from '../../src/services/api.ts'
 
 // Mock the api module
 vi.mock('../services/api', () => ({

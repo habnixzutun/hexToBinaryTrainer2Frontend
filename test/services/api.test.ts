@@ -1,4 +1,4 @@
-import { api } from './api'
+import { api } from '../../src/services/api.ts'
 
 // Mock global fetch
 const mockFetch = vi.fn()

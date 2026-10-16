@@ -1,5 +1,5 @@
-import { render, screen, waitFor } from '../test-utils'
-import Leaderboard from './Leaderboard'
+import { render, screen, waitFor } from '../../src/test-utils.tsx'
+import Leaderboard from '../../src/components/Leaderboard.tsx'
 
 // Mock the api module
 vi.mock('../services/api', () => ({
