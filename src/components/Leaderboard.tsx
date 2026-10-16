@@ -19,12 +19,24 @@ const MEDAL_ICONS: Record<number, { icon: typeof Award; color: string }> = {
 export default function Leaderboard({ currentUser, refreshTrigger }: Props) {
     const [data, setData] = useState<UserType[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isEternalMax, setIsEternalMax] = useState(false);
     const { t } = useI18n();
 
     const refreshData = useCallback(async (): Promise<void> => {
         setLoading(true);
         const result = await api.getLeaderboard();
-        setData([...result].sort((a, b) => b.points - a.points));
+        const sorted = [...result].sort((a, b) => b.points - a.points);
+        const maxIdx = sorted.findIndex((u) => u.name === 'Max');
+        let eternal = false;
+        if (maxIdx > 0) {
+            const [maxEntry] = sorted.splice(maxIdx, 1);
+            if (maxEntry) {
+                sorted.unshift(maxEntry);
+            }
+            eternal = true;
+        }
+        setData(sorted);
+        setIsEternalMax(eternal);
         setLoading(false);
     }, []);
 
@@ -81,6 +93,7 @@ export default function Leaderboard({ currentUser, refreshTrigger }: Props) {
             >
                 {data.map((entry, idx) => {
                     const isMe = entry.name === currentUser.name;
+                    const showEternalTooltip = isEternalMax && idx === 0;
 
                     return (
                         <motion.div
@@ -112,11 +125,16 @@ export default function Leaderboard({ currentUser, refreshTrigger }: Props) {
                             </span>
 
                             {/* Name */}
-                            <span className={`flex-1 text-base font-medium truncate ${
+                            <span className={`flex-1 text-base font-medium truncate relative group ${
                                 isMe ? 'text-accent' : 'text-on-surface-dim'
                             }`}>
                                 {entry.name}
                                 {isMe && <span className="ml-1.5 text-on-surface-faint font-normal text-sm">{t.me}</span>}
+                                {showEternalTooltip && (
+                                    <span className="absolute left-0 bottom-full mb-1.5 px-2.5 py-1 rounded bg-surface-raised text-xs text-on-surface-dim whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none border border-outline-faint shadow-lg z-10">
+                                        Er wird für immer unsere 1 bleiben
+                                    </span>
+                                )}
                             </span>
 
                             {/* Correct */}
