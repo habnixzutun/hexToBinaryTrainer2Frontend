@@ -4,7 +4,7 @@ import { Terminal, Hash, Binary, LogOut, Globe, Trophy, Sun, Moon, ChevronDown }
 import { useI18n } from '../i18n/useI18n.ts';
 import { type Locale } from '../i18n/translations.ts';
 import { useTheme } from '../theme/useTheme.ts';
-import { type UserType } from '../services/api.ts';
+import { useAuth } from '../contexts/AuthContext.tsx';
 import { type ActiveApp, type HexBinMode } from '../App.tsx';
 import BitByteSelector from './BitByteSelector.tsx';
 
@@ -15,7 +15,6 @@ const BYTE_OPTIONS = [1, 2, 3, 4];
 interface Props {
     activeApp: ActiveApp;
     setActiveApp: (app: ActiveApp) => void;
-    user: UserType;
     onLogout: () => void;
     isMobileMenuOpen: boolean;
     setIsMobileMenuOpen: (open: boolean) => void;
@@ -32,7 +31,6 @@ interface Props {
 export default function Sidebar({
     activeApp,
     setActiveApp,
-    user,
     onLogout,
     isMobileMenuOpen,
     setIsMobileMenuOpen,
@@ -45,6 +43,7 @@ export default function Sidebar({
     bytes,
     onBytesChange,
 }: Props) {
+    const { user } = useAuth();
     const { t, locale, setLocale } = useI18n();
     const { theme, toggleTheme } = useTheme();
     const [isHexExpanded, setIsHexExpanded] = useState(true);
@@ -230,21 +229,21 @@ export default function Sidebar({
                     {/* User info */}
                     <div className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-accent shrink-0" role="status" aria-label="Online" />
-                        <span className="text-base text-on-surface-dim font-medium truncate">{user.name}</span>
+                        <span className="text-base text-on-surface-dim font-medium truncate">{user?.username || 'User'}</span>
                     </div>
 
                     {/* Stats row */}
                     <div className="grid grid-cols-3 gap-1 text-center" aria-label="Your statistics">
                         <div>
-                            <div className="text-lg font-bold text-accent">{user.correct}</div>
+                            <div className="text-lg font-bold text-accent">{user?.correct_count || 0}</div>
                             <div className="text-xs text-on-surface-faint uppercase tracking-wide" aria-label="Correct answers">OK</div>
                         </div>
                         <div>
-                            <div className="text-lg font-bold text-error-text">{user.incorrect}</div>
+                            <div className="text-lg font-bold text-error-text">{user?.incorrect_count || 0}</div>
                             <div className="text-xs text-on-surface-faint uppercase tracking-wide" aria-label="Wrong answers">ERR</div>
                         </div>
                         <div>
-                            <div className="text-lg font-bold text-points">{user.points}</div>
+                            <div className="text-lg font-bold text-points">{user?.points || 0}</div>
                             <div className="text-xs text-on-surface-faint uppercase tracking-wide" aria-label="Points">PTS</div>
                         </div>
                     </div>

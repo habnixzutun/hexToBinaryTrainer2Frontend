@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, X, ArrowRight } from 'lucide-react';
-import { api, type UserType } from '../services/api.ts';
+import { gameApi } from '../services/api.ts';
 import { useI18n } from '../i18n/useI18n.ts';
 import AppFooter from './AppFooter.tsx';
 
@@ -10,14 +10,13 @@ type Mode = 'HexToBin' | 'HexToDec' | 'BinToHex' | 'BinToDec' | 'DecToHex' | 'De
 const BIT_OPTIONS = [4, 8, 16, 32];
 
 interface Props {
-    user: UserType;
-    onUpdate: (user: UserType) => void;
+    onUpdate: () => void;
     activeMode?: Mode;
     bits?: number;
     onBitsChange?: (bits: number) => void;
 }
 
-export default function HexBinTrainer({ user, onUpdate, activeMode: externalMode, bits: externalBits, onBitsChange }: Props) {
+export default function HexBinTrainer({ onUpdate, activeMode: externalMode, bits: externalBits, onBitsChange }: Props) {
     const { t } = useI18n();
 
     const [internalMode] = useState<Mode>('HexToBin');
@@ -78,13 +77,13 @@ export default function HexBinTrainer({ user, onUpdate, activeMode: externalMode
         try {
             if (isCorrect) {
                 setFeedback('correct');
-                const res = await api.updateUserCorrect(user.name, bits);
-                onUpdate(res.user);
+                await gameApi.submitCorrect(bits);
+                onUpdate();
                 setTimeout(generateQuestion, 600);
             } else {
                 setFeedback('wrong');
-                const res = await api.updateUserIncorrect(user.name, bits);
-                onUpdate(res.user);
+                await gameApi.submitIncorrect(bits);
+                onUpdate();
                 setTimeout(() => setFeedback('none'), 1000);
             }
         } catch (e: unknown) {

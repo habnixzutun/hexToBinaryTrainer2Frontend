@@ -1,11 +1,11 @@
 import { useEffect, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Zap, Award, Info } from 'lucide-react';
-import { api, type UserType } from '../services/api.ts';
+import { gameApi, type LeaderboardEntry } from '../services/api.ts';
+import { useAuth } from '../contexts/AuthContext.tsx';
 import { useI18n } from '../i18n/useI18n.ts';
 
 interface Props {
-    currentUser: UserType;
     refreshTrigger: number;
 }
 
@@ -16,17 +16,18 @@ const MEDAL_ICONS: Record<number, { icon: typeof Award; color: string }> = {
     2: { icon: Award, color: 'text-amber-600' },
 };
 
-export default function Leaderboard({ currentUser, refreshTrigger }: Props) {
-    const [data, setData] = useState<UserType[]>([]);
+export default function Leaderboard({ refreshTrigger }: Props) {
+    const { user } = useAuth();
+    const [data, setData] = useState<LeaderboardEntry[]>([]);
     const [loading, setLoading] = useState(true);
     const [isEternalMax, setIsEternalMax] = useState(false);
     const { t } = useI18n();
 
     const refreshData = useCallback(async (): Promise<void> => {
         setLoading(true);
-        const result = await api.getLeaderboard();
+        const result = await gameApi.getLeaderboard();
         const sorted = [...result].sort((a, b) => b.points - a.points);
-        const maxIdx = sorted.findIndex((u) => u.name === 'Max');
+        const maxIdx = sorted.findIndex((u) => u.username === 'Max');
         let eternal = false;
         if (maxIdx > 0) {
             const [maxEntry] = sorted.splice(maxIdx, 1);
@@ -92,17 +93,17 @@ export default function Leaderboard({ currentUser, refreshTrigger }: Props) {
                 aria-atomic="false"
             >
                 {data.map((entry, idx) => {
-                    const isMe = entry.name === currentUser.name;
+                    const isMe = entry.username === user?.username;
                     const showEternalTooltip = isEternalMax && idx === 0;
 
                     return (
                         <motion.div
-                            key={entry.name}
+                            key={entry.user_id}
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             transition={{ delay: Math.min(idx * 0.04, 0.3) }}
                             role="listitem"
-                            aria-label={`Rank ${idx + 1}: ${entry.name}, ${entry.points} points`}
+                            aria-label={`Rank ${idx + 1}: ${entry.username}, ${entry.points} points`}
                             className={`flex items-center px-5 py-3.5 border-b border-outline-faint transition-colors ${
                                 isMe ? 'bg-accent-muted' : 'hover:bg-surface-alt'
                             }`}
@@ -128,7 +129,7 @@ export default function Leaderboard({ currentUser, refreshTrigger }: Props) {
                             <span className={`flex-1 text-base font-medium truncate ${
                                 isMe ? 'text-accent' : 'text-on-surface-dim'
                             }`}>
-                                {entry.name}
+                                {entry.username}
                                 {isMe && <span className="ml-1.5 text-on-surface-faint font-normal text-sm">{t.me}</span>}
                                 {showEternalTooltip && (
                                     <span title="Er wird für immer unsere 1 bleiben" className="ml-1.5 inline-flex align-middle">
@@ -138,13 +139,13 @@ export default function Leaderboard({ currentUser, refreshTrigger }: Props) {
                             </span>
 
                             {/* Correct */}
-                            <span className="w-10 text-sm font-mono text-on-surface-faint text-right" aria-label={`${entry.correct} correct`}>
-                                {entry.correct}
+                            <span className="w-10 text-sm font-mono text-on-surface-faint text-right" aria-label={`${entry.correct_count} correct`}>
+                                {entry.correct_count}
                             </span>
 
                             {/* Incorrect */}
-                            <span className="w-10 text-sm font-mono text-on-surface-faint text-right" aria-label={`${entry.incorrect} wrong`}>
-                                {entry.incorrect}
+                            <span className="w-10 text-sm font-mono text-on-surface-faint text-right" aria-label={`${entry.incorrect_count} wrong`}>
+                                {entry.incorrect_count}
                             </span>
 
                             {/* Points */}
