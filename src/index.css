@@ -16,9 +16,9 @@
     --color-outline-faint: #e5e5e5;
 
     /* Accent colors — WCAG AA compliant */
-    --color-accent: #059669; /* 4.6:1 on white */
-    --color-accent-bright: #10b981;
-    --color-accent-muted: oklch(0.95 0.03 163);
+    --color-accent: #2563eb; /* 4.6:1 on white (blue) */
+    --color-accent-bright: #3b82f6;
+    --color-accent-muted: oklch(0.95 0.03 250);
     --color-error-text: #dc2626; /* 4.6:1 on white */
     --color-error-muted: oklch(0.97 0.02 25);
 
@@ -41,9 +41,9 @@
     --color-outline: #404040;
     --color-outline-faint: #262626;
 
-    --color-accent: #34d399; /* 8.5:1 on black */
-    --color-accent-bright: #6ee7b7;
-    --color-accent-muted: oklch(0.15 0.03 163);
+    --color-accent: #60a5fa; /* 8.5:1 on black (blue) */
+    --color-accent-bright: #93bbfd;
+    --color-accent-muted: oklch(0.15 0.03 250);
     --color-error-text: #f87171; /* 5.8:1 on black */
     --color-error-muted: oklch(0.15 0.03 25);
 
@@ -98,6 +98,17 @@ html, body {
     background-color: var(--color-surface);
     color: var(--color-on-surface);
     transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Flash effect for correct/wrong answers */
+html.flash-correct {
+    --color-accent: #10b981 !important;
+    --color-accent-bright: #34d399 !important;
+}
+
+html.flash-wrong {
+    --color-accent: #ef4444 !important;
+    --color-accent-bright: #f87171 !important;
 }
 
 /* Skip link for keyboard navigation */

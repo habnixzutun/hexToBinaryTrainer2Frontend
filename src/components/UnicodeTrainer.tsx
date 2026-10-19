@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Check, X, ArrowRight } from 'lucide-react';
 import { gameApi } from '../services/api.ts';
 import { useI18n } from '../i18n/useI18n.ts';
+import { flashAccent } from '../utils/flashAccent.ts';
 import AppFooter from './AppFooter.tsx';
 
 interface Props {
@@ -61,11 +62,13 @@ export default function UnicodeTrainer({ onUpdate, bytes: externalBytes, onBytes
         try {
             if (isCorrect) {
                 setFeedback('correct');
+                flashAccent('correct');
                 await gameApi.submitCorrect(bytes * 8);
                 onUpdate();
                 setTimeout(generateQuestion, 600);
             } else {
                 setFeedback('wrong');
+                flashAccent('wrong');
                 await gameApi.submitIncorrect(bytes * 8);
                 onUpdate();
                 setTimeout(() => setFeedback('none'), 1000);

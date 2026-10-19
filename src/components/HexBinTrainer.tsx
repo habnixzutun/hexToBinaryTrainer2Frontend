@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Check, X, ArrowRight } from 'lucide-react';
 import { gameApi } from '../services/api.ts';
 import { useI18n } from '../i18n/useI18n.ts';
+import { flashAccent } from '../utils/flashAccent.ts';
 import AppFooter from './AppFooter.tsx';
 
 type Mode = 'HexToBin' | 'HexToDec' | 'BinToHex' | 'BinToDec' | 'DecToHex' | 'DecToBin';
@@ -77,11 +78,13 @@ export default function HexBinTrainer({ onUpdate, activeMode: externalMode, bits
         try {
             if (isCorrect) {
                 setFeedback('correct');
+                flashAccent('correct');
                 await gameApi.submitCorrect(bits);
                 onUpdate();
                 setTimeout(generateQuestion, 600);
             } else {
                 setFeedback('wrong');
+                flashAccent('wrong');
                 await gameApi.submitIncorrect(bits);
                 onUpdate();
                 setTimeout(() => setFeedback('none'), 1000);
