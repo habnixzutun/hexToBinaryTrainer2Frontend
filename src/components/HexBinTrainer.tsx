@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, X, ArrowRight } from 'lucide-react';
-import { api, type UserType } from '../services/api.ts';
+import { gameApi } from '../services/api.ts';
 import { useI18n } from '../i18n/useI18n.ts';
+import { flashAccent } from '../utils/flashAccent.ts';
 import AppFooter from './AppFooter.tsx';
 
 type Mode = 'HexToBin' | 'HexToDec' | 'BinToHex' | 'BinToDec' | 'DecToHex' | 'DecToBin';
@@ -10,14 +11,13 @@ type Mode = 'HexToBin' | 'HexToDec' | 'BinToHex' | 'BinToDec' | 'DecToHex' | 'De
 const BIT_OPTIONS = [4, 8, 16, 32];
 
 interface Props {
-    user: UserType;
-    onUpdate: (user: UserType) => void;
+    onUpdate: () => void;
     activeMode?: Mode;
     bits?: number;
     onBitsChange?: (bits: number) => void;
 }
 
-export default function HexBinTrainer({ user, onUpdate, activeMode: externalMode, bits: externalBits, onBitsChange }: Props) {
+export default function HexBinTrainer({ onUpdate, activeMode: externalMode, bits: externalBits, onBitsChange }: Props) {
     const { t } = useI18n();
 
     const [internalMode] = useState<Mode>('HexToBin');
@@ -78,13 +78,15 @@ export default function HexBinTrainer({ user, onUpdate, activeMode: externalMode
         try {
             if (isCorrect) {
                 setFeedback('correct');
-                const res = await api.updateUserCorrect(user.name, bits);
-                onUpdate(res.user);
+                flashAccent('correct');
+                await gameApi.submitCorrect(bits);
+                onUpdate();
                 setTimeout(generateQuestion, 600);
             } else {
                 setFeedback('wrong');
-                const res = await api.updateUserIncorrect(user.name, bits);
-                onUpdate(res.user);
+                flashAccent('wrong');
+                await gameApi.submitIncorrect(bits);
+                onUpdate();
                 setTimeout(() => setFeedback('none'), 1000);
             }
         } catch (e: unknown) {
@@ -248,7 +250,7 @@ export default function HexBinTrainer({ user, onUpdate, activeMode: externalMode
                                 ? 'text-on-surface-subtle bg-surface-raised cursor-not-allowed'
                                 : feedback === 'wrong'
                                     ? 'text-white bg-error-text hover:bg-error-text/90 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-error-text focus-visible:ring-offset-2 focus-visible:ring-offset-surface'
-                                    : 'text-emerald-100 bg-emerald-800 hover:bg-emerald-700 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface'
+                                    : 'text-accent-muted bg-accent hover:bg-accent-bright active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface'
                         }`}
                     >
                         {feedback === 'wrong'

@@ -1,18 +1,18 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, X, ArrowRight } from 'lucide-react';
-import { api, type UserType } from '../services/api.ts';
+import { gameApi } from '../services/api.ts';
 import { useI18n } from '../i18n/useI18n.ts';
+import { flashAccent } from '../utils/flashAccent.ts';
 import AppFooter from './AppFooter.tsx';
 
 interface Props {
-    user: UserType;
-    onUpdate: (user: UserType) => void;
+    onUpdate: () => void;
     bytes?: number;
     onBytesChange?: (bytes: number) => void;
 }
 
-export default function UnicodeTrainer({ user, onUpdate, bytes: externalBytes, onBytesChange }: Props) {
+export default function UnicodeTrainer({ onUpdate, bytes: externalBytes, onBytesChange }: Props) {
     const [internalBytes, setInternalBytes] = useState(1);
     const bytes = externalBytes ?? internalBytes;
     const setBytes = onBytesChange ?? setInternalBytes;
@@ -62,13 +62,15 @@ export default function UnicodeTrainer({ user, onUpdate, bytes: externalBytes, o
         try {
             if (isCorrect) {
                 setFeedback('correct');
-                const res = await api.updateUserCorrect(user.name, bytes * 8);
-                onUpdate(res.user);
+                flashAccent('correct');
+                await gameApi.submitCorrect(bytes * 8);
+                onUpdate();
                 setTimeout(generateQuestion, 600);
             } else {
                 setFeedback('wrong');
-                const res = await api.updateUserIncorrect(user.name, bytes * 8);
-                onUpdate(res.user);
+                flashAccent('wrong');
+                await gameApi.submitIncorrect(bytes * 8);
+                onUpdate();
                 setTimeout(() => setFeedback('none'), 1000);
             }
         } catch (e: unknown) {

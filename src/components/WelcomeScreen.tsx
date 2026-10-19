@@ -1,16 +1,32 @@
+/**
+ * Welcome Screen: Authentication gate with login/register/verify flows.
+ *
+ * Features:
+ * - Toggle between Login and Register forms
+ * - Shows VerifyEmailScreen after successful registration
+ * - Theme + Language toggles preserved
+ * - Error handling and loading states
+ */
+
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Terminal, ArrowRight, Globe, Sun, Moon } from 'lucide-react';
+import { Terminal, Globe, Sun, Moon } from 'lucide-react';
 import { useI18n } from '../i18n/useI18n.ts';
 import { type Locale } from '../i18n/translations.ts';
 import { useTheme } from '../theme/useTheme.ts';
+import LoginForm from './auth/LoginForm.tsx';
+import RegisterForm from './auth/RegisterForm.tsx';
+import VerifyEmailScreen from './auth/VerifyEmailScreen.tsx';
 
-interface Props {
-    onJoin: (name: string) => void;
-}
+// ==================== Types ====================
 
-export default function WelcomeScreen({ onJoin }: Props) {
-    const [name, setName] = useState('');
+type AuthView = 'login' | 'register' | 'verify-email';
+
+// ==================== Component ====================
+
+export default function WelcomeScreen(): JSX.Element {
+    const [view, setView] = useState<AuthView>('login');
+    const [registeredEmail, setRegisteredEmail] = useState<string>('');
     const { t, locale, setLocale } = useI18n();
     const { theme, toggleTheme } = useTheme();
 
@@ -19,12 +35,15 @@ export default function WelcomeScreen({ onJoin }: Props) {
         setLocale(next);
     };
 
-    const handleSubmit = (e: React.FormEvent): void => {
-        e.preventDefault();
-        if (name.trim().length >= 2) onJoin(name.trim());
+    const handleRegisterSuccess = (email: string): void => {
+        setRegisteredEmail(email);
+        setView('verify-email');
     };
 
-    const isNameValid = name.trim().length >= 2;
+    const handleBackToLogin = (): void => {
+        setView('login');
+        setRegisteredEmail('');
+    };
 
     return (
         <div className="min-h-screen bg-surface flex items-center justify-center p-4">
@@ -55,58 +74,50 @@ export default function WelcomeScreen({ onJoin }: Props) {
                 </motion.button>
             </div>
 
-            <main className="w-full max-w-xs" aria-labelledby="welcome-heading">
-                <div className="flex items-center gap-2 mb-8">
-                    <Terminal strokeWidth={1.5} size={16} className="text-accent" aria-hidden="true" />
-                    <span className="text-xs font-bold tracking-wider text-on-surface-faint uppercase">IT Trainer</span>
+            <main className="w-full max-w-sm" aria-labelledby="welcome-heading">
+                {/* Logo + Title */}
+                <div className="mb-8">
+                    <div className="flex items-center gap-2 mb-4">
+                        <Terminal strokeWidth={1.5} size={16} className="text-accent" aria-hidden="true" />
+                        <span className="text-xs font-bold tracking-wider text-on-surface-faint uppercase">IT Trainer</span>
+                    </div>
+
+                    <h1 id="welcome-heading" className="text-2xl font-bold tracking-tight text-on-surface mb-2">
+                        {view === 'login' && t.authWelcomeBack}
+                        {view === 'register' && t.authCreateAccount}
+                        {view === 'verify-email' && t.authVerifyEmail}
+                    </h1>
+                    <p className="text-sm text-on-surface-faint leading-relaxed">
+                        {view === 'login' && t.authLoginSubtitle}
+                        {view === 'register' && t.authRegisterSubtitle}
+                        {view === 'verify-email' && t.authVerifySubtitle}
+                    </p>
                 </div>
 
-                <h1 id="welcome-heading" className="text-2xl font-bold tracking-tight text-on-surface mb-2">
-                    {t.welcomeTitle}
-                </h1>
-                <p className="text-sm text-on-surface-faint mb-8 leading-relaxed">
-                    {t.welcomeSubtitle}
-                </p>
-
-                <form onSubmit={handleSubmit} className="space-y-3" aria-label="Login form">
-                    <div className="border-b border-outline focus-within:border-accent transition-colors">
-                        <label htmlFor="username-input" className="sr-only">
-                            {typeof t.srUsername === 'string' ? t.srUsername : 'Username'}
-                        </label>
-                        <input
-                            id="username-input"
-                            type="text"
-                            autoComplete="username"
-                            autoFocus
-                            value={name}
-                            onChange={e => setName(e.target.value)}
-                            placeholder={t.usernamePlaceholder}
-                            aria-required="true"
-                            aria-invalid={!isNameValid && name.length > 0}
-                            aria-describedby="username-help"
-                            className="w-full bg-transparent py-2 text-sm text-on-surface placeholder-on-surface-subtle focus:outline-none"
-                        />
-                        <span id="username-help" className="sr-only">
-                            Enter your username (minimum 2 characters)
-                        </span>
-                    </div>
-                    {!isNameValid && name.length > 0 && (
-                        <p className="text-xs text-error-text" role="alert">
-                            {t.usernameValidationError}
-                        </p>
+                {/* Auth Forms */}
+                <motion.div
+                    key={view}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2 }}
+                >
+                    {view === 'login' && (
+                        <LoginForm onSwitchToRegister={() => setView('register')} />
                     )}
-                    <motion.button
-                        type="submit"
-                        disabled={!isNameValid}
-                        whileHover={{ scale: isNameValid ? 1.02 : 1 }}
-                        whileTap={{ scale: isNameValid ? 0.98 : 1 }}
-                        aria-label={t.startButton}
-                        className="w-full flex items-center justify-center gap-2 bg-emerald-800 hover:bg-emerald-700 disabled:bg-surface-raised disabled:text-on-surface-subtle text-emerald-100 font-semibold py-2 rounded text-sm transition-all mt-4"
-                    >
-                        <span>{t.startButton}</span>
-                        <ArrowRight strokeWidth={2} size={13} aria-hidden="true" />
-                    </motion.button>
-                </form>
+                    {view === 'register' && (
+                        <RegisterForm
+                            onSwitchToLogin={() => setView('login')}
+                            onRegisterSuccess={handleRegisterSuccess}
+                        />
+                    )}
+                    {view === 'verify-email' && (
+                        <VerifyEmailScreen
+                            email={registeredEmail}
+                            onBackToLogin={handleBackToLogin}
+                        />
+                    )}
+                </motion.div>
             </main>
         </div>
     );
