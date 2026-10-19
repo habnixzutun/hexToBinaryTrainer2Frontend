@@ -12,7 +12,7 @@ const CLASS_MAP: Record<FlashType, string> = {
     wrong: 'flash-wrong',
 };
 
-const DEFAULT_DURATION = 400;
+const DEFAULT_DURATION = 800;
 
 export function flashAccent(type: FlashType, duration = DEFAULT_DURATION): void {
     const root = document.documentElement;

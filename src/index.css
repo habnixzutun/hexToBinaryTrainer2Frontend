@@ -21,6 +21,7 @@
     --color-accent-muted: oklch(0.95 0.03 250);
     --color-error-text: #dc2626; /* 4.6:1 on white */
     --color-error-muted: oklch(0.97 0.02 25);
+    --color-correct-text: #10b981;
 
     /* Points color — WCAG AA compliant */
     --color-points: #d97706; /* 4.5:1 on white */
@@ -46,6 +47,7 @@
     --color-accent-muted: oklch(0.15 0.03 250);
     --color-error-text: #f87171; /* 5.8:1 on black */
     --color-error-muted: oklch(0.15 0.03 25);
+    --color-correct-text: #10b981;
 
     /* Points color — WCAG AA compliant */
     --color-points: #fbbf24; /* 8.2:1 on black */
@@ -100,7 +102,7 @@ html, body {
     transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-/* Flash effect for correct/wrong answers */
+/* Flash effect for correct/wrong answers — matches button transition (200ms) */
 html.flash-correct {
     --color-accent: #10b981 !important;
     --color-accent-bright: #34d399 !important;

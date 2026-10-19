@@ -235,7 +235,7 @@ export default function Sidebar({
                     {/* Stats row */}
                     <div className="grid grid-cols-3 gap-1 text-center" aria-label="Your statistics">
                         <div>
-                            <div className="text-lg font-bold text-accent">{user?.correct_count || 0}</div>
+                            <div className="text-lg font-bold text-emerald-600">{user?.correct_count || 0}</div>
                             <div className="text-xs text-on-surface-faint uppercase tracking-wide" aria-label="Correct answers">OK</div>
                         </div>
                         <div>
