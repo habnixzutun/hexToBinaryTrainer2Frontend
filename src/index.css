@@ -103,7 +103,7 @@ html {
     position: absolute;
     top: -40px;
     left: 0;
-    background: var(--color-accent);
+    /*background: var(--color-accent);*/
     color: white;
     padding: 8px;
     text-decoration: none;
