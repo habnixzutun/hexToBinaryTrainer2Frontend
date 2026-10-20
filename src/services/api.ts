@@ -8,7 +8,7 @@
  * - Credentials: 'include' for httponly refresh token cookies
  */
 
-import { getAccessToken, setAccessToken, clearAccessToken } from '../utils/tokenManager';
+import { getAccessToken, clearAccessToken } from '../utils/tokenManager';
 import { refreshAccessToken } from './authApi';
 
 const BASE_URL: string = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
