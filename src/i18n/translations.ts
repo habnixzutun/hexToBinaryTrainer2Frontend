@@ -70,6 +70,7 @@ export const translations = {
         authStep2: 'Klicke auf den Bestätigungslink in der E-Mail',
         authStep3: 'Kehre hierher zurück und melde dich mit deinen Zugangsdaten an',
         authCheckSpam: 'E-Mail nicht erhalten? Überprüfe deinen Spam-Ordner.',
+        authOpenMailClient: 'E-Mail-Programm öffnen',
         authBackToLogin: 'Zurück zur Anmeldung',
 
         // Stats
@@ -187,6 +188,7 @@ export const translations = {
         authStep2: 'Click the verification link in the email',
         authStep3: 'Return here and login with your credentials',
         authCheckSpam: "Didn't receive the email? Check your spam folder.",
+        authOpenMailClient: 'Open email client',
         authBackToLogin: 'Back to Login',
 
         // Stats
@@ -306,6 +308,7 @@ export type Translations = {
     authStep2: string;
     authStep3: string;
     authCheckSpam: string;
+    authOpenMailClient: string;
     authBackToLogin: string;
 
     // Stats
