@@ -5,12 +5,12 @@ import { type ReactElement } from 'react';
  * Features:
  * - Displays "Check your email" message
  * - Shows email address for clarity
+ * - Button to open email client
  * - Link to go back to login
- * - Future: Resend verification email button
  */
 
 import { motion } from 'framer-motion';
-import { Mail, ArrowLeft, CheckCircle } from 'lucide-react';
+import { Mail, ArrowLeft, CheckCircle, ExternalLink } from 'lucide-react';
 import { useI18n } from '../../i18n/useI18n';
 
 // ==================== Types ====================
@@ -24,6 +24,10 @@ interface VerifyEmailScreenProps {
 
 export default function VerifyEmailScreen({ email, onBackToLogin }: VerifyEmailScreenProps): ReactElement {
     const { t } = useI18n();
+
+    const handleOpenMailClient = (): void => {
+        window.location.href = `mailto:${email}?subject=${encodeURIComponent('E-Mail Bestätigung')}&body=${encodeURIComponent('Bitte bestätige meine E-Mail-Adresse für den IT-Trainer.')}`;
+    };
 
     return (
         <div className="text-center space-y-6">
@@ -67,6 +71,18 @@ export default function VerifyEmailScreen({ email, onBackToLogin }: VerifyEmailS
                     {t.authCheckSpam}
                 </p>
             </div>
+
+            {/* Open Mail Client Button */}
+            <motion.button
+                onClick={handleOpenMailClient}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="w-full flex items-center justify-center gap-2 bg-accent hover:bg-accent/90 text-on-accent font-semibold py-3 rounded-md text-sm transition-all"
+            >
+                <Mail className="w-4 h-4" aria-hidden="true" />
+                <span>{t.authOpenMailClient}</span>
+                <ExternalLink className="w-3 h-3" aria-hidden="true" />
+            </motion.button>
 
             {/* Back to Login Button */}
             <motion.button
