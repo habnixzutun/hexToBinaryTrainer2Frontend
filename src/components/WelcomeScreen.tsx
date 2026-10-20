@@ -34,7 +34,10 @@ function readVerifyTokenFromUrl(): string | null {
     if (!path.endsWith('/verify-email')) {
         return null;
     }
-    return new URLSearchParams(window.location.search).get('token');
+    // Normalize empty ?token= to null so both call sites (lazy init + effect)
+    // treat a missing and an empty token identically.
+    const token = new URLSearchParams(window.location.search).get('token');
+    return token ? token : null;
 }
 
 // ==================== Component ====================

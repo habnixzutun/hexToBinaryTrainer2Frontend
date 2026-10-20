@@ -106,6 +106,17 @@ describe('WelcomeScreen verify-email link handling', () => {
         expect(mockVerifyEmail).not.toHaveBeenCalled()
     })
 
+    it('ignores an empty token parameter', () => {
+        window.history.replaceState({}, '', '/trainer/verify-email?token=')
+
+        render(<WelcomeScreen />)
+
+        expect(
+            screen.getByRole('heading', { name: 'Willkommen zurück' }),
+        ).toBeInTheDocument()
+        expect(mockVerifyEmail).not.toHaveBeenCalled()
+    })
+
     it('ignores a token on a non-verify-email path', () => {
         window.history.replaceState({}, '', '/trainer/?token=jwt-token-123')
 
