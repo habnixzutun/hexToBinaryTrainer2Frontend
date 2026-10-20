@@ -75,6 +75,12 @@ export const translations = {
         authOpenMailClient: 'E-Mail-Programm öffnen',
         authBackToLogin: 'Zurück zur Anmeldung',
 
+        // Auth - Verify Link (token from email)
+        authLinkVerifying: 'E-Mail wird bestätigt...',
+        authLinkVerifiedTitle: 'E-Mail bestätigt!',
+        authLinkVerifiedSubtitle: 'Dein Konto ist freigeschaltet — du kannst dich jetzt einloggen.',
+        authLinkFailedTitle: 'Bestätigung fehlgeschlagen',
+
         // Stats
         correct: 'Richtig',
         wrong: 'Falsch',
@@ -194,6 +200,12 @@ export const translations = {
         authCheckSpam: "Didn't receive the email? Check your spam folder.",
         authOpenMailClient: 'Open email client',
         authBackToLogin: 'Back to Login',
+
+        // Auth - Verify Link (token from email)
+        authLinkVerifying: 'Verifying your email...',
+        authLinkVerifiedTitle: 'Email verified!',
+        authLinkVerifiedSubtitle: 'Your account is active — you can log in now.',
+        authLinkFailedTitle: 'Verification failed',
 
         // Stats
         correct: 'Correct',
@@ -316,6 +328,10 @@ export type Translations = {
     authCheckSpam: string;
     authOpenMailClient: string;
     authBackToLogin: string;
+    authLinkVerifying: string;
+    authLinkVerifiedTitle: string;
+    authLinkVerifiedSubtitle: string;
+    authLinkFailedTitle: string;
 
     // Stats
     correct: string;
