@@ -1,5 +1,11 @@
+import type { ComponentProps } from 'react'
 import { render, screen, fireEvent } from '../../src/test-utils.tsx'
 import Sidebar from '../../src/components/Sidebar.tsx'
+import type { ActiveApp } from '../../src/App.tsx'
+import { authValue } from '../helpers/auth.ts'
+
+const mockUseAuth = vi.hoisted(() => vi.fn())
+vi.mock('../../src/contexts/AuthContext.tsx', () => ({ useAuth: mockUseAuth }))
 
 // Mock localStorage
 const localStorageMock = (() => {
@@ -22,35 +28,22 @@ Object.defineProperty(window, 'localStorage', {
   value: localStorageMock,
 })
 
-const mockUser = { name: 'TestUser', correct: 5, incorrect: 2, points: 50 }
-
 describe('Sidebar', () => {
-  let mockSetActiveApp: ReturnType<typeof vi.fn>
-  let mockOnLogout: ReturnType<typeof vi.fn>
-  let mockSetIsMobileMenuOpen: ReturnType<typeof vi.fn>
-  let defaultProps: {
-    activeApp: 'hex' | 'unicode' | 'leaderboard';
-    setActiveApp: ReturnType<typeof vi.fn>;
-    user: typeof mockUser;
-    onLogout: ReturnType<typeof vi.fn>;
-    isMobileMenuOpen: boolean;
-    setIsMobileMenuOpen: ReturnType<typeof vi.fn>;
-    hideLeaderboardNav: boolean;
-    isMobile: boolean;
-    activeHexMode?: string;
-    onHexModeChange?: ReturnType<typeof vi.fn>;
-  }
+  let mockSetActiveApp: ReturnType<typeof vi.fn<(app: ActiveApp) => void>>
+  let mockOnLogout: ReturnType<typeof vi.fn<() => void>>
+  let mockSetIsMobileMenuOpen: ReturnType<typeof vi.fn<(open: boolean) => void>>
+  let defaultProps: ComponentProps<typeof Sidebar>
 
   beforeEach(() => {
     vi.clearAllMocks()
     localStorageMock.clear()
+    mockUseAuth.mockReturnValue(authValue())
     mockSetActiveApp = vi.fn()
     mockOnLogout = vi.fn()
     mockSetIsMobileMenuOpen = vi.fn()
     defaultProps = {
       activeApp: 'hex',
       setActiveApp: mockSetActiveApp,
-      user: mockUser,
       onLogout: mockOnLogout,
       isMobileMenuOpen: false,
       setIsMobileMenuOpen: mockSetIsMobileMenuOpen,
@@ -130,8 +123,8 @@ describe('Sidebar', () => {
     const mockOnHexModeChange = vi.fn()
     render(<Sidebar {...defaultProps} onHexModeChange={mockOnHexModeChange} activeHexMode="HexToBin" />)
 
-    // Should show mode heading
-    expect(screen.getByText('Hex/Bin Modi')).toBeInTheDocument()
+    // Should show mode list (labelled via aria-label)
+    expect(screen.getByRole('list', { name: 'Hex/Bin Modi' })).toBeInTheDocument()
 
     // Should show 6 mode buttons
     expect(screen.getByLabelText('Mode: HexToBin')).toBeInTheDocument()
@@ -154,7 +147,7 @@ describe('Sidebar', () => {
     const mockOnHexModeChange = vi.fn()
     render(<Sidebar {...defaultProps} activeApp="unicode" onHexModeChange={mockOnHexModeChange} />)
 
-    expect(screen.queryByText('Hex/Bin Modi')).not.toBeInTheDocument()
+    expect(screen.queryByRole('list', { name: 'Hex/Bin Modi' })).not.toBeInTheDocument()
   })
 
   it('toggles theme and updates aria-label', () => {

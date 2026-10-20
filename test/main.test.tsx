@@ -47,8 +47,8 @@ describe('main.tsx', () => {
     expect(mockRender).toHaveBeenCalled()
 
     // Verify the render call structure (first argument is the React element tree)
-    const renderCall = mockRender.mock.calls[0][0]
+    const renderCall = mockRender.mock.calls[0]?.[0]
     expect(renderCall).toBeDefined()
-    expect(renderCall.type).toBeDefined() // StrictMode
+    expect(renderCall?.type).toBeDefined() // StrictMode
   })
 })

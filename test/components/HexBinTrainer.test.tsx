@@ -1,18 +1,17 @@
 import { render, screen, fireEvent, waitFor } from '../../src/test-utils.tsx'
 import HexBinTrainer from '../../src/components/HexBinTrainer.tsx'
-import { api } from '../../src/services/api.ts'
+import { gameApi } from '../../src/services/api.ts'
 
-// Mock the api module
-vi.mock('../../src/services/api', () => ({
-  api: {
-    updateUserCorrect: vi.fn(),
-    updateUserIncorrect: vi.fn(),
+// Mock the game API
+vi.mock('../../src/services/api.ts', () => ({
+  gameApi: {
+    submitCorrect: vi.fn(),
+    submitIncorrect: vi.fn(),
   },
 }))
 
-// Helper to cast mocked API functions
-const mockUpdateUserCorrect = api.updateUserCorrect as ReturnType<typeof vi.fn>
-const mockUpdateUserIncorrect = api.updateUserIncorrect as ReturnType<typeof vi.fn>
+const mockSubmitCorrect = vi.mocked(gameApi.submitCorrect)
+const mockSubmitIncorrect = vi.mocked(gameApi.submitIncorrect)
 
 // Mock localStorage
 const localStorageMock = (() => {
@@ -35,10 +34,8 @@ Object.defineProperty(window, 'localStorage', {
   value: localStorageMock,
 })
 
-const mockUser = { name: 'TestUser', correct: 5, incorrect: 2, points: 50 }
-
 describe('HexBinTrainer', () => {
-  let mockOnUpdate: ReturnType<typeof vi.fn<(user: { name: string; correct: number; incorrect: number; points: number }) => void>>
+  let mockOnUpdate: ReturnType<typeof vi.fn<() => void>>
 
   beforeEach(() => {
     vi.clearAllMocks()
@@ -50,13 +47,19 @@ describe('HexBinTrainer', () => {
     vi.spyOn(Math, 'random').mockReturnValue(0.5)
 
     // Setup default API mock responses
-    mockUpdateUserCorrect.mockResolvedValue({
-      message: 'Correct',
-      user: { name: 'TestUser', correct: 6, incorrect: 2, points: 60 },
+    mockSubmitCorrect.mockResolvedValue({
+      message: 'Correct answer recorded',
+      user_id: 'user-1',
+      correct_count: 6,
+      incorrect_count: 2,
+      points: 58,
     })
-    mockUpdateUserIncorrect.mockResolvedValue({
-      message: 'Incorrect',
-      user: { name: 'TestUser', correct: 5, incorrect: 3, points: 50 },
+    mockSubmitIncorrect.mockResolvedValue({
+      message: 'Incorrect answer recorded',
+      user_id: 'user-1',
+      correct_count: 5,
+      incorrect_count: 3,
+      points: 18,
     })
   })
 
@@ -65,32 +68,28 @@ describe('HexBinTrainer', () => {
   })
 
   it('renders without crashing', () => {
-    render(<HexBinTrainer user={mockUser} onUpdate={mockOnUpdate} />)
+    render(<HexBinTrainer onUpdate={mockOnUpdate} />)
 
     // Should render the trainer interface
     expect(screen.getByRole('region', { name: /hex\/binary trainer/i })).toBeInTheDocument()
   })
 
-  it('shows mode tabs with correct aria-labels', () => {
-    render(<HexBinTrainer user={mockUser} onUpdate={mockOnUpdate} />)
+  it('shows bit selection tabs with 8 bits selected by default', () => {
+    render(<HexBinTrainer onUpdate={mockOnUpdate} />)
 
-    // On lg+ screens, should show 6 mode tabs in the top bar
-    // In jsdom (no lg breakpoint), tabs are hidden with hidden lg:flex
-    // But they still exist in the DOM
+    // In jsdom (no lg breakpoint) the tab bar is hidden via CSS, but still in the DOM
+    expect(screen.getByRole('tablist', { name: /bit selection/i })).toBeInTheDocument()
     const tabs = screen.getAllByRole('tab')
-    expect(tabs).toHaveLength(6)
+    expect(tabs).toHaveLength(4)
 
-    // Check tab labels
-    expect(screen.getByRole('tab', { name: /hex to bin/i })).toBeInTheDocument()
-    expect(screen.getByRole('tab', { name: /hex to dec/i })).toBeInTheDocument()
-    expect(screen.getByRole('tab', { name: /bin to hex/i })).toBeInTheDocument()
-    expect(screen.getByRole('tab', { name: /bin to dec/i })).toBeInTheDocument()
-    expect(screen.getByRole('tab', { name: /dec to hex/i })).toBeInTheDocument()
-    expect(screen.getByRole('tab', { name: /dec to bin/i })).toBeInTheDocument()
+    for (const b of [4, 16, 32]) {
+      expect(screen.getByRole('tab', { name: `${b} Bits` })).toHaveAttribute('aria-selected', 'false')
+    }
+    expect(screen.getByRole('tab', { name: '8 Bits' })).toHaveAttribute('aria-selected', 'true')
   })
 
   it('generates deterministic question with mocked random', () => {
-    render(<HexBinTrainer user={mockUser} onUpdate={mockOnUpdate} />)
+    render(<HexBinTrainer onUpdate={mockOnUpdate} />)
 
     // With bits=8, random=0.5: value = 135 = 0x87
     // Default mode is HexToBin, so question shows hex "87"
@@ -98,7 +97,7 @@ describe('HexBinTrainer', () => {
   })
 
   it('filters input based on target format', () => {
-    render(<HexBinTrainer user={mockUser} onUpdate={mockOnUpdate} />)
+    render(<HexBinTrainer onUpdate={mockOnUpdate} />)
 
     const input = screen.getByRole('textbox')
 
@@ -108,7 +107,7 @@ describe('HexBinTrainer', () => {
   })
 
   it('handles correct answer flow with API call and feedback', async () => {
-    render(<HexBinTrainer user={mockUser} onUpdate={mockOnUpdate} />)
+    render(<HexBinTrainer onUpdate={mockOnUpdate} />)
 
     const input = screen.getByRole('textbox')
     const submitButton = screen.getByRole('button', { name: /check answer/i })
@@ -128,22 +127,18 @@ describe('HexBinTrainer', () => {
       expect(screen.getByText(/Richtig/i)).toBeInTheDocument()
     })
 
-    // Should call API with correct parameters (bits=8)
-    expect(mockUpdateUserCorrect).toHaveBeenCalledWith('TestUser', 8)
+    // Should call API with the number of bits
+    expect(mockSubmitCorrect).toHaveBeenCalledWith(8)
+    expect(mockSubmitIncorrect).not.toHaveBeenCalled()
 
-    // Should call onUpdate with new user data
+    // Should notify parent so it can refresh user stats
     await waitFor(() => {
-      expect(mockOnUpdate).toHaveBeenCalledWith({
-        name: 'TestUser',
-        correct: 6,
-        incorrect: 2,
-        points: 60,
-      })
+      expect(mockOnUpdate).toHaveBeenCalledTimes(1)
     })
   })
 
   it('handles wrong answer flow with API call and feedback', async () => {
-    render(<HexBinTrainer user={mockUser} onUpdate={mockOnUpdate} />)
+    render(<HexBinTrainer onUpdate={mockOnUpdate} />)
 
     const input = screen.getByRole('textbox')
     const submitButton = screen.getByRole('button', { name: /check answer/i })
@@ -162,25 +157,22 @@ describe('HexBinTrainer', () => {
       expect(alert).toHaveTextContent(/Falsch/i)
     })
 
-    // Should call API with correct parameters (bits=8)
-    expect(mockUpdateUserIncorrect).toHaveBeenCalledWith('TestUser', 8)
+    // Should call API with the number of bits
+    expect(mockSubmitIncorrect).toHaveBeenCalledWith(8)
+    expect(mockSubmitCorrect).not.toHaveBeenCalled()
 
-    // Should call onUpdate with new user data
+    // Should notify parent so it can refresh user stats
     await waitFor(() => {
-      expect(mockOnUpdate).toHaveBeenCalledWith({
-        name: 'TestUser',
-        correct: 5,
-        incorrect: 3,
-        points: 50,
-      })
+      expect(mockOnUpdate).toHaveBeenCalledTimes(1)
     })
   })
 
   it('handles API failure gracefully with error feedback', async () => {
     // Mock API to reject
-    mockUpdateUserCorrect.mockRejectedValue(new Error('Network error'))
+    mockSubmitCorrect.mockRejectedValue(new Error('Network error'))
+    vi.spyOn(console, 'error').mockImplementation(() => {})
 
-    render(<HexBinTrainer user={mockUser} onUpdate={mockOnUpdate} />)
+    render(<HexBinTrainer onUpdate={mockOnUpdate} />)
 
     const input = screen.getByRole('textbox')
     const submitButton = screen.getByRole('button', { name: /check answer/i })
@@ -202,7 +194,7 @@ describe('HexBinTrainer', () => {
   })
 
   it('submits answer when Enter key is pressed', async () => {
-    render(<HexBinTrainer user={mockUser} onUpdate={mockOnUpdate} />)
+    render(<HexBinTrainer onUpdate={mockOnUpdate} />)
 
     const input = screen.getByRole('textbox')
 
@@ -214,73 +206,42 @@ describe('HexBinTrainer', () => {
 
     // Should trigger submit and call API
     await waitFor(() => {
-      expect(mockUpdateUserCorrect).toHaveBeenCalledWith('TestUser', 8)
+      expect(mockSubmitCorrect).toHaveBeenCalledWith(8)
     })
   })
 
-  it('switches mode tabs and generates new question', async () => {
-    render(<HexBinTrainer user={mockUser} onUpdate={mockOnUpdate} />)
+  it('uses the mode passed in from the sidebar', () => {
+    render(<HexBinTrainer onUpdate={mockOnUpdate} activeMode="HexToDec" />)
 
-    // Initially HexToBin mode (question is hex "87")
+    // Mode label is shown in the top bar
+    expect(screen.getByLabelText('Current mode')).toHaveTextContent('Hex → Dec')
+
+    // Question is still hex "87", but the answer is decimal now
     expect(screen.getByText('87')).toBeInTheDocument()
-
-    // Click HexToDec tab
-    const hexToDecTab = screen.getByRole('tab', { name: /hex to dec/i })
-    fireEvent.click(hexToDecTab)
-
-    // Should update aria-selected
-    expect(hexToDecTab).toHaveAttribute('aria-selected', 'true')
-
-    // Should generate new question (still hex "87" but now asking for decimal)
-    // With random=0.5, value=135, hex="87", dec="135"
-    await waitFor(() => {
-      expect(screen.getByText('87')).toBeInTheDocument()
-    })
-
-    // Input should now accept decimal digits (0-9)
     const input = screen.getByRole('textbox')
     fireEvent.change(input, { target: { value: '123abc' } })
     expect(input).toHaveValue('123')
   })
 
-  it('adjusts bits with stepper buttons', () => {
-    render(<HexBinTrainer user={mockUser} onUpdate={mockOnUpdate} />)
+  it('switches bits via tab and generates a question in the new range', () => {
+    render(<HexBinTrainer onUpdate={mockOnUpdate} />)
 
-    // Initial bits should be 8
-    const bitsDisplay = screen.getByText('8')
-    expect(bitsDisplay).toBeInTheDocument()
+    const fourBitsTab = screen.getByRole('tab', { name: '4 Bits' })
+    fireEvent.click(fourBitsTab)
 
-    // Click increase button
-    const increaseButton = screen.getByLabelText(/increase bits by 4/i)
-    fireEvent.click(increaseButton)
+    expect(fourBitsTab).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('tab', { name: '8 Bits' })).toHaveAttribute('aria-selected', 'false')
 
-    // Should show 12 bits
-    expect(screen.getByText('12')).toBeInTheDocument()
-
-    // Click decrease button
-    const decreaseButton = screen.getByLabelText(/decrease bits by 4/i)
-    fireEvent.click(decreaseButton)
-
-    // Should show 8 bits again
+    // With bits=4, range [0, 15], random=0.5 → value = floor(0.5 * 16) + 0 = 8 = 0x8
     expect(screen.getByText('8')).toBeInTheDocument()
   })
 
-  it('disables stepper buttons at min/max bounds', () => {
-    render(<HexBinTrainer user={mockUser} onUpdate={mockOnUpdate} />)
+  it('reports bit changes to the parent when controlled', () => {
+    const mockOnBitsChange = vi.fn()
+    render(<HexBinTrainer onUpdate={mockOnUpdate} bits={8} onBitsChange={mockOnBitsChange} />)
 
-    const decreaseButton = screen.getByLabelText(/decrease bits by 4/i)
-    const increaseButton = screen.getByLabelText(/increase bits by 4/i)
+    fireEvent.click(screen.getByRole('tab', { name: '16 Bits' }))
 
-    // Decrease to minimum (4 bits)
-    fireEvent.click(decreaseButton)
-    expect(screen.getByText('4')).toBeInTheDocument()
-    expect(decreaseButton).toBeDisabled()
-
-    // Increase to maximum (32 bits)
-    for (let i = 0; i < 7; i++) {
-      fireEvent.click(increaseButton)
-    }
-    expect(screen.getByText('32')).toBeInTheDocument()
-    expect(increaseButton).toBeDisabled()
+    expect(mockOnBitsChange).toHaveBeenCalledWith(16)
   })
 })

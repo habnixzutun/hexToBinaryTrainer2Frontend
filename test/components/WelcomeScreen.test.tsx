@@ -1,5 +1,10 @@
-import { render, screen, fireEvent } from '../../src/test-utils.tsx'
+import { userEvent } from '@testing-library/user-event'
+import { render, screen, waitFor } from '../../src/test-utils.tsx'
 import WelcomeScreen from '../../src/components/WelcomeScreen.tsx'
+import { authValue } from '../helpers/auth.ts'
+
+const mockUseAuth = vi.hoisted(() => vi.fn())
+vi.mock('../../src/contexts/AuthContext.tsx', () => ({ useAuth: mockUseAuth }))
 
 // Mock localStorage
 const localStorageMock = (() => {
@@ -22,155 +27,162 @@ Object.defineProperty(window, 'localStorage', {
   value: localStorageMock,
 })
 
+const VALID_PASSWORD = 'Test1234!'
+
 describe('WelcomeScreen', () => {
-  let mockOnJoin: ReturnType<typeof vi.fn>
+  let auth: ReturnType<typeof authValue>
 
   beforeEach(() => {
     vi.clearAllMocks()
     localStorageMock.clear()
-    mockOnJoin = vi.fn()
+    auth = authValue({ user: null })
+    mockUseAuth.mockReturnValue(auth)
   })
 
-  it('has only one main landmark', () => {
-    render(<WelcomeScreen onJoin={mockOnJoin} />)
+  it('has exactly one main landmark rendered as <main>', () => {
+    render(<WelcomeScreen />)
 
-    // Should have exactly one main element
     const mainElements = screen.getAllByRole('main')
     expect(mainElements).toHaveLength(1)
+    expect(mainElements[0]?.tagName).toBe('MAIN')
   })
 
-  it('does not have role="main" on outer div', () => {
-    render(<WelcomeScreen onJoin={mockOnJoin} />)
+  it('shows the login form by default', () => {
+    render(<WelcomeScreen />)
 
-    // If there's a main, it should be the <main> element, not a div with role="main"
-    const mainElement = screen.getByRole('main')
-    expect(mainElement.tagName).toBe('MAIN')
+    expect(screen.getByRole('heading', { name: 'Willkommen zurück' })).toBeInTheDocument()
+    expect(screen.getByRole('form', { name: 'Anmelden' })).toBeInTheDocument()
+    expect(screen.getByLabelText('E-Mail')).toBeInTheDocument()
+    expect(screen.getByLabelText('Passwort')).toBeInTheDocument()
   })
 
-  it('disables submit button when name is shorter than 2 characters', () => {
-    render(<WelcomeScreen onJoin={mockOnJoin} />)
+  describe('login', () => {
+    it('shows validation errors and does not call login for empty fields', async () => {
+      const user = userEvent.setup()
+      render(<WelcomeScreen />)
 
-    const submitButton = screen.getByRole('button', { name: /los geht's/i })
-    const nameInput = screen.getByLabelText(/(username|benutzername)/i)
+      await user.click(screen.getByRole('button', { name: 'Anmelden' }))
 
-    // Initially disabled (empty name)
-    expect(submitButton).toBeDisabled()
+      expect(await screen.findByText('E-Mail ist erforderlich')).toBeInTheDocument()
+      expect(screen.getByText('Passwort ist erforderlich')).toBeInTheDocument()
+      expect(screen.getByLabelText('E-Mail')).toHaveAttribute('aria-invalid', 'true')
+      expect(auth.login).not.toHaveBeenCalled()
+    })
 
-    // Type single character → still disabled
-    fireEvent.change(nameInput, { target: { value: 'A' } })
-    expect(submitButton).toBeDisabled()
+    it('calls login with email and password', async () => {
+      const user = userEvent.setup()
+      render(<WelcomeScreen />)
 
-    // Type second character → enabled
-    fireEvent.change(nameInput, { target: { value: 'Al' } })
-    expect(submitButton).not.toBeDisabled()
+      await user.type(screen.getByLabelText('E-Mail'), 'alice@example.com')
+      await user.type(screen.getByLabelText('Passwort'), VALID_PASSWORD)
+      await user.click(screen.getByRole('button', { name: 'Anmelden' }))
+
+      await waitFor(() => {
+        expect(auth.login).toHaveBeenCalledWith({
+          email: 'alice@example.com',
+          password: VALID_PASSWORD,
+        })
+      })
+    })
+
+    it('shows the backend error when login fails', async () => {
+      vi.mocked(auth.login).mockRejectedValue(new Error('Invalid credentials.'))
+      const user = userEvent.setup()
+      render(<WelcomeScreen />)
+
+      await user.type(screen.getByLabelText('E-Mail'), 'alice@example.com')
+      await user.type(screen.getByLabelText('Passwort'), 'wrong')
+      await user.click(screen.getByRole('button', { name: 'Anmelden' }))
+
+      expect(await screen.findByRole('alert')).toHaveTextContent('Invalid credentials.')
+    })
   })
 
-  it('calls onJoin with trimmed name on form submit', () => {
-    render(<WelcomeScreen onJoin={mockOnJoin} />)
+  describe('register', () => {
+    it('switches to the register form and back', async () => {
+      const user = userEvent.setup()
+      render(<WelcomeScreen />)
 
-    const nameInput = screen.getByLabelText(/(username|benutzername)/i)
-    const submitButton = screen.getByRole('button', { name: /los geht's/i })
+      await user.click(screen.getByRole('button', { name: /noch kein konto/i }))
+      expect(screen.getByRole('heading', { name: 'Konto erstellen' })).toBeInTheDocument()
+      expect(screen.getByLabelText('Benutzername')).toBeInTheDocument()
 
-    // Type name with surrounding whitespace
-    fireEvent.change(nameInput, { target: { value: '  Alice  ' } })
-    fireEvent.click(submitButton)
+      await user.click(screen.getByRole('button', { name: /bereits ein konto/i }))
+      expect(screen.getByRole('heading', { name: 'Willkommen zurück' })).toBeInTheDocument()
+    })
 
-    // Should call onJoin with trimmed name
-    expect(mockOnJoin).toHaveBeenCalledWith('Alice')
-    expect(mockOnJoin).toHaveBeenCalledTimes(1)
+    it('shows an error when the passwords do not match', async () => {
+      const user = userEvent.setup()
+      render(<WelcomeScreen />)
+
+      await user.click(screen.getByRole('button', { name: /noch kein konto/i }))
+      await user.type(screen.getByLabelText('E-Mail'), 'alice@example.com')
+      await user.type(screen.getByLabelText('Benutzername'), 'alice')
+      await user.type(screen.getByLabelText('Passwort'), VALID_PASSWORD)
+      await user.type(screen.getByLabelText('Passwort bestätigen'), 'Other1234!')
+      await user.click(screen.getByRole('button', { name: 'Konto erstellen' }))
+
+      expect(await screen.findByText('Passwörter stimmen nicht überein')).toBeInTheDocument()
+      expect(auth.register).not.toHaveBeenCalled()
+    })
+
+    it('registers and shows the verify-email screen with the address', async () => {
+      const user = userEvent.setup()
+      render(<WelcomeScreen />)
+
+      await user.click(screen.getByRole('button', { name: /noch kein konto/i }))
+      await user.type(screen.getByLabelText('E-Mail'), 'alice@example.com')
+      await user.type(screen.getByLabelText('Benutzername'), 'alice')
+      await user.type(screen.getByLabelText('Passwort'), VALID_PASSWORD)
+      await user.type(screen.getByLabelText('Passwort bestätigen'), VALID_PASSWORD)
+      await user.click(screen.getByRole('button', { name: 'Konto erstellen' }))
+
+      // Password confirmation is client-side only and not sent to the backend
+      await waitFor(() => {
+        expect(auth.register).toHaveBeenCalledWith({
+          email: 'alice@example.com',
+          username: 'alice',
+          password: VALID_PASSWORD,
+        })
+      })
+      expect(await screen.findByRole('heading', { name: 'E-Mail bestätigen' })).toBeInTheDocument()
+      expect(screen.getByText('alice@example.com')).toBeInTheDocument()
+
+      await user.click(screen.getByRole('button', { name: /zurück zur anmeldung/i }))
+      expect(screen.getByRole('heading', { name: 'Willkommen zurück' })).toBeInTheDocument()
+    })
   })
 
-  it('shows validation error with role=alert for short names', () => {
-    render(<WelcomeScreen onJoin={mockOnJoin} />)
-
-    const nameInput = screen.getByLabelText(/(username|benutzername)/i)
-
-    // No error initially (empty input)
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
-
-    // Type single character → error shown
-    fireEvent.change(nameInput, { target: { value: 'A' } })
-    expect(screen.getByRole('alert')).toBeInTheDocument()
-    // German locale default: "Mindestens 2 Zeichen erforderlich"
-    expect(screen.getByText(/mindestens 2 zeichen/i)).toBeInTheDocument()
-
-    // Input should be marked invalid
-    expect(nameInput).toHaveAttribute('aria-invalid', 'true')
-
-    // Type valid name → error disappears
-    fireEvent.change(nameInput, { target: { value: 'Alice' } })
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
-    expect(nameInput).toHaveAttribute('aria-invalid', 'false')
-  })
-
-  it('does not call onJoin when submitting invalid name via Enter key', () => {
-    render(<WelcomeScreen onJoin={mockOnJoin} />)
-
-    const nameInput = screen.getByLabelText(/(username|benutzername)/i)
-
-    // Type single character and press Enter
-    fireEvent.change(nameInput, { target: { value: 'A' } })
-    fireEvent.keyDown(nameInput, { key: 'Enter', code: 'Enter' })
-
-    // onJoin should NOT be called (name too short)
-    expect(mockOnJoin).not.toHaveBeenCalled()
-  })
-
-  it('toggles theme and updates aria-label', () => {
-    render(<WelcomeScreen onJoin={mockOnJoin} />)
+  it('toggles theme and updates aria-label', async () => {
+    const user = userEvent.setup()
+    render(<WelcomeScreen />)
 
     // Default theme is dark → shows "Switch to light mode"
-    const themeButton = screen.getByLabelText(/switch to light mode/i)
-
-    // Click to toggle to light
-    fireEvent.click(themeButton)
+    await user.click(screen.getByLabelText(/switch to light mode/i))
     expect(screen.getByLabelText(/switch to dark mode/i)).toBeInTheDocument()
 
-    // Click to toggle back to dark
-    fireEvent.click(screen.getByLabelText(/switch to dark mode/i))
+    await user.click(screen.getByLabelText(/switch to dark mode/i))
     expect(screen.getByLabelText(/switch to light mode/i)).toBeInTheDocument()
   })
 
-  it('toggles locale and translates validation error', () => {
-    render(<WelcomeScreen onJoin={mockOnJoin} />)
+  it('toggles locale and translates the login screen', async () => {
+    const user = userEvent.setup()
+    render(<WelcomeScreen />)
 
     // Initially German locale: button shows "EN"
-    const localeButton = screen.getByLabelText(/switch to english/i)
     expect(screen.getByText('EN')).toBeInTheDocument()
 
-    // Trigger German validation error
-    const nameInput = screen.getByLabelText(/(username|benutzername)/i)
-    fireEvent.change(nameInput, { target: { value: 'A' } })
-    expect(screen.getByText(/mindestens 2 zeichen/i)).toBeInTheDocument()
+    await user.click(screen.getByLabelText(/switch to english/i))
 
-    // Switch to English
-    fireEvent.click(localeButton)
-
-    // Button now shows "DE" with German aria-label
     expect(screen.getByText('DE')).toBeInTheDocument()
     expect(screen.getByLabelText(/auf deutsch wechseln/i)).toBeInTheDocument()
-
-    // Validation error now in English (match full text to exclude sr-only help)
-    expect(screen.getByText(/minimum 2 characters required/i)).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Welcome back' })).toBeInTheDocument()
+    expect(screen.getByRole('form', { name: 'Login' })).toBeInTheDocument()
   })
 
-  it('has proper form accessibility attributes', () => {
-    render(<WelcomeScreen onJoin={mockOnJoin} />)
+  it('has a settings toolbar', () => {
+    render(<WelcomeScreen />)
 
-    // Form has aria-label
-    expect(screen.getByRole('form', { name: /login form/i })).toBeInTheDocument()
-
-    // Input is required and described by help text
-    const nameInput = screen.getByLabelText(/(username|benutzername)/i)
-    expect(nameInput).toHaveAttribute('aria-required', 'true')
-    expect(nameInput).toHaveAttribute('aria-describedby', 'username-help')
-
-    // Help text exists
-    const helpText = screen.getByText(/enter your username/i)
-    expect(helpText).toBeInTheDocument()
-    expect(helpText).toHaveAttribute('id', 'username-help')
-
-    // Settings toolbar exists
     expect(screen.getByRole('toolbar', { name: /settings/i })).toBeInTheDocument()
   })
 })
