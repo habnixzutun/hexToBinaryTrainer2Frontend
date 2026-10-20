@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ReactElement } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Terminal, Menu, X, Loader2 } from 'lucide-react';
 import Sidebar from './components/Sidebar.tsx';
@@ -16,7 +16,7 @@ export type HexBinMode = 'HexToBin' | 'HexToDec' | 'BinToHex' | 'BinToDec' | 'De
  *
  * Only rendered when user is authenticated.
  */
-function AuthenticatedApp(): JSX.Element {
+function AuthenticatedApp(): ReactElement {
     const { user, refreshUser, logout } = useAuth();
     const [activeApp, setActiveApp] = useState<ActiveApp>('hex');
     const [activeMode, setActiveMode] = useState<HexBinMode>('HexToBin');
@@ -143,7 +143,7 @@ function AuthenticatedApp(): JSX.Element {
  * Shows WelcomeScreen for unauthenticated users,
  * AuthenticatedApp for authenticated users.
  */
-export default function App(): JSX.Element {
+export default function App(): ReactElement {
     return (
         <AuthProvider>
             <AuthGate />
@@ -154,7 +154,7 @@ export default function App(): JSX.Element {
 /**
  * Auth Gate: Switches between WelcomeScreen and AuthenticatedApp.
  */
-function AuthGate(): JSX.Element {
+function AuthGate(): ReactElement {
     const { user, loading } = useAuth();
 
     if (loading) {

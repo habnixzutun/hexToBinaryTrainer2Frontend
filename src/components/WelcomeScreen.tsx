@@ -8,7 +8,7 @@
  * - Error handling and loading states
  */
 
-import { useState } from 'react';
+import { useState, type ReactElement } from 'react';
 import { motion } from 'framer-motion';
 import { Terminal, Globe, Sun, Moon } from 'lucide-react';
 import { useI18n } from '../i18n/useI18n.ts';
@@ -24,7 +24,7 @@ type AuthView = 'login' | 'register' | 'verify-email';
 
 // ==================== Component ====================
 
-export default function WelcomeScreen(): JSX.Element {
+export default function WelcomeScreen(): ReactElement {
     const [view, setView] = useState<AuthView>('login');
     const [registeredEmail, setRegisteredEmail] = useState<string>('');
     const { t, locale, setLocale } = useI18n();

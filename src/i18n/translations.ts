@@ -35,6 +35,8 @@ export const translations = {
         authEmailRequired: 'E-Mail ist erforderlich',
         authEmailInvalid: 'Ungültige E-Mail-Adresse',
         authPasswordRequired: 'Passwort ist erforderlich',
+        authShowPassword: 'Passwort anzeigen',
+        authHidePassword: 'Passwort verbergen',
 
         // Auth - Register Form
         authUsername: 'Benutzername',
@@ -153,6 +155,8 @@ export const translations = {
         authEmailRequired: 'Email is required',
         authEmailInvalid: 'Invalid email address',
         authPasswordRequired: 'Password is required',
+        authShowPassword: 'Show password',
+        authHidePassword: 'Hide password',
 
         // Auth - Register Form
         authUsername: 'Username',
@@ -273,6 +277,8 @@ export type Translations = {
     authEmailRequired: string;
     authEmailInvalid: string;
     authPasswordRequired: string;
+    authShowPassword: string;
+    authHidePassword: string;
 
     // Auth - Register Form
     authUsername: string;

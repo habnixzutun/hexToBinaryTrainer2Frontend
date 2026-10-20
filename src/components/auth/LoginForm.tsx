@@ -8,14 +8,15 @@
  * - Link to register form
  */
 
-import { useState } from 'react';
+import { useState, type ReactElement } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion } from 'framer-motion';
-import { Mail, Lock, LogIn } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
-import { useI18n } from '../../i18n/useI18n';
+import { Mail, LogIn } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext.tsx';
+import { useI18n } from '../../i18n/useI18n.ts';
+import PasswordInput from './PasswordInput.tsx';
 
 // ==================== Types ====================
 
@@ -25,7 +26,7 @@ interface LoginFormProps {
 
 // ==================== Component ====================
 
-export default function LoginForm({ onSwitchToRegister }: LoginFormProps): JSX.Element {
+export default function LoginForm({ onSwitchToRegister }: LoginFormProps): ReactElement {
     const { login, error: authError, clearError } = useAuth();
     const { t } = useI18n();
     const [submitError, setSubmitError] = useState<string | null>(null);
@@ -96,33 +97,16 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps): JSX.E
             </div>
 
             {/* Password Input */}
-            <div>
-                <label htmlFor="login-password" className="sr-only">
-                    {t.authPassword}
-                </label>
-                <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Lock className="h-4 w-4 text-on-surface-subtle" aria-hidden="true" />
-                    </div>
-                    <input
-                        id="login-password"
-                        type="password"
-                        autoComplete="current-password"
-                        {...register('password')}
-                        placeholder={t.authPassword}
-                        aria-required="true"
-                        aria-invalid={errors.password ? 'true' : 'false'}
-                        aria-describedby={errors.password ? 'login-password-error' : undefined}
-                        disabled={isSubmitting}
-                        className="w-full pl-10 pr-3 py-2 bg-surface-alt border border-outline rounded-md text-sm text-on-surface placeholder-on-surface-subtle focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent disabled:opacity-50 transition-colors"
-                    />
-                </div>
-                {errors.password && (
-                    <p id="login-password-error" className="mt-1 text-xs text-error-text" role="alert">
-                        {errors.password.message}
-                    </p>
-                )}
-            </div>
+            <PasswordInput
+                id="login-password"
+                name="password"
+                placeholder={t.authPassword}
+                autoComplete="current-password"
+                register={register}
+                error={errors.password}
+                isSubmitting={isSubmitting}
+                autoFocus={false}
+            />
 
             {/* Error Message */}
             {displayError && (

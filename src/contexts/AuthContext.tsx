@@ -8,7 +8,7 @@
  * - Automatic user restoration on app startup
  */
 
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, type ReactNode, type ReactElement } from 'react';
 import {
     login as apiLogin,
     register as apiRegister,
@@ -43,7 +43,7 @@ interface AuthProviderProps {
     children: ReactNode;
 }
 
-export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
+export function AuthProvider({ children }: AuthProviderProps): ReactElement {
     const [user, setUser] = useState<UserMeResponse | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);

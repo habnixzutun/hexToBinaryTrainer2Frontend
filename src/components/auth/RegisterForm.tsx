@@ -10,14 +10,15 @@
  * - Link to login form
  */
 
-import { useState } from 'react';
+import { useState, type ReactElement } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion } from 'framer-motion';
-import { Mail, User, Lock, UserPlus } from 'lucide-react';
+import { Mail, User, UserPlus } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useI18n } from '../../i18n/useI18n';
+import PasswordInput from './PasswordInput.tsx';
 
 // ==================== Types ====================
 
@@ -28,7 +29,7 @@ interface RegisterFormProps {
 
 // ==================== Component ====================
 
-export default function RegisterForm({ onSwitchToLogin, onRegisterSuccess }: RegisterFormProps): JSX.Element {
+export default function RegisterForm({ onSwitchToLogin, onRegisterSuccess }: RegisterFormProps): ReactElement {
     const { register: authRegister, error: authError, clearError } = useAuth();
     const { t } = useI18n();
     const [submitError, setSubmitError] = useState<string | null>(null);
@@ -159,33 +160,16 @@ export default function RegisterForm({ onSwitchToLogin, onRegisterSuccess }: Reg
             </div>
 
             {/* Password Input */}
-            <div>
-                <label htmlFor="register-password" className="sr-only">
-                    {t.authPassword}
-                </label>
-                <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Lock className="h-4 w-4 text-on-surface-subtle" aria-hidden="true" />
-                    </div>
-                    <input
-                        id="register-password"
-                        type="password"
-                        autoComplete="new-password"
-                        {...register('password')}
-                        placeholder={t.authPassword}
-                        aria-required="true"
-                        aria-invalid={errors.password ? 'true' : 'false'}
-                        aria-describedby="password-requirements"
-                        disabled={isSubmitting}
-                        className="w-full pl-10 pr-3 py-2 bg-surface-alt border border-outline rounded-md text-sm text-on-surface placeholder-on-surface-subtle focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent disabled:opacity-50 transition-colors"
-                    />
-                </div>
-                {errors.password && (
-                    <p id="register-password-error" className="mt-1 text-xs text-error-text" role="alert">
-                        {errors.password.message}
-                    </p>
-                )}
-            </div>
+            <PasswordInput
+                id="register-password"
+                name="password"
+                placeholder={t.authPassword}
+                autoComplete="new-password"
+                register={register}
+                error={errors.password}
+                isSubmitting={isSubmitting}
+                ariaDescribedBy="password-requirements"
+            />
 
             {/* Password Requirements */}
             {password && (
@@ -202,33 +186,15 @@ export default function RegisterForm({ onSwitchToLogin, onRegisterSuccess }: Reg
             )}
 
             {/* Confirm Password Input */}
-            <div>
-                <label htmlFor="register-confirm-password" className="sr-only">
-                    {t.authConfirmPassword}
-                </label>
-                <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Lock className="h-4 w-4 text-on-surface-subtle" aria-hidden="true" />
-                    </div>
-                    <input
-                        id="register-confirm-password"
-                        type="password"
-                        autoComplete="new-password"
-                        {...register('confirmPassword')}
-                        placeholder={t.authConfirmPassword}
-                        aria-required="true"
-                        aria-invalid={errors.confirmPassword ? 'true' : 'false'}
-                        aria-describedby={errors.confirmPassword ? 'register-confirm-password-error' : undefined}
-                        disabled={isSubmitting}
-                        className="w-full pl-10 pr-3 py-2 bg-surface-alt border border-outline rounded-md text-sm text-on-surface placeholder-on-surface-subtle focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent disabled:opacity-50 transition-colors"
-                    />
-                </div>
-                {errors.confirmPassword && (
-                    <p id="register-confirm-password-error" className="mt-1 text-xs text-error-text" role="alert">
-                        {errors.confirmPassword.message}
-                    </p>
-                )}
-            </div>
+            <PasswordInput
+                id="register-confirm-password"
+                name="confirmPassword"
+                placeholder={t.authConfirmPassword}
+                autoComplete="new-password"
+                register={register}
+                error={errors.confirmPassword}
+                isSubmitting={isSubmitting}
+            />
 
             {/* Error Message */}
             {displayError && (
