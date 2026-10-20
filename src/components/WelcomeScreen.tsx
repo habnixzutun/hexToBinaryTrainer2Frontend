@@ -8,27 +8,62 @@
  * - Error handling and loading states
  */
 
-import { useState, type ReactElement } from 'react';
+import { useEffect, useState, type ReactElement } from 'react';
 import { motion } from 'framer-motion';
 import { Terminal, Globe, Sun, Moon } from 'lucide-react';
 import { useI18n } from '../i18n/useI18n.ts';
 import { type Locale } from '../i18n/translations.ts';
 import { useTheme } from '../theme/useTheme.ts';
+import { verifyEmail } from '../services/authApi.ts';
 import LoginForm from './auth/LoginForm.tsx';
 import RegisterForm from './auth/RegisterForm.tsx';
 import VerifyEmailScreen from './auth/VerifyEmailScreen.tsx';
+import VerifyLinkScreen, { type VerifyLinkStatus } from './auth/VerifyLinkScreen.tsx';
 
 // ==================== Types ====================
 
 type AuthView = 'login' | 'register' | 'verify-email';
+
+/**
+ * Extract the verification token from the URL if this is a verify-email link
+ * ({FRONTEND_URL}/verify-email?token=...) sent by the backend.
+ */
+function readVerifyTokenFromUrl(): string | null {
+    const isVerifyPath = window.location.pathname.endsWith('/verify-email');
+    if (!isVerifyPath) {
+        return null;
+    }
+    return new URLSearchParams(window.location.search).get('token');
+}
 
 // ==================== Component ====================
 
 export default function WelcomeScreen(): ReactElement {
     const [view, setView] = useState<AuthView>('login');
     const [registeredEmail, setRegisteredEmail] = useState<string>('');
+    const [linkStatus, setLinkStatus] = useState<VerifyLinkStatus | 'idle'>('idle');
+    const [linkError, setLinkError] = useState<string>('');
     const { t, locale, setLocale } = useI18n();
     const { theme, toggleTheme } = useTheme();
+
+    /**
+     * Process a verification link (?token=) from the user's email once on mount.
+     * The URL is cleaned immediately so a reload never re-submits the token.
+     */
+    useEffect(() => {
+        const token = readVerifyTokenFromUrl();
+        if (!token) {
+            return;
+        }
+        window.history.replaceState({}, '', import.meta.env.BASE_URL);
+        setLinkStatus('verifying');
+        verifyEmail(token)
+            .then(() => setLinkStatus('success'))
+            .catch((err: unknown) => {
+                setLinkError(err instanceof Error ? err.message : 'Verification failed');
+                setLinkStatus('error');
+            });
+    }, []);
 
     const toggleLocale = (): void => {
         const next: Locale = locale === 'de' ? 'en' : 'de';
@@ -43,6 +78,8 @@ export default function WelcomeScreen(): ReactElement {
     const handleBackToLogin = (): void => {
         setView('login');
         setRegisteredEmail('');
+        setLinkStatus('idle');
+        setLinkError('');
     };
 
     return (
@@ -75,49 +112,60 @@ export default function WelcomeScreen(): ReactElement {
             </div>
 
             <main className="w-full max-w-sm" aria-labelledby="welcome-heading">
-                {/* Logo + Title */}
-                <div className="mb-8">
-                    <div className="flex items-center gap-2 mb-4">
-                        <Terminal strokeWidth={1.5} size={16} className="text-accent" aria-hidden="true" />
-                        <span className="text-xs font-bold tracking-wider text-on-surface-faint uppercase">IT Trainer</span>
-                    </div>
-
-                    <h1 id="welcome-heading" className="text-2xl font-bold tracking-tight text-on-surface mb-2">
-                        {view === 'login' && t.authWelcomeBack}
-                        {view === 'register' && t.authCreateAccount}
-                        {view === 'verify-email' && t.authVerifyEmail}
-                    </h1>
-                    <p className="text-sm text-on-surface-faint leading-relaxed">
-                        {view === 'login' && t.authLoginSubtitle}
-                        {view === 'register' && t.authRegisterSubtitle}
-                        {view === 'verify-email' && t.authVerifySubtitle}
-                    </p>
+                {/* Logo */}
+                <div className="flex items-center gap-2 mb-4">
+                    <Terminal strokeWidth={1.5} size={16} className="text-accent" aria-hidden="true" />
+                    <span className="text-xs font-bold tracking-wider text-on-surface-faint uppercase">IT Trainer</span>
                 </div>
 
-                {/* Auth Forms */}
-                <motion.div
-                    key={view}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.2 }}
-                >
-                    {view === 'login' && (
-                        <LoginForm onSwitchToRegister={() => setView('register')} />
-                    )}
-                    {view === 'register' && (
-                        <RegisterForm
-                            onSwitchToLogin={() => setView('login')}
-                            onRegisterSuccess={handleRegisterSuccess}
-                        />
-                    )}
-                    {view === 'verify-email' && (
-                        <VerifyEmailScreen
-                            email={registeredEmail}
-                            onBackToLogin={handleBackToLogin}
-                        />
-                    )}
-                </motion.div>
+                {linkStatus === 'idle' ? (
+                    <>
+                        {/* Title */}
+                        <div className="mb-8">
+                            <h1 id="welcome-heading" className="text-2xl font-bold tracking-tight text-on-surface mb-2">
+                                {view === 'login' && t.authWelcomeBack}
+                                {view === 'register' && t.authCreateAccount}
+                                {view === 'verify-email' && t.authVerifyEmail}
+                            </h1>
+                            <p className="text-sm text-on-surface-faint leading-relaxed">
+                                {view === 'login' && t.authLoginSubtitle}
+                                {view === 'register' && t.authRegisterSubtitle}
+                                {view === 'verify-email' && t.authVerifySubtitle}
+                            </p>
+                        </div>
+
+                        {/* Auth Forms */}
+                        <motion.div
+                            key={view}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.2 }}
+                        >
+                            {view === 'login' && (
+                                <LoginForm onSwitchToRegister={() => setView('register')} />
+                            )}
+                            {view === 'register' && (
+                                <RegisterForm
+                                    onSwitchToLogin={() => setView('login')}
+                                    onRegisterSuccess={handleRegisterSuccess}
+                                />
+                            )}
+                            {view === 'verify-email' && (
+                                <VerifyEmailScreen
+                                    email={registeredEmail}
+                                    onBackToLogin={handleBackToLogin}
+                                />
+                            )}
+                        </motion.div>
+                    </>
+                ) : (
+                    <VerifyLinkScreen
+                        status={linkStatus}
+                        errorMessage={linkError}
+                        onBackToLogin={handleBackToLogin}
+                    />
+                )}
             </main>
         </div>
     );
