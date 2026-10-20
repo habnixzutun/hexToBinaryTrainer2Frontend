@@ -14,6 +14,7 @@ import {
     register as apiRegister,
     logout as apiLogout,
     getCurrentUser,
+    refreshAccessToken,
     type UserMeResponse,
     type LoginRequest,
     type RegisterRequest
@@ -51,21 +52,22 @@ export function AuthProvider({ children }: AuthProviderProps): ReactElement {
     /**
      * Restore user session on app startup.
      *
-     * If access token exists in memory, fetch user data.
-     * If no token, user remains null (unauthenticated).
+     * The access token lives only in memory and is lost on reload, but the
+     * httponly refresh cookie survives - exchange it for a new access token,
+     * then fetch user data.
+     * If there is no valid refresh cookie, user remains null (unauthenticated).
      */
     useEffect(() => {
         const restoreSession = async (): Promise<void> => {
             try {
-                const token = getAccessToken();
-                if (token) {
-                    const userData = await getCurrentUser();
-                    setUser(userData);
+                if (!getAccessToken()) {
+                    await refreshAccessToken();
                 }
-            } catch (err) {
-                // Token invalid or expired - clear it
+                const userData = await getCurrentUser();
+                setUser(userData);
+            } catch {
+                // No valid session - not an error, just show the login screen
                 clearAccessToken();
-                setError(err instanceof Error ? err.message : 'Failed to restore session');
             } finally {
                 setLoading(false);
             }
