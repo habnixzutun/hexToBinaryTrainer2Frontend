@@ -33,7 +33,10 @@ export default function VerifyLinkScreen({
     const { t } = useI18n();
 
     return (
-        <div className="text-center space-y-6" role="status">
+        <div
+            className="text-center space-y-6"
+            role={status === 'error' ? 'alert' : 'status'}
+        >
             <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}

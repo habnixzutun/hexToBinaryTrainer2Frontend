@@ -8,7 +8,7 @@
  * - Error handling and loading states
  */
 
-import { useEffect, useState, type ReactElement } from 'react';
+import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { motion } from 'framer-motion';
 import { Terminal, Globe, Sun, Moon } from 'lucide-react';
 import { useI18n } from '../i18n/useI18n.ts';
@@ -23,14 +23,15 @@ import VerifyLinkScreen, { type VerifyLinkStatus } from './auth/VerifyLinkScreen
 // ==================== Types ====================
 
 type AuthView = 'login' | 'register' | 'verify-email';
+type LinkProcessState = VerifyLinkStatus | 'idle';
 
 /**
  * Extract the verification token from the URL if this is a verify-email link
  * ({FRONTEND_URL}/verify-email?token=...) sent by the backend.
  */
 function readVerifyTokenFromUrl(): string | null {
-    const isVerifyPath = window.location.pathname.endsWith('/verify-email');
-    if (!isVerifyPath) {
+    const path = window.location.pathname.replace(/\/$/, '');
+    if (!path.endsWith('/verify-email')) {
         return null;
     }
     return new URLSearchParams(window.location.search).get('token');
@@ -41,26 +42,34 @@ function readVerifyTokenFromUrl(): string | null {
 export default function WelcomeScreen(): ReactElement {
     const [view, setView] = useState<AuthView>('login');
     const [registeredEmail, setRegisteredEmail] = useState<string>('');
-    const [linkStatus, setLinkStatus] = useState<VerifyLinkStatus | 'idle'>('idle');
+    // Lazy init: landing on a verify-email link starts in 'verifying' without
+    // a synchronous setState inside the effect (react-hooks/set-state-in-effect).
+    const [linkStatus, setLinkStatus] = useState<LinkProcessState>(() =>
+        readVerifyTokenFromUrl() !== null ? 'verifying' : 'idle'
+    );
     const [linkError, setLinkError] = useState<string>('');
+    const verifySubmittedRef = useRef(false);
     const { t, locale, setLocale } = useI18n();
     const { theme, toggleTheme } = useTheme();
 
     /**
-     * Process a verification link (?token=) from the user's email once on mount.
-     * The URL is cleaned immediately so a reload never re-submits the token.
+     * Submit the verification token from the URL exactly once.
+     *
+     * The one-time token is single-use, so the effect must be idempotent even
+     * under React StrictMode's double invocation: an explicit ref guard plus
+     * immediate URL cleaning (a reload never re-submits the token).
      */
     useEffect(() => {
         const token = readVerifyTokenFromUrl();
-        if (!token) {
+        if (token === null || verifySubmittedRef.current) {
             return;
         }
+        verifySubmittedRef.current = true;
         window.history.replaceState({}, '', import.meta.env.BASE_URL);
-        setLinkStatus('verifying');
         verifyEmail(token)
             .then(() => setLinkStatus('success'))
             .catch((err: unknown) => {
-                setLinkError(err instanceof Error ? err.message : 'Verification failed');
+                setLinkError(err instanceof Error ? err.message : '');
                 setLinkStatus('error');
             });
     }, []);

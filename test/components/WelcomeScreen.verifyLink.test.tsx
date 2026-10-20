@@ -1,3 +1,4 @@
+import { StrictMode } from 'react'
 import { userEvent } from '@testing-library/user-event'
 import { render, screen, waitFor } from '../../src/test-utils.tsx'
 import WelcomeScreen from '../../src/components/WelcomeScreen.tsx'
@@ -29,10 +30,45 @@ describe('WelcomeScreen verify-email link handling', () => {
         await waitFor(() => {
             expect(mockVerifyEmail).toHaveBeenCalledWith('jwt-token-123')
         })
+        expect(mockVerifyEmail).toHaveBeenCalledTimes(1)
         expect(await screen.findByText('E-Mail bestätigt!')).toBeInTheDocument()
         expect(
             screen.getByRole('button', { name: 'Zurück zur Anmeldung' }),
         ).toBeInTheDocument()
+    })
+
+    it('shows the verifying state and cleans the URL while the request is in flight', async () => {
+        let resolveVerify: (value: { message: string }) => void = () => {}
+        mockVerifyEmail.mockReturnValue(
+            new Promise<{ message: string }>((resolve) => {
+                resolveVerify = resolve
+            }),
+        )
+        window.history.replaceState({}, '', VERIFY_PATH)
+
+        render(<WelcomeScreen />)
+
+        expect(await screen.findByText('E-Mail wird bestätigt...')).toBeInTheDocument()
+        // URL cleaned while in flight: a reload must never re-submit the token
+        expect(window.location.search).toBe('')
+        expect(window.location.pathname).not.toContain('verify-email')
+
+        resolveVerify({ message: 'ok' })
+        expect(await screen.findByText('E-Mail bestätigt!')).toBeInTheDocument()
+    })
+
+    it('submits the token exactly once under StrictMode double invocation', async () => {
+        mockVerifyEmail.mockResolvedValue({ message: 'ok' })
+        window.history.replaceState({}, '', VERIFY_PATH)
+
+        render(
+            <StrictMode>
+                <WelcomeScreen />
+            </StrictMode>,
+        )
+
+        expect(await screen.findByText('E-Mail bestätigt!')).toBeInTheDocument()
+        expect(mockVerifyEmail).toHaveBeenCalledTimes(1)
     })
 
     it('shows the API error message when verification fails', async () => {
@@ -44,6 +80,7 @@ describe('WelcomeScreen verify-email link handling', () => {
         render(<WelcomeScreen />)
 
         expect(await screen.findByText('Bestätigung fehlgeschlagen')).toBeInTheDocument()
+        expect(screen.getByRole('alert')).toBeInTheDocument()
         expect(
             await screen.findByText('Verification token has expired.'),
         ).toBeInTheDocument()
