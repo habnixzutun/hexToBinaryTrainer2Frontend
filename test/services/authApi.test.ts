@@ -199,11 +199,45 @@ describe('authApi', () => {
       })
     })
 
-    it('throws the backend detail on error', async () => {
+    it('refreshes the access token once on 401 and retries', async () => {
+      setAccessToken('expired')
+      mockFetch
+        .mockResolvedValueOnce(jsonResponse(401, { detail: 'Token has expired.' }))
+        .mockResolvedValueOnce(jsonResponse(200, { access_token: 'access-2', token_type: 'bearer' }))
+        .mockResolvedValueOnce(jsonResponse(200, user))
+
+      await expect(getCurrentUser()).resolves.toEqual(user)
+
+      expect(mockFetch).toHaveBeenCalledTimes(3)
+      expect(mockFetch).toHaveBeenNthCalledWith(
+        2,
+        'http://localhost:8000/api/auth/refresh',
+        expect.objectContaining({ method: 'POST', credentials: 'include' })
+      )
+      expect(mockFetch).toHaveBeenNthCalledWith(
+        3,
+        'http://localhost:8000/api/user/me',
+        expect.objectContaining({ headers: { Authorization: 'Bearer access-2' } })
+      )
+      expect(getAccessToken()).toBe('access-2')
+    })
+
+    it('throws when the refresh after a 401 fails', async () => {
+      setAccessToken('expired')
+      mockFetch
+        .mockResolvedValueOnce(jsonResponse(401, { detail: 'Token has expired.' }))
+        .mockResolvedValueOnce(jsonResponse(401, { detail: 'Missing refresh token.' }))
+
+      await expect(getCurrentUser()).rejects.toThrow('Missing refresh token.')
+      expect(mockFetch).toHaveBeenCalledTimes(2)
+    })
+
+    it('throws the backend detail on other errors without refreshing', async () => {
       setAccessToken('access-1')
       mockFetch.mockResolvedValueOnce(jsonResponse(404, { detail: 'Not Found' }))
 
       await expect(getCurrentUser()).rejects.toThrow('Not Found')
+      expect(mockFetch).toHaveBeenCalledTimes(1)
     })
 
     it('throws a fallback message when the error body is not JSON', async () => {

@@ -190,8 +190,20 @@ export async function logout(): Promise<LogoutResponse> {
     return await response.json();
 }
 
+function fetchCurrentUser(token: string): Promise<Response> {
+    return fetch(`${BASE_URL}/api/user/me`, {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+        },
+        credentials: 'include',
+    });
+}
+
 /**
  * Get current authenticated user info with statistics.
+ *
+ * On 401 (e.g. expired access token) refreshes the token once and retries.
  *
  * @returns User info + game stats
  * @throws Error if not authenticated or user not found
@@ -203,13 +215,12 @@ export async function getCurrentUser(): Promise<UserMeResponse> {
         throw new Error('No access token available');
     }
 
-    const response = await fetch(`${BASE_URL}/api/user/me`, {
-        method: 'GET',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-        },
-        credentials: 'include',
-    });
+    let response = await fetchCurrentUser(token);
+
+    if (response.status === 401) {
+        const refreshResult = await refreshAccessToken();
+        response = await fetchCurrentUser(refreshResult.access_token);
+    }
 
     if (!response.ok) {
         const error = await response.json().catch(() => ({ detail: 'Failed to fetch user data' }));
