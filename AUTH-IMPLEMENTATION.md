@@ -89,7 +89,7 @@ Both backend and frontend authentication systems have been fully implemented acc
 - **Access Token**: Stored in memory (not localStorage) for security
 - **Refresh Token**: httponly cookie managed by backend
 - **Auto-Refresh**: HTTP interceptor catches 401 → calls /api/auth/refresh → retries request
-- **Session Persistence**: On app reload, if access token exists → fetch /api/user/me
+- **Session Persistence**: On app reload → POST /api/auth/refresh (refresh cookie) → fetch /api/user/me
 
 ### State Management
 

@@ -1,17 +1,21 @@
 import { render, screen, waitFor } from '../../src/test-utils.tsx'
 import Leaderboard from '../../src/components/Leaderboard.tsx'
+import { authValue, testUser } from '../helpers/auth.ts'
 
-// Mock the api module
-vi.mock('../../src/services/api', () => ({
-  api: {
+// Mock the game API (shape of GET /api/game/leaderboard entries)
+vi.mock('../../src/services/api.ts', () => ({
+  gameApi: {
     getLeaderboard: vi.fn().mockResolvedValue([
-      { name: 'Alice', correct: 10, incorrect: 2, points: 100 },
-      { name: 'Bob', correct: 8, incorrect: 3, points: 80 },
-      { name: 'Charlie', correct: 6, incorrect: 4, points: 60 },
-      { name: 'Dave', correct: 4, incorrect: 5, points: 40 },
+      { user_id: 'u-1', username: 'Alice', correct_count: 10, incorrect_count: 2, points: 100 },
+      { user_id: 'u-2', username: 'Bob', correct_count: 8, incorrect_count: 3, points: 80 },
+      { user_id: 'u-3', username: 'Charlie', correct_count: 6, incorrect_count: 4, points: 60 },
+      { user_id: 'u-4', username: 'Dave', correct_count: 4, incorrect_count: 5, points: 40 },
     ]),
   },
 }))
+
+const mockUseAuth = vi.hoisted(() => vi.fn())
+vi.mock('../../src/contexts/AuthContext.tsx', () => ({ useAuth: mockUseAuth }))
 
 // Mock localStorage
 const localStorageMock = (() => {
@@ -34,16 +38,15 @@ Object.defineProperty(window, 'localStorage', {
   value: localStorageMock,
 })
 
-const currentUser = { name: 'Alice', correct: 10, incorrect: 2, points: 100 }
-
 describe('Leaderboard', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     localStorageMock.clear()
+    mockUseAuth.mockReturnValue(authValue({ user: { ...testUser, username: 'Alice' } }))
   })
 
   it('renders medal icons for top 3 ranks instead of emojis', async () => {
-    render(<Leaderboard currentUser={currentUser} refreshTrigger={0} />)
+    render(<Leaderboard refreshTrigger={0} />)
 
     await waitFor(() => {
       // Check that rank labels are accessible (full aria-label includes name and points)
@@ -64,7 +67,7 @@ describe('Leaderboard', () => {
   })
 
   it('renders numeric ranks for positions below 3', async () => {
-    render(<Leaderboard currentUser={currentUser} refreshTrigger={0} />)
+    render(<Leaderboard refreshTrigger={0} />)
 
     await waitFor(() => {
       // Rank 4 should show numeric "4" (Dave is at rank 4)
@@ -74,7 +77,7 @@ describe('Leaderboard', () => {
   })
 
   it('has accessible column headers for correct and wrong answers', async () => {
-    render(<Leaderboard currentUser={currentUser} refreshTrigger={0} />)
+    render(<Leaderboard refreshTrigger={0} />)
 
     await waitFor(() => {
       // Column headers should have aria-labels that screen readers can announce

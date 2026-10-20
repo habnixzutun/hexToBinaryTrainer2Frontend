@@ -1,189 +1,149 @@
-import { api } from '../../src/services/api.ts'
+import { gameApi } from '../../src/services/api.ts'
+import { clearAccessToken, getAccessToken, setAccessToken } from '../../src/utils/tokenManager.ts'
 
-// Mock global fetch
 const mockFetch = vi.fn()
-global.fetch = mockFetch
 
-// Mock console.error for getLeaderboard error case
-const mockConsoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+const jsonResponse = (status: number, body: unknown) => ({
+  ok: status >= 200 && status < 300,
+  status,
+  json: async () => body,
+})
 
-describe('api', () => {
+const submitResult = {
+  message: 'Correct answer recorded',
+  user_id: 'user-1',
+  correct_count: 1,
+  incorrect_count: 0,
+  points: 8,
+}
+
+describe('gameApi', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    vi.stubGlobal('fetch', mockFetch)
+    mockFetch.mockReset()
+    clearAccessToken()
   })
 
   afterAll(() => {
-    mockConsoleError.mockRestore()
+    vi.unstubAllGlobals()
   })
 
-  describe('getUser', () => {
-    it('returns user data on successful response', async () => {
-      // Arrange
-      const mockUser = { name: 'Alice', correct: 10, incorrect: 2, points: 100 }
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: async () => mockUser,
+  describe('submitCorrect', () => {
+    it('posts the bits with bearer token and refresh cookie', async () => {
+      setAccessToken('access-1')
+      mockFetch.mockResolvedValueOnce(jsonResponse(200, submitResult))
+
+      await expect(gameApi.submitCorrect(8)).resolves.toEqual(submitResult)
+      expect(mockFetch).toHaveBeenCalledWith('http://localhost:8000/api/game/correct', {
+        method: 'POST',
+        body: JSON.stringify({ bits: 8 }),
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer access-1',
+        },
+        credentials: 'include',
       })
+    })
 
-      // Act
-      const result = await api.getUser('Alice')
+    it('omits the Authorization header without access token', async () => {
+      mockFetch.mockResolvedValueOnce(jsonResponse(200, submitResult))
 
-      // Assert
-      expect(result).toEqual(mockUser)
+      await gameApi.submitCorrect(8)
+
+      expect(mockFetch.mock.calls[0]?.[1]?.headers).toEqual({ 'Content-Type': 'application/json' })
+    })
+
+    it('throws the backend detail on error', async () => {
+      setAccessToken('access-1')
+      mockFetch.mockResolvedValueOnce(jsonResponse(404, { detail: 'User not found.' }))
+
+      await expect(gameApi.submitCorrect(8)).rejects.toThrow('User not found.')
+    })
+  })
+
+  describe('submitIncorrect', () => {
+    it('posts the bits to /api/game/incorrect', async () => {
+      setAccessToken('access-1')
+      const result = { ...submitResult, message: 'Incorrect answer recorded', points: -16 }
+      mockFetch.mockResolvedValueOnce(jsonResponse(200, result))
+
+      await expect(gameApi.submitIncorrect(4)).resolves.toEqual(result)
       expect(mockFetch).toHaveBeenCalledWith(
-        'http://localhost:8000/api/user',
-        expect.objectContaining({
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: 'Alice' }),
-        })
+        'http://localhost:8000/api/game/incorrect',
+        expect.objectContaining({ method: 'POST', body: JSON.stringify({ bits: 4 }) })
       )
     })
 
-    it('returns default user on HTTP error (e.g., 404 for new user)', async () => {
-      // Arrange
-      mockFetch.mockResolvedValue({
+    it('throws a fallback message when the error body is not JSON', async () => {
+      setAccessToken('access-1')
+      mockFetch.mockResolvedValueOnce({
         ok: false,
-        status: 404,
+        status: 500,
+        json: async () => {
+          throw new SyntaxError('Unexpected token')
+        },
       })
 
-      // Act
-      const result = await api.getUser('NewUser')
+      await expect(gameApi.submitIncorrect(4)).rejects.toThrow('Failed to submit incorrect answer')
+    })
+  })
 
-      // Assert
-      expect(result).toEqual({
-        name: 'NewUser',
-        correct: 0,
-        incorrect: 0,
-        points: 0,
-      })
+  describe('token refresh on 401', () => {
+    it('refreshes the access token and retries the request once', async () => {
+      setAccessToken('expired')
+      mockFetch
+        .mockResolvedValueOnce(jsonResponse(401, { detail: 'Token has expired.' }))
+        .mockResolvedValueOnce(jsonResponse(200, { access_token: 'access-2', token_type: 'bearer' }))
+        .mockResolvedValueOnce(jsonResponse(200, submitResult))
+
+      await expect(gameApi.submitCorrect(8)).resolves.toEqual(submitResult)
+
+      expect(mockFetch).toHaveBeenCalledTimes(3)
+      expect(mockFetch).toHaveBeenNthCalledWith(
+        2,
+        'http://localhost:8000/api/auth/refresh',
+        expect.objectContaining({ method: 'POST', credentials: 'include' })
+      )
+      expect(mockFetch).toHaveBeenNthCalledWith(
+        3,
+        'http://localhost:8000/api/game/correct',
+        expect.objectContaining({
+          headers: expect.objectContaining({ Authorization: 'Bearer access-2' }),
+        })
+      )
+      expect(getAccessToken()).toBe('access-2')
     })
 
-    it('returns default user on network error', async () => {
-      // Arrange
-      mockFetch.mockRejectedValue(new Error('Network error'))
+    it('clears the token and throws when the refresh fails', async () => {
+      setAccessToken('expired')
+      mockFetch
+        .mockResolvedValueOnce(jsonResponse(401, { detail: 'Token has expired.' }))
+        .mockResolvedValueOnce(jsonResponse(401, { detail: 'Missing refresh token.' }))
 
-      // Act
-      const result = await api.getUser('Alice')
-
-      // Assert
-      expect(result).toEqual({
-        name: 'Alice',
-        correct: 0,
-        incorrect: 0,
-        points: 0,
-      })
+      await expect(gameApi.submitCorrect(8)).rejects.toThrow('Session expired. Please login again.')
+      expect(getAccessToken()).toBeNull()
+      expect(mockFetch).toHaveBeenCalledTimes(2)
     })
   })
 
   describe('getLeaderboard', () => {
-    it('returns entries array on successful response', async () => {
-      // Arrange
-      const mockEntries = [
-        { name: 'Alice', correct: 10, incorrect: 2, points: 100 },
-        { name: 'Bob', correct: 8, incorrect: 3, points: 80 },
+    it('returns the unwrapped entries from a public GET', async () => {
+      const entries = [
+        { user_id: 'u-1', username: 'Alice', correct_count: 10, incorrect_count: 2, points: 100 },
       ]
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: async () => ({ entries: mockEntries }),
+      mockFetch.mockResolvedValueOnce(jsonResponse(200, { entries }))
+
+      await expect(gameApi.getLeaderboard()).resolves.toEqual(entries)
+      expect(mockFetch).toHaveBeenCalledWith('http://localhost:8000/api/game/leaderboard', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
       })
-
-      // Act
-      const result = await api.getLeaderboard()
-
-      // Assert
-      expect(result).toEqual(mockEntries)
-      expect(mockFetch).toHaveBeenCalledWith('http://localhost:8000/api/leaderboard')
     })
 
-    it('returns empty array and logs error on HTTP error', async () => {
-      // Arrange
-      mockFetch.mockResolvedValue({
-        ok: false,
-        status: 500,
-      })
+    it('throws on HTTP error', async () => {
+      mockFetch.mockResolvedValueOnce(jsonResponse(500, {}))
 
-      // Act
-      const result = await api.getLeaderboard()
-
-      // Assert
-      expect(result).toEqual([])
-      expect(mockConsoleError).toHaveBeenCalledWith(
-        'Leaderboard konnte nicht geladen werden:',
-        expect.any(Error)
-      )
-    })
-
-    it('returns empty array and logs error on network error', async () => {
-      // Arrange
-      const networkError = new Error('Network error')
-      mockFetch.mockRejectedValue(networkError)
-
-      // Act
-      const result = await api.getLeaderboard()
-
-      // Assert
-      expect(result).toEqual([])
-      expect(mockConsoleError).toHaveBeenCalledWith(
-        'Leaderboard konnte nicht geladen werden:',
-        networkError
-      )
-    })
-  })
-
-  describe('updateUserCorrect', () => {
-    it('sends correct payload and returns parsed response', async () => {
-      // Arrange
-      const mockResponse = {
-        message: 'Correct answer recorded',
-        user: { name: 'Alice', correct: 11, incorrect: 2, points: 110 },
-      }
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: async () => mockResponse,
-      })
-
-      // Act
-      const result = await api.updateUserCorrect('Alice', 8)
-
-      // Assert
-      expect(result).toEqual(mockResponse)
-      expect(mockFetch).toHaveBeenCalledWith(
-        'http://localhost:8000/api/correct',
-        expect.objectContaining({
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: 'Alice', bits: 8 }),
-        })
-      )
-    })
-  })
-
-  describe('updateUserIncorrect', () => {
-    it('sends correct payload and returns parsed response', async () => {
-      // Arrange
-      const mockResponse = {
-        message: 'Incorrect answer recorded',
-        user: { name: 'Alice', correct: 10, incorrect: 3, points: 100 },
-      }
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: async () => mockResponse,
-      })
-
-      // Act
-      const result = await api.updateUserIncorrect('Alice', 16)
-
-      // Assert
-      expect(result).toEqual(mockResponse)
-      expect(mockFetch).toHaveBeenCalledWith(
-        'http://localhost:8000/api/incorrect',
-        expect.objectContaining({
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: 'Alice', bits: 16 }),
-        })
-      )
+      await expect(gameApi.getLeaderboard()).rejects.toThrow('Failed to fetch leaderboard')
     })
   })
 })

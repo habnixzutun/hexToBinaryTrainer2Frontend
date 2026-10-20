@@ -1,17 +1,17 @@
 import { render, screen, fireEvent, waitFor } from '../../src/test-utils.tsx'
 import UnicodeTrainer from '../../src/components/UnicodeTrainer.tsx'
-import { api } from '../../src/services/api.ts'
+import { gameApi } from '../../src/services/api.ts'
 
-// Mock the api module
-vi.mock('../../src/services/api', () => ({
-  api: {
-    updateUserCorrect: vi.fn(),
-    updateUserIncorrect: vi.fn(),
+// Mock the game API
+vi.mock('../../src/services/api.ts', () => ({
+  gameApi: {
+    submitCorrect: vi.fn(),
+    submitIncorrect: vi.fn(),
   },
 }))
 
-const mockUpdateUserCorrect = api.updateUserCorrect as ReturnType<typeof vi.fn>
-const mockUpdateUserIncorrect = api.updateUserIncorrect as ReturnType<typeof vi.fn>
+const mockSubmitCorrect = vi.mocked(gameApi.submitCorrect)
+const mockSubmitIncorrect = vi.mocked(gameApi.submitIncorrect)
 
 // Mock localStorage
 const localStorageMock = (() => {
@@ -34,10 +34,8 @@ Object.defineProperty(window, 'localStorage', {
   value: localStorageMock,
 })
 
-const mockUser = { name: 'TestUser', correct: 5, incorrect: 2, points: 50 }
-
 describe('UnicodeTrainer', () => {
-  let mockOnUpdate: ReturnType<typeof vi.fn>
+  let mockOnUpdate: ReturnType<typeof vi.fn<() => void>>
 
   beforeEach(() => {
     vi.clearAllMocks()
@@ -48,13 +46,19 @@ describe('UnicodeTrainer', () => {
     vi.spyOn(Math, 'random').mockReturnValue(0.5)
 
     // Setup default API mock responses
-    mockUpdateUserCorrect.mockResolvedValue({
-      message: 'Correct',
-      user: { name: 'TestUser', correct: 6, incorrect: 2, points: 60 },
+    mockSubmitCorrect.mockResolvedValue({
+      message: 'Correct answer recorded',
+      user_id: 'user-1',
+      correct_count: 6,
+      incorrect_count: 2,
+      points: 58,
     })
-    mockUpdateUserIncorrect.mockResolvedValue({
-      message: 'Incorrect',
-      user: { name: 'TestUser', correct: 5, incorrect: 3, points: 50 },
+    mockSubmitIncorrect.mockResolvedValue({
+      message: 'Incorrect answer recorded',
+      user_id: 'user-1',
+      correct_count: 5,
+      incorrect_count: 3,
+      points: 18,
     })
   })
 
@@ -63,7 +67,7 @@ describe('UnicodeTrainer', () => {
   })
 
   it('renders without crashing and shows initial state', () => {
-    render(<UnicodeTrainer user={mockUser} onUpdate={mockOnUpdate} />)
+    render(<UnicodeTrainer onUpdate={mockOnUpdate} />)
 
     // Should render the trainer interface
     expect(screen.getByRole('region', { name: /unicode trainer/i })).toBeInTheDocument()
@@ -76,7 +80,7 @@ describe('UnicodeTrainer', () => {
   })
 
   it('filters input to only allow 0 and 1 characters', () => {
-    render(<UnicodeTrainer user={mockUser} onUpdate={mockOnUpdate} />)
+    render(<UnicodeTrainer onUpdate={mockOnUpdate} />)
 
     const input = screen.getByRole('textbox')
 
@@ -86,7 +90,7 @@ describe('UnicodeTrainer', () => {
   })
 
   it('handles correct answer flow with API call and feedback', async () => {
-    render(<UnicodeTrainer user={mockUser} onUpdate={mockOnUpdate} />)
+    render(<UnicodeTrainer onUpdate={mockOnUpdate} />)
 
     const input = screen.getByRole('textbox')
     const submitButton = screen.getByRole('button', { name: /check answer/i })
@@ -107,21 +111,16 @@ describe('UnicodeTrainer', () => {
     })
 
     // Should call API with correct parameters (bytes*8 = 8)
-    expect(mockUpdateUserCorrect).toHaveBeenCalledWith('TestUser', 8)
+    expect(mockSubmitCorrect).toHaveBeenCalledWith(8)
 
-    // Should call onUpdate with new user data
+    // Should notify parent so it can refresh user stats
     await waitFor(() => {
-      expect(mockOnUpdate).toHaveBeenCalledWith({
-        name: 'TestUser',
-        correct: 6,
-        incorrect: 2,
-        points: 60,
-      })
+      expect(mockOnUpdate).toHaveBeenCalledTimes(1)
     })
   })
 
   it('handles wrong answer flow with API call and feedback', async () => {
-    render(<UnicodeTrainer user={mockUser} onUpdate={mockOnUpdate} />)
+    render(<UnicodeTrainer onUpdate={mockOnUpdate} />)
 
     const input = screen.getByRole('textbox')
     const submitButton = screen.getByRole('button', { name: /check answer/i })
@@ -140,21 +139,16 @@ describe('UnicodeTrainer', () => {
     })
 
     // Should call API with correct parameters
-    expect(mockUpdateUserIncorrect).toHaveBeenCalledWith('TestUser', 8)
+    expect(mockSubmitIncorrect).toHaveBeenCalledWith(8)
 
-    // Should call onUpdate with new user data
+    // Should notify parent so it can refresh user stats
     await waitFor(() => {
-      expect(mockOnUpdate).toHaveBeenCalledWith({
-        name: 'TestUser',
-        correct: 5,
-        incorrect: 3,
-        points: 50,
-      })
+      expect(mockOnUpdate).toHaveBeenCalledTimes(1)
     })
   })
 
   it('submits answer when Enter key is pressed', async () => {
-    render(<UnicodeTrainer user={mockUser} onUpdate={mockOnUpdate} />)
+    render(<UnicodeTrainer onUpdate={mockOnUpdate} />)
 
     const input = screen.getByRole('textbox')
 
@@ -166,12 +160,12 @@ describe('UnicodeTrainer', () => {
 
     // Should trigger submit and call API
     await waitFor(() => {
-      expect(mockUpdateUserCorrect).toHaveBeenCalledWith('TestUser', 8)
+      expect(mockSubmitCorrect).toHaveBeenCalledWith(8)
     })
   })
 
   it('switches byte tabs and generates new question in correct range', () => {
-    render(<UnicodeTrainer user={mockUser} onUpdate={mockOnUpdate} />)
+    render(<UnicodeTrainer onUpdate={mockOnUpdate} />)
 
     // Click 2 Bytes tab
     const twoBytesTab = screen.getByRole('tab', { name: '2 Bytes' })
@@ -186,9 +180,9 @@ describe('UnicodeTrainer', () => {
 
   it('handles API failure gracefully with error feedback', async () => {
     // Mock API to reject
-    mockUpdateUserCorrect.mockRejectedValue(new Error('Network error'))
+    mockSubmitCorrect.mockRejectedValue(new Error('Network error'))
 
-    render(<UnicodeTrainer user={mockUser} onUpdate={mockOnUpdate} />)
+    render(<UnicodeTrainer onUpdate={mockOnUpdate} />)
 
     const input = screen.getByRole('textbox')
     const submitButton = screen.getByRole('button', { name: /check answer/i })
@@ -210,7 +204,7 @@ describe('UnicodeTrainer', () => {
   })
 
   it('has proper accessibility attributes', () => {
-    render(<UnicodeTrainer user={mockUser} onUpdate={mockOnUpdate} />)
+    render(<UnicodeTrainer onUpdate={mockOnUpdate} />)
 
     // Should have region landmark
     expect(screen.getByRole('region', { name: /unicode trainer/i })).toBeInTheDocument()
