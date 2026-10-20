@@ -1,3 +1,4 @@
+import { type ReactElement } from 'react';
 /**
  * Verify Email Screen: Shown after successful registration.
  *
@@ -21,7 +22,7 @@ interface VerifyEmailScreenProps {
 
 // ==================== Component ====================
 
-export default function VerifyEmailScreen({ email, onBackToLogin }: VerifyEmailScreenProps): JSX.Element {
+export default function VerifyEmailScreen({ email, onBackToLogin }: VerifyEmailScreenProps): ReactElement {
     const { t } = useI18n();
 
     return (

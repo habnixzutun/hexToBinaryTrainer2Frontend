@@ -8,7 +8,7 @@
  * - Link to register form
  */
 
-import { useState } from 'react';
+import { useState, type ReactElement } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -26,7 +26,7 @@ interface LoginFormProps {
 
 // ==================== Component ====================
 
-export default function LoginForm({ onSwitchToRegister }: LoginFormProps): JSX.Element {
+export default function LoginForm({ onSwitchToRegister }: LoginFormProps): ReactElement {
     const { login, error: authError, clearError } = useAuth();
     const { t } = useI18n();
     const [submitError, setSubmitError] = useState<string | null>(null);

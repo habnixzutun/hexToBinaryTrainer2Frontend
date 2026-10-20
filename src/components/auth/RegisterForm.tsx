@@ -10,7 +10,7 @@
  * - Link to login form
  */
 
-import { useState } from 'react';
+import { useState, type ReactElement } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -29,7 +29,7 @@ interface RegisterFormProps {
 
 // ==================== Component ====================
 
-export default function RegisterForm({ onSwitchToLogin, onRegisterSuccess }: RegisterFormProps): JSX.Element {
+export default function RegisterForm({ onSwitchToLogin, onRegisterSuccess }: RegisterFormProps): ReactElement {
     const { register: authRegister, error: authError, clearError } = useAuth();
     const { t } = useI18n();
     const [submitError, setSubmitError] = useState<string | null>(null);
