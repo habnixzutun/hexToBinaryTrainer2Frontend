@@ -103,7 +103,10 @@ export function AuthProvider({ children }: AuthProviderProps): ReactElement {
      */
     const register = async (data: RegisterRequest): Promise<void> => {
         setError(null);
-        setLoading(true);
+        // NOTE: Do NOT toggle the global `loading` state here. AuthGate renders a
+        // spinner instead of WelcomeScreen while loading, which would unmount the
+        // form and reset its local view state — the verify-email screen would
+        // never be shown. RegisterForm tracks submission via isSubmitting.
 
         try {
             await apiRegister(data);
@@ -113,8 +116,6 @@ export function AuthProvider({ children }: AuthProviderProps): ReactElement {
             const message = err instanceof Error ? err.message : 'Registration failed';
             setError(message);
             throw err;
-        } finally {
-            setLoading(false);
         }
     };
 
