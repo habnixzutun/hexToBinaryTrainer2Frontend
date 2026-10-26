@@ -44,31 +44,39 @@ function recordConsent(): void {
     }
 }
 
+/** Exit animation duration in ms — must match the transition duration on motion.div. */
+const EXIT_ANIMATION_DURATION_MS = 300;
+
 /**
  * CookieBanner component.
  *
  * Renders a fixed bottom banner with info text and accept button.
  * Automatically focuses the accept button for keyboard accessibility.
- * Dismissed by clicking the button; consent is persisted.
+ * Dismissed by clicking the button — slides smoothly off-screen before unmounting.
+ * Consent is persisted in localStorage so the banner does not reappear.
  */
 export function CookieBanner(): ReactElement | null {
-    const [hasAccepted, setHasAccepted] = useState<boolean>(hasConsent);
+    const alreadyAccepted = hasConsent();
+    const [isVisible, setIsVisible] = useState<boolean>(!alreadyAccepted);
+    const [isFullyDismissed, setIsFullyDismissed] = useState<boolean>(alreadyAccepted);
     const buttonRef = useRef<HTMLButtonElement>(null);
     const { t } = useI18n();
 
     // Auto-focus the accept button on mount for keyboard users
     useEffect(() => {
-        if (!hasAccepted) {
+        if (isVisible) {
             buttonRef.current?.focus();
         }
-    }, [hasAccepted]);
+    }, [isVisible]);
 
     const handleAccept = (): void => {
         recordConsent();
-        setHasAccepted(true);
+        setIsVisible(false);
+        // Unmount after the exit animation finishes
+        window.setTimeout(() => setIsFullyDismissed(true), EXIT_ANIMATION_DURATION_MS);
     };
 
-    if (hasAccepted) {
+    if (isFullyDismissed) {
         return null;
     }
 
@@ -78,8 +86,8 @@ export function CookieBanner(): ReactElement | null {
             aria-label="Cookie notice"
             aria-live="polite"
             initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            transition={{ duration: 0.3, ease: 'easeOut' }}
+            animate={{ y: isVisible ? 0 : '100%' }}
+            transition={{ duration: EXIT_ANIMATION_DURATION_MS / 1000, ease: 'easeOut' }}
             className="fixed bottom-0 left-0 right-0 z-50 border-t border-outline-faint bg-surface-raised p-4 shadow-lg"
         >
             <div className="mx-auto flex max-w-5xl flex-col items-center gap-4 sm:flex-row sm:justify-between">
