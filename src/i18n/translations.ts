@@ -123,6 +123,10 @@ export const translations = {
         // Sidebar
         modus: 'Modus',
 
+        // Cookie banner
+        cookieBannerMessage: 'Diese App verwendet essentielle Cookies (HTTP-only), um deine Anmeldung aufrechtzuerhalten. Es werden keine Tracking- oder Marketing-Cookies eingesetzt.',
+        cookieBannerAccept: 'Verstanden',
+
         // sr-only helpers
         srAnswerFormat: (format: string) => `Gib deine Antwort im ${format}-Format ein`,
         srUtf8Binary: 'Gib die UTF-8 Binärdarstellung mit 0en und 1en ein',
@@ -249,6 +253,10 @@ export const translations = {
         // Sidebar
         modus: 'Mode',
 
+        // Cookie banner
+        cookieBannerMessage: 'This app uses essential cookies (HTTP-only) to keep you signed in. No tracking or marketing cookies are used.',
+        cookieBannerAccept: 'Got it',
+
         // sr-only helpers
         srAnswerFormat: (format: string) => `Enter your answer in ${format} format`,
         srUtf8Binary: 'Enter the UTF-8 binary representation using 0s and 1s',
@@ -374,6 +382,10 @@ export type Translations = {
 
     // Sidebar
     modus: string;
+
+    // Cookie banner
+    cookieBannerMessage: string;
+    cookieBannerAccept: string;
 
     // sr-only helpers
     srAnswerFormat: (format: string) => string;
