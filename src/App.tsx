@@ -7,6 +7,7 @@ import UnicodeTrainer from './components/UnicodeTrainer.tsx';
 import Leaderboard from './components/Leaderboard.tsx';
 import WelcomeScreen from './components/WelcomeScreen.tsx';
 import { AuthProvider, useAuth } from './contexts/AuthContext.tsx';
+import { CookieBanner } from './components/CookieBanner.tsx';
 
 export type ActiveApp = 'hex' | 'unicode' | 'leaderboard';
 export type HexBinMode = 'HexToBin' | 'HexToDec' | 'BinToHex' | 'BinToDec' | 'DecToHex' | 'DecToBin';
@@ -153,21 +154,25 @@ export default function App(): ReactElement {
 
 /**
  * Auth Gate: Switches between WelcomeScreen and AuthenticatedApp.
+ *
+ * Renders the CookieBanner on every auth state — the banner must be visible
+ * before login too.
  */
 function AuthGate(): ReactElement {
     const { user, loading } = useAuth();
 
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center h-screen bg-surface">
-                <Loader2 className="w-8 h-8 text-accent animate-spin" />
-            </div>
-        );
-    }
-
-    if (!user) {
-        return <WelcomeScreen />;
-    }
-
-    return <AuthenticatedApp />;
+    return (
+        <>
+            {loading ? (
+                <div className="flex items-center justify-center h-screen bg-surface">
+                    <Loader2 className="w-8 h-8 text-accent animate-spin" />
+                </div>
+            ) : user ? (
+                <AuthenticatedApp />
+            ) : (
+                <WelcomeScreen />
+            )}
+            <CookieBanner />
+        </>
+    );
 }
