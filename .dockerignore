@@ -1,5 +1,53 @@
+# Dependencies (reinstalled inside container)
 node_modules/
+.npm/
+
+# Build output
+dist/
+
+# Git
+.git/
+.github/
+
+# IDE
 .idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment & secrets
 .env
-.git
-.gitignore
+.env.*
+
+# Tests & coverage (not needed in image)
+test/
+coverage/
+.pytest_cache/
+
+# Documentation
+docs/
+README.md
+AUTH-IMPLEMENTATION.md
+
+# Lighthouse
+.lighthouseci/
+.lighthouserc.json
+
+# Caches & temp
+.tmp/
+__pycache__/
+*.log
+
+# macOS
+.DS_Store
+
+# Docker (self-referencing)
+docker-compose*.yaml
+Dockerfile.*
+.dockerignore
+
+# Generated output
+graphify-out/
+
+# Claude
+.claude/
