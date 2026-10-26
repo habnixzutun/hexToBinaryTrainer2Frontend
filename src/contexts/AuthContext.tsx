@@ -20,6 +20,8 @@ import {
     type RegisterRequest
 } from '../services/authApi';
 import { getAccessToken, clearAccessToken } from '../utils/tokenManager';
+import { setScoreCache, clearScoreCache, type CachedScore } from '../utils/scoreCache';
+import type { GameSubmitResponse } from '../services/api';
 
 // ==================== Types ====================
 
@@ -31,6 +33,7 @@ interface AuthContextType {
     register: (data: RegisterRequest) => Promise<void>;
     logout: () => Promise<void>;
     refreshUser: () => Promise<void>;
+    applyGameResult: (result: GameSubmitResponse) => void;
     clearError: () => void;
 }
 
@@ -50,6 +53,19 @@ export function AuthProvider({ children }: AuthProviderProps): ReactElement {
     const [error, setError] = useState<string | null>(null);
 
     /**
+     * Sync user stats to localStorage cache.
+     *
+     * Backend remains single source of truth — cache is for fast UI rendering.
+     */
+    const syncScoreCache = (userData: UserMeResponse): void => {
+        setScoreCache(userData.id, {
+            correct_count: userData.correct_count,
+            incorrect_count: userData.incorrect_count,
+            points: userData.points,
+        });
+    };
+
+    /**
      * Restore user session on app startup.
      *
      * The access token lives only in memory and is lost on reload, but the
@@ -65,6 +81,7 @@ export function AuthProvider({ children }: AuthProviderProps): ReactElement {
                 }
                 const userData = await getCurrentUser();
                 setUser(userData);
+                syncScoreCache(userData);
             } catch {
                 // No valid session - not an error, just show the login screen
                 clearAccessToken();
@@ -79,7 +96,7 @@ export function AuthProvider({ children }: AuthProviderProps): ReactElement {
     /**
      * Login with email and password.
      *
-     * On success, fetches user data and sets authenticated state.
+     * On success, fetches user data, sets authenticated state, and syncs score cache.
      */
     const login = async (data: LoginRequest): Promise<void> => {
         setError(null);
@@ -89,6 +106,7 @@ export function AuthProvider({ children }: AuthProviderProps): ReactElement {
             await apiLogin(data);
             const userData = await getCurrentUser();
             setUser(userData);
+            syncScoreCache(userData);
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Login failed';
             setError(message);
@@ -123,13 +141,19 @@ export function AuthProvider({ children }: AuthProviderProps): ReactElement {
 
     /**
      * Logout and clear authentication state.
+     *
+     * Clears user state and removes score cache for this user.
      */
     const logout = async (): Promise<void> => {
         setError(null);
 
         try {
+            const userId = user?.id;
             await apiLogout();
             setUser(null);
+            if (userId) {
+                clearScoreCache(userId);
+            }
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Logout failed';
             setError(message);
@@ -139,16 +163,38 @@ export function AuthProvider({ children }: AuthProviderProps): ReactElement {
     /**
      * Refresh user data from backend.
      *
-     * Called after game actions to update stats.
+     * Called after game actions to update stats. Syncs score cache on success.
      */
     const refreshUser = async (): Promise<void> => {
         try {
             const userData = await getCurrentUser();
             setUser(userData);
+            syncScoreCache(userData);
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Failed to refresh user data';
             setError(message);
         }
+    };
+
+    /**
+     * Apply game result from submitCorrect/submitIncorrect.
+     *
+     * Updates user state and syncs score cache without an extra API call.
+     * Backend remains single source of truth — this is an optimistic update
+     * based on the API response.
+     */
+    const applyGameResult = (result: GameSubmitResponse): void => {
+        setUser(prev => {
+            if (prev === null) return prev;
+            const updated: UserMeResponse = {
+                ...prev,
+                correct_count: result.correct_count,
+                incorrect_count: result.incorrect_count,
+                points: result.points,
+            };
+            syncScoreCache(updated);
+            return updated;
+        });
     };
 
     /**
@@ -166,6 +212,7 @@ export function AuthProvider({ children }: AuthProviderProps): ReactElement {
         register,
         logout,
         refreshUser,
+        applyGameResult,
         clearError,
     };
 
