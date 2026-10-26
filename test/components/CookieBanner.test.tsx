@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '../../src/test-utils.tsx';
+import { render, screen, fireEvent, waitFor } from '../../src/test-utils.tsx';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { CookieBanner, COOKIE_CONSENT_KEY } from '../../src/components/CookieBanner';
 
@@ -19,15 +19,26 @@ describe('CookieBanner', () => {
         expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
 
-    it('stores consent in localStorage and unmounts when the user accepts', () => {
+    it('stores consent in localStorage and unmounts after the exit animation', async () => {
         render(<CookieBanner />);
         const acceptButton = screen.getByRole('button', { name: /verstanden|got it/i });
         expect(localStorage.getItem(COOKIE_CONSENT_KEY)).toBeNull();
 
         fireEvent.click(acceptButton);
 
+        // Consent is persisted immediately
         expect(localStorage.getItem(COOKIE_CONSENT_KEY)).toBe('accepted');
-        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+        // Banner is still in the DOM while the slide-out animation plays
+        expect(screen.queryByRole('dialog')).toBeInTheDocument();
+
+        // After the animation duration, the banner unmounts
+        await waitFor(
+            () => {
+                expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+            },
+            { timeout: 500 },
+        );
     });
 
     it('focuses the accept button on mount for keyboard users', () => {
