@@ -8,6 +8,7 @@ import Leaderboard from './components/Leaderboard.tsx';
 import WelcomeScreen from './components/WelcomeScreen.tsx';
 import { AuthProvider, useAuth } from './contexts/AuthContext.tsx';
 import { CookieBanner } from './components/CookieBanner.tsx';
+import type { GameSubmitResponse } from './services/api.ts';
 
 export type ActiveApp = 'hex' | 'unicode' | 'leaderboard';
 export type HexBinMode = 'HexToBin' | 'HexToDec' | 'BinToHex' | 'BinToDec' | 'DecToHex' | 'DecToBin';
@@ -18,7 +19,7 @@ export type HexBinMode = 'HexToBin' | 'HexToDec' | 'BinToHex' | 'BinToDec' | 'De
  * Only rendered when user is authenticated.
  */
 function AuthenticatedApp(): ReactElement {
-    const { user, refreshUser, logout } = useAuth();
+    const { user, refreshUser, applyGameResult, logout } = useAuth();
     const [activeApp, setActiveApp] = useState<ActiveApp>('hex');
     const [activeMode, setActiveMode] = useState<HexBinMode>('HexToBin');
     const [refreshKey, setRefreshKey] = useState(0);
@@ -41,6 +42,11 @@ function AuthenticatedApp(): ReactElement {
 
     const updateUserData = (): void => {
         void refreshUser();
+        setRefreshKey(prev => prev + 1);
+    };
+
+    const handleGameResult = (result: GameSubmitResponse): void => {
+        applyGameResult(result);
         setRefreshKey(prev => prev + 1);
     };
 
@@ -111,6 +117,7 @@ function AuthenticatedApp(): ReactElement {
                                 {activeApp === 'hex' ? (
                                     <HexBinTrainer
                                         onUpdate={updateUserData}
+                                        onGameResult={handleGameResult}
                                         activeMode={activeMode}
                                         bits={bits}
                                         onBitsChange={setBits}
@@ -118,6 +125,7 @@ function AuthenticatedApp(): ReactElement {
                                 ) : (
                                     <UnicodeTrainer
                                         onUpdate={updateUserData}
+                                        onGameResult={handleGameResult}
                                         bytes={bytes}
                                         onBytesChange={setBytes}
                                     />
