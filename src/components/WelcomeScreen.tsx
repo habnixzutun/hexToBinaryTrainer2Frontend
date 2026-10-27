@@ -10,7 +10,7 @@
 
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { motion } from 'framer-motion';
-import { Terminal, Globe, Sun, Moon } from 'lucide-react';
+import { Terminal, Globe, Sun, Moon, ArrowLeft } from 'lucide-react';
 import { useI18n } from '../i18n/useI18n.ts';
 import { type Locale } from '../i18n/translations.ts';
 import { useTheme } from '../theme/useTheme.ts';
@@ -19,10 +19,12 @@ import LoginForm from './auth/LoginForm.tsx';
 import RegisterForm from './auth/RegisterForm.tsx';
 import VerifyEmailScreen from './auth/VerifyEmailScreen.tsx';
 import VerifyLinkScreen, { type VerifyLinkStatus } from './auth/VerifyLinkScreen.tsx';
+import ForgotPasswordForm from './auth/ForgotPasswordForm.tsx';
+import ResetPasswordForm from './auth/ResetPasswordForm.tsx';
 
 // ==================== Types ====================
 
-type AuthView = 'login' | 'register' | 'verify-email';
+type AuthView = 'login' | 'register' | 'verify-email' | 'forgot-password' | 'reset-password';
 type LinkProcessState = VerifyLinkStatus | 'idle';
 
 /**
@@ -40,11 +42,29 @@ function readVerifyTokenFromUrl(): string | null {
     return token ? token : null;
 }
 
+/**
+ * Extract the reset-password token from the URL if this is a reset-password link
+ * ({FRONTEND_URL}/reset-password?token=...) sent by the backend.
+ */
+function readResetTokenFromUrl(): string | null {
+    const path = window.location.pathname.replace(/\/$/, '');
+    if (!path.endsWith('/reset-password')) {
+        return null;
+    }
+    const token = new URLSearchParams(window.location.search).get('token');
+    return token ? token : null;
+}
+
 // ==================== Component ====================
 
 export default function WelcomeScreen(): ReactElement {
-    const [view, setView] = useState<AuthView>('login');
+    // Lazy init: landing on a verify-email/reset-password link sets the starting view
+    const [view, setView] = useState<AuthView>(() => {
+        if (readResetTokenFromUrl() !== null) return 'reset-password';
+        return 'login';
+    });
     const [registeredEmail, setRegisteredEmail] = useState<string>('');
+    const [resetToken, setResetToken] = useState<string | null>(() => readResetTokenFromUrl());
     // Lazy init: landing on a verify-email link starts in 'verifying' without
     // a synchronous setState inside the effect (react-hooks/set-state-in-effect).
     const [linkStatus, setLinkStatus] = useState<LinkProcessState>(() =>
@@ -77,6 +97,21 @@ export default function WelcomeScreen(): ReactElement {
             });
     }, []);
 
+    /**
+     * Strip the reset-password token from the URL on mount so a page reload
+     * (e.g. after a failed login attempt) cannot re-read it from the URL and
+     * bounce the user back to the reset-password view.
+     *
+     * The token is already captured in component state via lazy init; the URL
+     * is only cleaned, not re-submitted here.
+     */
+    useEffect(() => {
+        if (readResetTokenFromUrl() === null) {
+            return;
+        }
+        window.history.replaceState({}, '', import.meta.env.BASE_URL);
+    }, []);
+
     const toggleLocale = (): void => {
         const next: Locale = locale === 'de' ? 'en' : 'de';
         setLocale(next);
@@ -92,6 +127,19 @@ export default function WelcomeScreen(): ReactElement {
         setRegisteredEmail('');
         setLinkStatus('idle');
         setLinkError('');
+        setResetToken(null);
+        // Strip any lingering token from the URL so a reload cannot bounce
+        // the user back to the reset-password or verify-email view.
+        window.history.replaceState({}, '', import.meta.env.BASE_URL);
+    };
+
+    const handleForgotPassword = (): void => {
+        setView('forgot-password');
+    };
+
+    const handleResetPasswordSuccess = (): void => {
+        // After successful reset, go back to login
+        handleBackToLogin();
     };
 
     return (
@@ -138,11 +186,15 @@ export default function WelcomeScreen(): ReactElement {
                                 {view === 'login' && t.authWelcomeBack}
                                 {view === 'register' && t.authCreateAccount}
                                 {view === 'verify-email' && t.authVerifyEmail}
+                                {view === 'forgot-password' && t.authForgotPasswordTitle}
+                                {view === 'reset-password' && t.authResetPasswordTitle}
                             </h1>
                             <p className="text-sm text-on-surface-faint leading-relaxed">
                                 {view === 'login' && t.authLoginSubtitle}
                                 {view === 'register' && t.authRegisterSubtitle}
                                 {view === 'verify-email' && t.authVerifySubtitle}
+                                {view === 'forgot-password' && t.authForgotPasswordSubtitle}
+                                {view === 'reset-password' && t.authResetPasswordSubtitle}
                             </p>
                         </div>
 
@@ -155,7 +207,10 @@ export default function WelcomeScreen(): ReactElement {
                             transition={{ duration: 0.2 }}
                         >
                             {view === 'login' && (
-                                <LoginForm onSwitchToRegister={() => setView('register')} />
+                                <LoginForm
+                                    onSwitchToRegister={() => setView('register')}
+                                    onForgotPassword={handleForgotPassword}
+                                />
                             )}
                             {view === 'register' && (
                                 <RegisterForm
@@ -168,6 +223,31 @@ export default function WelcomeScreen(): ReactElement {
                                     email={registeredEmail}
                                     onBackToLogin={handleBackToLogin}
                                 />
+                            )}
+                            {view === 'forgot-password' && (
+                                <ForgotPasswordForm
+                                    onSwitchToLogin={() => setView('login')}
+                                />
+                            )}
+                            {view === 'reset-password' && resetToken && (
+                                <ResetPasswordForm
+                                    token={resetToken}
+                                    onSwitchToLogin={handleResetPasswordSuccess}
+                                />
+                            )}
+                            {view === 'reset-password' && !resetToken && (
+                                <div className="text-center space-y-4">
+                                    <p className="text-sm text-error-text">{t.authResetPasswordTokenMissing}</p>
+                                    <motion.button
+                                        onClick={handleBackToLogin}
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        className="w-full flex items-center justify-center gap-2 bg-surface-alt hover:bg-surface-raised border border-outline text-on-surface font-semibold py-2 rounded-md text-sm transition-all"
+                                    >
+                                        <ArrowLeft className="w-4 h-4" aria-hidden="true" />
+                                        <span>{t.authBackToLogin}</span>
+                                    </motion.button>
+                                </div>
                             )}
                         </motion.div>
                     </>
