@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { translations, type Locale } from './translations.ts';
 import { I18nContext } from './i18nContext.ts';
+import { persistItem } from '../utils/persistence.ts';
 
 interface Props {
     children: React.ReactNode;
@@ -13,7 +14,7 @@ export function I18nProvider({ children }: Props) {
     });
 
     const handleSetLocale = (next: Locale): void => {
-        localStorage.setItem('locale', next);
+        persistItem('locale', next);
         setLocale(next);
     };
 

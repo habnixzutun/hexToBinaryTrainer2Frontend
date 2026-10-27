@@ -198,4 +198,21 @@ describe('Sidebar', () => {
     expect(statusDot).toBeInTheDocument()
     expect(statusDot).toHaveAttribute('aria-label', 'Online')
   })
+
+
+  it('shows guest name, local counters and no points in guest mode', () => {
+    mockUseAuth.mockReturnValue(
+      authValue({ user: null, isGuest: true, guestStats: { correct_count: 3, incorrect_count: 1 } }),
+    )
+    render(<Sidebar {...defaultProps} />)
+
+    expect(screen.getByText('Gast')).toBeInTheDocument()
+    expect(screen.getByText('3')).toBeInTheDocument()
+    expect(screen.getByText('1')).toBeInTheDocument()
+    expect(screen.getByText('–')).toBeInTheDocument()
+
+    const exitButton = screen.getByRole('button', { name: 'Gastmodus beenden' })
+    fireEvent.click(exitButton)
+    expect(mockOnLogout).toHaveBeenCalled()
+  })
 })

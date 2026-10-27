@@ -217,4 +217,26 @@ describe('UnicodeTrainer', () => {
     expect(input).toBeInTheDocument()
     expect(input).toHaveAttribute('aria-label', 'UTF-8 binary answer')
   })
+
+
+  it('counts the answer locally and skips the backend in guest mode', async () => {
+    const onGuestAnswer = vi.fn()
+    render(<UnicodeTrainer onUpdate={mockOnUpdate} onGuestAnswer={onGuestAnswer} />)
+
+    const input = screen.getByRole('textbox')
+    const submitButton = screen.getByRole('button', { name: /check answer/i })
+
+    // cp=64 → '01000000'
+    fireEvent.change(input, { target: { value: '01000000' } })
+    fireEvent.click(submitButton)
+    await waitFor(() => expect(onGuestAnswer).toHaveBeenCalledWith(true))
+
+    fireEvent.change(input, { target: { value: '1' } })
+    fireEvent.click(submitButton)
+    await waitFor(() => expect(onGuestAnswer).toHaveBeenCalledWith(false))
+
+    expect(mockSubmitCorrect).not.toHaveBeenCalled()
+    expect(mockSubmitIncorrect).not.toHaveBeenCalled()
+    expect(mockOnUpdate).not.toHaveBeenCalled()
+  })
 })
