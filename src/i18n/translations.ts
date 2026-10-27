@@ -144,6 +144,12 @@ export const translations = {
         cookieBannerMessage: 'Diese App verwendet essentielle Cookies (HTTP-only), um deine Anmeldung aufrechtzuerhalten. Es werden keine Tracking- oder Marketing-Cookies eingesetzt.',
         cookieBannerAccept: 'Verstanden',
 
+        // Guest mode
+        guestModeButton: 'Als Gast testen',
+        guestModeHint: 'Ohne Konto ausprobieren. Es wird nichts gespeichert und du erscheinst nicht in der Rangliste.',
+        guestName: 'Gast',
+        guestExitTitle: 'Gastmodus beenden',
+
         // sr-only helpers
         srAnswerFormat: (format: string) => `Gib deine Antwort im ${format}-Format ein`,
         srUtf8Binary: 'Gib die UTF-8 Binärdarstellung mit 0en und 1en ein',
@@ -291,6 +297,12 @@ export const translations = {
         cookieBannerMessage: 'This app uses essential cookies (HTTP-only) to keep you signed in. No tracking or marketing cookies are used.',
         cookieBannerAccept: 'Got it',
 
+        // Guest mode
+        guestModeButton: 'Try as guest',
+        guestModeHint: 'Try it without an account. Nothing is saved and you will not appear on the leaderboard.',
+        guestName: 'Guest',
+        guestExitTitle: 'Leave guest mode',
+
         // sr-only helpers
         srAnswerFormat: (format: string) => `Enter your answer in ${format} format`,
         srUtf8Binary: 'Enter the UTF-8 binary representation using 0s and 1s',
@@ -437,6 +449,12 @@ export type Translations = {
     // Cookie banner
     cookieBannerMessage: string;
     cookieBannerAccept: string;
+
+    // Guest mode
+    guestModeButton: string;
+    guestModeHint: string;
+    guestName: string;
+    guestExitTitle: string;
 
     // sr-only helpers
     srAnswerFormat: (format: string) => string;

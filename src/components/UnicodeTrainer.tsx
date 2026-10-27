@@ -9,11 +9,13 @@ import AppFooter from './AppFooter.tsx';
 interface Props {
     onUpdate: () => void;
     onGameResult?: (result: GameSubmitResponse) => void;
+    /** Guest mode: count the answer locally instead of calling the backend. */
+    onGuestAnswer?: ((isCorrect: boolean) => void) | undefined;
     bytes?: number;
     onBytesChange?: (bytes: number) => void;
 }
 
-export default function UnicodeTrainer({ onUpdate, onGameResult, bytes: externalBytes, onBytesChange }: Props) {
+export default function UnicodeTrainer({ onUpdate, onGameResult, onGuestAnswer, bytes: externalBytes, onBytesChange }: Props) {
     const [internalBytes, setInternalBytes] = useState(1);
     const bytes = externalBytes ?? internalBytes;
     const setBytes = onBytesChange ?? setInternalBytes;
@@ -64,14 +66,22 @@ export default function UnicodeTrainer({ onUpdate, onGameResult, bytes: external
             if (isCorrect) {
                 setFeedback('correct');
                 flashAccent('correct');
-                const result = await gameApi.submitCorrect(bytes * 8);
-                onGameResult?.(result) ?? onUpdate();
+                if (onGuestAnswer) {
+                    onGuestAnswer(true);
+                } else {
+                    const result = await gameApi.submitCorrect(bytes * 8);
+                    onGameResult?.(result) ?? onUpdate();
+                }
                 setTimeout(generateQuestion, 600);
             } else {
                 setFeedback('wrong');
                 flashAccent('wrong');
-                const result = await gameApi.submitIncorrect(bytes * 8);
-                onGameResult?.(result) ?? onUpdate();
+                if (onGuestAnswer) {
+                    onGuestAnswer(false);
+                } else {
+                    const result = await gameApi.submitIncorrect(bytes * 8);
+                    onGameResult?.(result) ?? onUpdate();
+                }
                 setTimeout(() => setFeedback('none'), 1000);
             }
         } catch (e: unknown) {

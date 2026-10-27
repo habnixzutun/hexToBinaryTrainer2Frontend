@@ -43,8 +43,13 @@ export default function Sidebar({
     bytes,
     onBytesChange,
 }: Props) {
-    const { user } = useAuth();
     const { t, locale, setLocale } = useI18n();
+    const { user, isGuest, guestStats } = useAuth();
+    const correctCount = isGuest ? guestStats?.correct_count ?? 0 : user?.correct_count || 0;
+    const incorrectCount = isGuest ? guestStats?.incorrect_count ?? 0 : user?.incorrect_count || 0;
+    // Guests have no points: the scoring rule lives in the backend only
+    const pointsLabel = isGuest ? '–' : user?.points || 0;
+    const exitTitle = isGuest ? t.guestExitTitle : t.logoutTitle;
     const { theme, toggleTheme } = useTheme();
     const [isHexExpanded, setIsHexExpanded] = useState(true);
 
@@ -229,21 +234,21 @@ export default function Sidebar({
                     {/* User info */}
                     <div className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-accent shrink-0" role="status" aria-label="Online" />
-                        <span className="text-base text-on-surface-dim font-medium truncate">{user?.username || 'User'}</span>
+                        <span className="text-base text-on-surface-dim font-medium truncate">{isGuest ? t.guestName : user?.username || 'User'}</span>
                     </div>
 
                     {/* Stats row */}
                     <div className="grid grid-cols-3 gap-1 text-center" aria-label="Your statistics">
                         <div>
-                            <div className="text-lg font-bold text-emerald-600">{user?.correct_count || 0}</div>
+                            <div className="text-lg font-bold text-emerald-600">{correctCount}</div>
                             <div className="text-xs text-on-surface-faint uppercase tracking-wide" aria-label="Correct answers">OK</div>
                         </div>
                         <div>
-                            <div className="text-lg font-bold text-error-text">{user?.incorrect_count || 0}</div>
+                            <div className="text-lg font-bold text-error-text">{incorrectCount}</div>
                             <div className="text-xs text-on-surface-faint uppercase tracking-wide" aria-label="Wrong answers">ERR</div>
                         </div>
                         <div>
-                            <div className="text-lg font-bold text-points">{user?.points || 0}</div>
+                            <div className="text-lg font-bold text-points">{pointsLabel}</div>
                             <div className="text-xs text-on-surface-faint uppercase tracking-wide" aria-label="Points">PTS</div>
                         </div>
                     </div>
@@ -275,8 +280,8 @@ export default function Sidebar({
                             onClick={onLogout}
                             whileTap={{ scale: 0.95 }}
                             className="flex items-center gap-1.5 px-2.5 min-h-[44px] rounded text-sm text-on-surface-faint hover:text-error-text transition-colors ml-auto"
-                            aria-label={t.logoutTitle}
-                            title={t.logoutTitle}
+                            aria-label={exitTitle}
+                            title={exitTitle}
                         >
                             <LogOut strokeWidth={1.5} size={15} aria-hidden="true" />
                         </motion.button>

@@ -24,12 +24,17 @@ export const testUser: UserMeResponse = {
 export function authValue(overrides: Partial<AuthValue> = {}): AuthValue {
   return {
     user: testUser,
+    isGuest: false,
+    guestStats: null,
     loading: false,
     error: null,
     login: vi.fn().mockResolvedValue(undefined),
     register: vi.fn().mockResolvedValue(undefined),
     logout: vi.fn().mockResolvedValue(undefined),
     refreshUser: vi.fn().mockResolvedValue(undefined),
+    applyGameResult: vi.fn(),
+    startGuest: vi.fn(),
+    recordGuestAnswer: vi.fn(),
     clearError: vi.fn(),
     ...overrides,
   }

@@ -13,12 +13,14 @@ const BIT_OPTIONS = [4, 8, 16, 32];
 interface Props {
     onUpdate: () => void;
     onGameResult?: (result: GameSubmitResponse) => void;
+    /** Guest mode: count the answer locally instead of calling the backend. */
+    onGuestAnswer?: ((isCorrect: boolean) => void) | undefined;
     activeMode?: Mode;
     bits?: number;
     onBitsChange?: (bits: number) => void;
 }
 
-export default function HexBinTrainer({ onUpdate, onGameResult, activeMode: externalMode, bits: externalBits, onBitsChange }: Props) {
+export default function HexBinTrainer({ onUpdate, onGameResult, onGuestAnswer, activeMode: externalMode, bits: externalBits, onBitsChange }: Props) {
     const { t } = useI18n();
 
     const [internalMode] = useState<Mode>('HexToBin');
@@ -80,14 +82,22 @@ export default function HexBinTrainer({ onUpdate, onGameResult, activeMode: exte
             if (isCorrect) {
                 setFeedback('correct');
                 flashAccent('correct');
-                const result = await gameApi.submitCorrect(bits);
-                onGameResult?.(result) ?? onUpdate();
+                if (onGuestAnswer) {
+                    onGuestAnswer(true);
+                } else {
+                    const result = await gameApi.submitCorrect(bits);
+                    onGameResult?.(result) ?? onUpdate();
+                }
                 setTimeout(generateQuestion, 600);
             } else {
                 setFeedback('wrong');
                 flashAccent('wrong');
-                const result = await gameApi.submitIncorrect(bits);
-                onGameResult?.(result) ?? onUpdate();
+                if (onGuestAnswer) {
+                    onGuestAnswer(false);
+                } else {
+                    const result = await gameApi.submitIncorrect(bits);
+                    onGameResult?.(result) ?? onUpdate();
+                }
                 setTimeout(() => setFeedback('none'), 1000);
             }
         } catch (e: unknown) {

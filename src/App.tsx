@@ -14,12 +14,13 @@ export type ActiveApp = 'hex' | 'unicode' | 'leaderboard';
 export type HexBinMode = 'HexToBin' | 'HexToDec' | 'BinToHex' | 'BinToDec' | 'DecToHex' | 'DecToBin';
 
 /**
- * Main App Component (authenticated).
+ * Main App Component (authenticated or guest).
  *
- * Only rendered when user is authenticated.
+ * Only rendered for a logged-in user or a guest. Guests get the same UI,
+ * but their answers are counted in memory instead of being sent to the backend.
  */
 function AuthenticatedApp(): ReactElement {
-    const { user, refreshUser, applyGameResult, logout } = useAuth();
+    const { user, isGuest, refreshUser, applyGameResult, recordGuestAnswer, logout } = useAuth();
     const [activeApp, setActiveApp] = useState<ActiveApp>('hex');
     const [activeMode, setActiveMode] = useState<HexBinMode>('HexToBin');
     const [refreshKey, setRefreshKey] = useState(0);
@@ -50,7 +51,7 @@ function AuthenticatedApp(): ReactElement {
         setRefreshKey(prev => prev + 1);
     };
 
-    if (!user) {
+    if (!user && !isGuest) {
         return (
             <div className="flex items-center justify-center h-screen bg-surface">
                 <Loader2 className="w-8 h-8 text-accent animate-spin" />
@@ -118,6 +119,7 @@ function AuthenticatedApp(): ReactElement {
                                     <HexBinTrainer
                                         onUpdate={updateUserData}
                                         onGameResult={handleGameResult}
+                                        onGuestAnswer={isGuest ? recordGuestAnswer : undefined}
                                         activeMode={activeMode}
                                         bits={bits}
                                         onBitsChange={setBits}
@@ -126,6 +128,7 @@ function AuthenticatedApp(): ReactElement {
                                     <UnicodeTrainer
                                         onUpdate={updateUserData}
                                         onGameResult={handleGameResult}
+                                        onGuestAnswer={isGuest ? recordGuestAnswer : undefined}
                                         bytes={bytes}
                                         onBytesChange={setBytes}
                                     />
@@ -150,7 +153,7 @@ function AuthenticatedApp(): ReactElement {
  * Root App Component with Auth Gate.
  *
  * Shows WelcomeScreen for unauthenticated users,
- * AuthenticatedApp for authenticated users.
+ * AuthenticatedApp for authenticated users and guests.
  */
 export default function App(): ReactElement {
     return (
@@ -167,7 +170,7 @@ export default function App(): ReactElement {
  * before login too.
  */
 function AuthGate(): ReactElement {
-    const { user, loading } = useAuth();
+    const { user, isGuest, loading } = useAuth();
 
     return (
         <>
@@ -175,7 +178,7 @@ function AuthGate(): ReactElement {
                 <div className="flex items-center justify-center h-screen bg-surface">
                     <Loader2 className="w-8 h-8 text-accent animate-spin" />
                 </div>
-            ) : user ? (
+            ) : user || isGuest ? (
                 <AuthenticatedApp />
             ) : (
                 <WelcomeScreen />
