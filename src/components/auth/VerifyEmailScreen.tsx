@@ -10,8 +10,8 @@ import { type ReactElement } from 'react';
  */
 
 import { motion } from 'framer-motion';
-import { Mail, ArrowLeft, CheckCircle, ExternalLink } from 'lucide-react';
-import { useI18n } from '../../i18n/useI18n';
+import { Mail, ArrowLeft, MailCheckIcon, ExternalLink } from 'lucide-react';
+import { useI18n } from '../../i18n/useI18n.ts';
 
 // ==================== Types ====================
 
@@ -39,7 +39,7 @@ export default function VerifyEmailScreen({ email, onBackToLogin }: VerifyEmailS
                 className="flex justify-center"
             >
                 <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center">
-                    <CheckCircle className="w-8 h-8 text-accent" aria-hidden="true" />
+                    <MailCheckIcon className="w-8 h-8 text-accent" aria-hidden="true" />
                 </div>
             </motion.div>
 

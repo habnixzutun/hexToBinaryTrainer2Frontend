@@ -22,11 +22,12 @@ import PasswordInput from './PasswordInput.tsx';
 
 interface LoginFormProps {
     onSwitchToRegister: () => void;
+    onForgotPassword: () => void;
 }
 
 // ==================== Component ====================
 
-export default function LoginForm({ onSwitchToRegister }: LoginFormProps): ReactElement {
+export default function LoginForm({ onSwitchToRegister, onForgotPassword }: LoginFormProps): ReactElement {
     const { login, error: authError, clearError } = useAuth();
     const { t } = useI18n();
     const [submitError, setSubmitError] = useState<string | null>(null);
@@ -134,6 +135,18 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps): React
                     </>
                 )}
             </motion.button>
+
+            {/* Forgot Password */}
+            <div className="text-right">
+                <button
+                    type="button"
+                    onClick={onForgotPassword}
+                    disabled={isSubmitting}
+                    className="text-xs text-accent hover:text-accent-hover transition-colors disabled:opacity-50"
+                >
+                    {t.authForgotPassword}
+                </button>
+            </div>
 
             {/* Switch to Register */}
             <div className="text-center">

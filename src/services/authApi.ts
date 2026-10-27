@@ -63,6 +63,23 @@ export interface UserMeResponse {
     points: number;
 }
 
+export interface RequestPasswordResetRequest {
+    email: string;
+}
+
+export interface RequestPasswordResetResponse {
+    message: string;
+}
+
+export interface ResetPasswordRequest {
+    token: string;
+    new_password: string;
+}
+
+export interface ResetPasswordResponse {
+    message: string;
+}
+
 // ==================== API Functions ====================
 
 /**
@@ -186,6 +203,50 @@ export async function logout(): Promise<LogoutResponse> {
 
     // Clear access token from memory
     clearAccessToken();
+
+    return await response.json();
+}
+
+/**
+ * Request a password reset email.
+ *
+ * @param data - Email address to send the reset link to
+ * @returns Success message (always the same, regardless of email existence)
+ * @throws Error if the request fails
+ */
+export async function requestPasswordReset(data: RequestPasswordResetRequest): Promise<RequestPasswordResetResponse> {
+    const response = await fetch(`${BASE_URL}/api/auth/request-password-reset`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({ detail: 'Password reset request failed' }));
+        throw new Error(error.detail || 'Password reset request failed');
+    }
+
+    return await response.json();
+}
+
+/**
+ * Reset password using token from email link.
+ *
+ * @param data - Reset token + new password
+ * @returns Success message
+ * @throws Error if the reset fails (invalid/expired token, weak password)
+ */
+export async function resetPassword(data: ResetPasswordRequest): Promise<ResetPasswordResponse> {
+    const response = await fetch(`${BASE_URL}/api/auth/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({ detail: 'Password reset failed' }));
+        throw new Error(error.detail || 'Password reset failed');
+    }
 
     return await response.json();
 }
