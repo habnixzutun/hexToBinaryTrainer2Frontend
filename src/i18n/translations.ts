@@ -81,6 +81,23 @@ export const translations = {
         authLinkVerifiedSubtitle: 'Dein Konto ist freigeschaltet — du kannst dich jetzt einloggen.',
         authLinkFailedTitle: 'Bestätigung fehlgeschlagen',
 
+        // Auth - Password Reset
+        authForgotPassword: 'Passwort vergessen?',
+        authForgotPasswordTitle: 'Passwort zurücksetzen',
+        authForgotPasswordSubtitle: 'Gib deine E-Mail-Adresse ein und wir senden dir einen Link zum Zurücksetzen.',
+        authForgotPasswordSubmit: 'Link senden',
+        authForgotPasswordSending: 'Link wird gesendet...',
+        authForgotPasswordSuccess: 'Falls ein Konto mit dieser E-Mail existiert, wurde ein Zurücksetzungslink gesendet.',
+        authForgotPasswordCheckEmail: 'Überprüfe deinen E-Mail-Eingang und klicke auf den Link, um dein Passwort zurückzusetzen.',
+        authResetPasswordTitle: 'Neues Passwort',
+        authResetPasswordSubtitle: 'Gib dein neues Passwort ein.',
+        authResetPasswordSubmit: 'Passwort zurücksetzen',
+        authResetPasswordResetting: 'Passwort wird zurückgesetzt...',
+        authResetPasswordSuccess: 'Dein Passwort wurde erfolgreich zurückgesetzt.',
+        authResetPasswordTokenMissing: 'Der Zurücksetzungslink ist ungültig oder abgelaufen. Bitte fordere einen neuen an.',
+        authNewPassword: 'Neues Passwort',
+        authConfirmNewPassword: 'Neues Passwort bestätigen',
+
         // Stats
         correct: 'Richtig',
         wrong: 'Falsch',
@@ -211,6 +228,23 @@ export const translations = {
         authLinkVerifiedSubtitle: 'Your account is active — you can log in now.',
         authLinkFailedTitle: 'Verification failed',
 
+        // Auth - Password Reset
+        authForgotPassword: 'Forgot password?',
+        authForgotPasswordTitle: 'Reset your password',
+        authForgotPasswordSubtitle: 'Enter your email and we\'ll send you a link to reset it.',
+        authForgotPasswordSubmit: 'Send link',
+        authForgotPasswordSending: 'Sending link...',
+        authForgotPasswordSuccess: 'If an account with that email exists, a reset link has been sent.',
+        authForgotPasswordCheckEmail: 'Check your inbox and click the link to reset your password.',
+        authResetPasswordTitle: 'New password',
+        authResetPasswordSubtitle: 'Enter your new password.',
+        authResetPasswordSubmit: 'Reset password',
+        authResetPasswordResetting: 'Resetting password...',
+        authResetPasswordSuccess: 'Your password has been reset successfully.',
+        authResetPasswordTokenMissing: 'The reset link is invalid or has expired. Please request a new one.',
+        authNewPassword: 'New password',
+        authConfirmNewPassword: 'Confirm new password',
+
         // Stats
         correct: 'Correct',
         wrong: 'Wrong',
@@ -340,6 +374,23 @@ export type Translations = {
     authLinkVerifiedTitle: string;
     authLinkVerifiedSubtitle: string;
     authLinkFailedTitle: string;
+
+    // Auth - Password Reset
+    authForgotPassword: string;
+    authForgotPasswordTitle: string;
+    authForgotPasswordSubtitle: string;
+    authForgotPasswordSubmit: string;
+    authForgotPasswordSending: string;
+    authForgotPasswordSuccess: string;
+    authForgotPasswordCheckEmail: string;
+    authResetPasswordTitle: string;
+    authResetPasswordSubtitle: string;
+    authResetPasswordSubmit: string;
+    authResetPasswordResetting: string;
+    authResetPasswordSuccess: string;
+    authResetPasswordTokenMissing: string;
+    authNewPassword: string;
+    authConfirmNewPassword: string;
 
     // Stats
     correct: string;
