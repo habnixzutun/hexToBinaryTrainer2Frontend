@@ -3,6 +3,8 @@ name: Lighthouse CI
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
 
 jobs:
   lighthouse:
@@ -54,5 +56,3 @@ jobs:
       - name: Run Assertions
         run: npx lhci assert --config=.lighthouserc.json
 
-      - name: Upload to Google Storage
-        run: npx lhci upload --config=.lighthouserc.json
