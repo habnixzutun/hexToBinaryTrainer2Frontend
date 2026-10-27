@@ -7,7 +7,7 @@ export const translations = {
         appTitleAccent: 'TRAINER',
         navHexBin: 'HEX/BIN',
         navUnicode: 'UNICODE',
-        logoutTitle: 'Sitzung beenden',
+        logoutTitle: 'Ausloggen',
 
         // WelcomeScreen (Legacy - kept for compatibility)
         welcomeTitle: 'IT-TRAINER',
@@ -150,6 +150,15 @@ export const translations = {
         guestName: 'Gast',
         guestExitTitle: 'Gastmodus beenden',
 
+        // Settings toolbar & account menu
+        settingsTitle: 'Einstellungen',
+        accountTitle: 'Konto',
+        accountGuestInfo: 'Du nutzt die App als Gast. Mit einem Konto werden deine Ergebnisse gespeichert und du erscheinst in der Bestenliste.',
+        accountCreate: 'Konto erstellen',
+        themeLight: 'Heller Modus',
+        themeDark: 'Dunkler Modus',
+        languageSwitch: 'English',
+
         // sr-only helpers
         srAnswerFormat: (format: string) => `Gib deine Antwort im ${format}-Format ein`,
         srUtf8Binary: 'Gib die UTF-8 Binärdarstellung mit 0en und 1en ein',
@@ -160,7 +169,7 @@ export const translations = {
         appTitleAccent: 'TRAINER',
         navHexBin: 'HEX/BIN',
         navUnicode: 'UNICODE',
-        logoutTitle: 'End session',
+        logoutTitle: 'Logout',
 
         // WelcomeScreen (Legacy - kept for compatibility)
         welcomeTitle: 'IT-TRAINER',
@@ -302,6 +311,15 @@ export const translations = {
         guestModeHint: 'Try it without an account. Nothing is saved and you will not appear on the leaderboard.',
         guestName: 'Guest',
         guestExitTitle: 'Leave guest mode',
+
+        // Settings toolbar & account menu
+        settingsTitle: 'Settings',
+        accountTitle: 'Account',
+        accountGuestInfo: 'You are using the app as a guest. With an account, your results are saved and you appear on the leaderboard.',
+        accountCreate: 'Create account',
+        themeLight: 'Light mode',
+        themeDark: 'Dark mode',
+        languageSwitch: 'Deutsch',
 
         // sr-only helpers
         srAnswerFormat: (format: string) => `Enter your answer in ${format} format`,
@@ -455,6 +473,15 @@ export type Translations = {
     guestModeHint: string;
     guestName: string;
     guestExitTitle: string;
+
+    // Settings toolbar & account menu
+    settingsTitle: string;
+    accountTitle: string;
+    accountGuestInfo: string;
+    accountCreate: string;
+    themeLight: string;
+    themeDark: string;
+    languageSwitch: string;
 
     // sr-only helpers
     srAnswerFormat: (format: string) => string;

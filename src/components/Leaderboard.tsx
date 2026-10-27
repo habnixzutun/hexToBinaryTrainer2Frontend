@@ -53,8 +53,8 @@ export default function Leaderboard({ refreshTrigger }: Props) {
 
     return (
         <div className="h-full flex flex-col" role="region" aria-label="Leaderboard">
-            {/* Header */}
-            <div className="flex items-center justify-between h-16 px-5 border-b border-outline-faint shrink-0">
+            {/* Title row — sits below the settings toolbar, separated by its own line */}
+            <div className="flex items-center justify-between px-5 py-3 border-b border-outline-faint shrink-0">
                 <h2 className="text-sm font-semibold uppercase tracking-widest text-on-surface-faint">
                     {t.leaderboardTitle}
                 </h2>

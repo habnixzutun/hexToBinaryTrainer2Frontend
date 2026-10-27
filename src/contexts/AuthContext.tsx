@@ -50,6 +50,12 @@ type Session =
 
 const ANONYMOUS: Session = { kind: 'anonymous' };
 
+/**
+ * View the WelcomeScreen should open with. Set when a guest clicks
+ * "Create account", read once by the WelcomeScreen, then reset to 'login'.
+ */
+export type WelcomeView = 'login' | 'register';
+
 interface AuthContextType {
     user: UserMeResponse | null;
     isGuest: boolean;
@@ -62,7 +68,10 @@ interface AuthContextType {
     refreshUser: () => Promise<void>;
     applyGameResult: (result: GameSubmitResponse) => void;
     startGuest: () => void;
+    leaveGuest: (nextView?: WelcomeView) => void;
     recordGuestAnswer: (isCorrect: boolean) => void;
+    welcomeView: WelcomeView;
+    clearWelcomeView: () => void;
     clearError: () => void;
 }
 
@@ -80,6 +89,7 @@ export function AuthProvider({ children }: AuthProviderProps): ReactElement {
     const [session, setSession] = useState<Session>(ANONYMOUS);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [welcomeView, setWelcomeView] = useState<WelcomeView>('login');
 
     const user = session.kind === 'user' ? session.user : null;
     const isGuest = session.kind === 'guest';
@@ -186,8 +196,7 @@ export function AuthProvider({ children }: AuthProviderProps): ReactElement {
         setError(null);
 
         if (session.kind === 'guest') {
-            setPersistenceEnabled(true);
-            setSession(ANONYMOUS);
+            leaveGuest('login');
             return;
         }
 
@@ -257,6 +266,25 @@ export function AuthProvider({ children }: AuthProviderProps): ReactElement {
     };
 
     /**
+     * End guest mode and return to the WelcomeScreen.
+     *
+     * @param nextView - view the WelcomeScreen opens with ('register' for
+     *                   "Create account", 'login' otherwise)
+     */
+    const leaveGuest = (nextView: WelcomeView = 'login'): void => {
+        setPersistenceEnabled(true);
+        setWelcomeView(nextView);
+        setSession(ANONYMOUS);
+    };
+
+    /**
+     * Reset the WelcomeScreen start view after it has been read once.
+     */
+    const clearWelcomeView = (): void => {
+        setWelcomeView('login');
+    };
+
+    /**
      * Count a guest answer in memory only.
      */
     const recordGuestAnswer = (isCorrect: boolean): void => {
@@ -291,7 +319,10 @@ export function AuthProvider({ children }: AuthProviderProps): ReactElement {
         refreshUser,
         applyGameResult,
         startGuest,
+        leaveGuest,
         recordGuestAnswer,
+        welcomeView,
+        clearWelcomeView,
         clearError,
     };
 

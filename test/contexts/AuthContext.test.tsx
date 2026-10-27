@@ -174,4 +174,18 @@ describe('AuthContext guest mode', () => {
     expect(result.current.user).toBeNull()
     expect(result.current.guestStats).toEqual({ correct_count: 0, incorrect_count: 0 })
   })
+
+  it('leaves guest mode towards registration and can reset the hint', async () => {
+    const { result } = await startAsGuest()
+    expect(result.current.welcomeView).toBe('login')
+
+    act(() => result.current.leaveGuest('register'))
+
+    expect(result.current.isGuest).toBe(false)
+    expect(result.current.welcomeView).toBe('register')
+    expect(isPersistenceEnabled()).toBe(true)
+
+    act(() => result.current.clearWelcomeView())
+    expect(result.current.welcomeView).toBe('login')
+  })
 })

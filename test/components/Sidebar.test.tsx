@@ -30,7 +30,6 @@ Object.defineProperty(window, 'localStorage', {
 
 describe('Sidebar', () => {
   let mockSetActiveApp: ReturnType<typeof vi.fn<(app: ActiveApp) => void>>
-  let mockOnLogout: ReturnType<typeof vi.fn<() => void>>
   let mockSetIsMobileMenuOpen: ReturnType<typeof vi.fn<(open: boolean) => void>>
   let defaultProps: ComponentProps<typeof Sidebar>
 
@@ -39,12 +38,10 @@ describe('Sidebar', () => {
     localStorageMock.clear()
     mockUseAuth.mockReturnValue(authValue())
     mockSetActiveApp = vi.fn()
-    mockOnLogout = vi.fn()
     mockSetIsMobileMenuOpen = vi.fn()
     defaultProps = {
       activeApp: 'hex',
       setActiveApp: mockSetActiveApp,
-      onLogout: mockOnLogout,
       isMobileMenuOpen: false,
       setIsMobileMenuOpen: mockSetIsMobileMenuOpen,
       hideLeaderboardNav: false,
@@ -150,44 +147,12 @@ describe('Sidebar', () => {
     expect(screen.queryByRole('list', { name: 'Hex/Bin Modi' })).not.toBeInTheDocument()
   })
 
-  it('toggles theme and updates aria-label', () => {
+  it('no longer contains theme, language or logout buttons (moved to the top-right toolbar)', () => {
     render(<Sidebar {...defaultProps} />)
 
-    // Find theme toggle button (initially dark theme based on ThemeProvider default)
-    const themeButton = screen.getByLabelText(/switch to light mode/i)
-    expect(themeButton).toBeInTheDocument()
-
-    // Click to toggle
-    fireEvent.click(themeButton)
-
-    // Should now show "Switch to dark mode"
-    expect(screen.getByLabelText(/switch to dark mode/i)).toBeInTheDocument()
-  })
-
-  it('toggles locale and updates button text', () => {
-    render(<Sidebar {...defaultProps} />)
-
-    // Find locale toggle button (initially 'de' locale, shows "EN")
-    const localeButton = screen.getByLabelText(/switch to english/i)
-    expect(localeButton).toBeInTheDocument()
-    expect(screen.getByText('EN')).toBeInTheDocument()
-
-    // Click to toggle to English
-    fireEvent.click(localeButton)
-
-    // Should now show "DE" and German label
-    expect(screen.getByText('DE')).toBeInTheDocument()
-    expect(screen.getByLabelText(/auf deutsch wechseln/i)).toBeInTheDocument()
-  })
-
-  it('calls onLogout when logout button is clicked', () => {
-    render(<Sidebar {...defaultProps} />)
-
-    // Find logout button (German locale is default)
-    const logoutButton = screen.getByLabelText(/sitzung beenden/i)
-    fireEvent.click(logoutButton)
-
-    expect(mockOnLogout).toHaveBeenCalled()
+    expect(screen.queryByLabelText(/switch to light mode/i)).not.toBeInTheDocument()
+    expect(screen.queryByLabelText(/switch to english/i)).not.toBeInTheDocument()
+    expect(screen.queryByLabelText(/ausloggen/i)).not.toBeInTheDocument()
   })
 
   it('shows online status dot with proper aria-label', () => {
@@ -199,7 +164,6 @@ describe('Sidebar', () => {
     expect(statusDot).toHaveAttribute('aria-label', 'Online')
   })
 
-
   it('shows guest name, local counters and no points in guest mode', () => {
     mockUseAuth.mockReturnValue(
       authValue({ user: null, isGuest: true, guestStats: { correct_count: 3, incorrect_count: 1 } }),
@@ -210,9 +174,5 @@ describe('Sidebar', () => {
     expect(screen.getByText('3')).toBeInTheDocument()
     expect(screen.getByText('1')).toBeInTheDocument()
     expect(screen.getByText('–')).toBeInTheDocument()
-
-    const exitButton = screen.getByRole('button', { name: 'Gastmodus beenden' })
-    fireEvent.click(exitButton)
-    expect(mockOnLogout).toHaveBeenCalled()
   })
 })
