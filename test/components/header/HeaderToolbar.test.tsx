@@ -22,7 +22,7 @@ describe('HeaderToolbar', () => {
     const labels = Array.from(toolbar.querySelectorAll('button')).map((button) =>
       button.getAttribute('aria-label'),
     )
-    expect(labels).toEqual(['Switch to light mode', 'Switch to English', 'Konto', 'Sitzung beenden'])
+    expect(labels).toEqual(['Switch to light mode', 'Switch to English', 'Konto', 'Ausloggen'])
   })
 
   it('toggles theme and language', () => {
@@ -39,7 +39,7 @@ describe('HeaderToolbar', () => {
   it('calls onLogout from the logout button', () => {
     render(<HeaderToolbar onLogout={onLogout} />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Sitzung beenden' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Ausloggen' }))
     expect(onLogout).toHaveBeenCalledTimes(1)
   })
 

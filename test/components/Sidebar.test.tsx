@@ -152,7 +152,7 @@ describe('Sidebar', () => {
 
     expect(screen.queryByLabelText(/switch to light mode/i)).not.toBeInTheDocument()
     expect(screen.queryByLabelText(/switch to english/i)).not.toBeInTheDocument()
-    expect(screen.queryByLabelText(/sitzung beenden/i)).not.toBeInTheDocument()
+    expect(screen.queryByLabelText(/ausloggen/i)).not.toBeInTheDocument()
   })
 
   it('shows online status dot with proper aria-label', () => {

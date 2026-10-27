@@ -167,7 +167,7 @@ describe('App', () => {
     await screen.findByRole('heading', { name: 'Willkommen zurück' })
     await loginThroughForm(user)
 
-    await user.click(screen.getByLabelText(/sitzung beenden/i))
+    await user.click(screen.getByLabelText(/ausloggen/i))
 
     expect(await screen.findByRole('heading', { name: 'Willkommen zurück' })).toBeInTheDocument()
     expect(mockedAuthApi.logout).toHaveBeenCalledTimes(1)

@@ -32,7 +32,7 @@ describe('MobileSettingsMenu', () => {
     expect(screen.getByText(testUser.email)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'English' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Heller Modus' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Sitzung beenden' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Ausloggen' })).toBeInTheDocument()
   })
 
   it('switches the language and closes after the selection', () => {
@@ -59,7 +59,7 @@ describe('MobileSettingsMenu', () => {
     render(<MobileSettingsMenu onLogout={onLogout} />)
     const trigger = openMenu()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Sitzung beenden' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Ausloggen' }))
 
     expect(onLogout).toHaveBeenCalledTimes(1)
     expect(trigger).toHaveAttribute('aria-expanded', 'false')
