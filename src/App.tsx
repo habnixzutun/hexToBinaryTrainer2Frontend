@@ -8,6 +8,8 @@ import Leaderboard from './components/Leaderboard.tsx';
 import WelcomeScreen from './components/WelcomeScreen.tsx';
 import { AuthProvider, useAuth } from './contexts/AuthContext.tsx';
 import { CookieBanner } from './components/CookieBanner.tsx';
+import HeaderToolbar from './components/header/HeaderToolbar.tsx';
+import MobileSettingsMenu from './components/header/MobileSettingsMenu.tsx';
 import type { GameSubmitResponse } from './services/api.ts';
 
 export type ActiveApp = 'hex' | 'unicode' | 'leaderboard';
@@ -83,12 +85,12 @@ function AuthenticatedApp(): ReactElement {
                 <span className="ml-2 text-base font-bold tracking-wider text-on-surface-dim uppercase">
                     IT Trainer
                 </span>
+                <MobileSettingsMenu onLogout={handleLogout} />
             </header>
 
             <Sidebar
                 activeApp={activeApp}
                 setActiveApp={setActiveApp}
-                onLogout={handleLogout}
                 isMobileMenuOpen={isMobileMenuOpen}
                 setIsMobileMenuOpen={setIsMobileMenuOpen}
                 hideLeaderboardNav={!isMobile && !isLeaderboardActive}
@@ -138,11 +140,15 @@ function AuthenticatedApp(): ReactElement {
                     </main>
                 )}
 
-                {/* Leaderboard panel — always visible on lg+, full-width when active */}
-                <aside className={`shrink-0 overflow-y-auto ${
-                    isLeaderboardActive ? 'flex-1' : 'hidden lg:block w-80'
+                {/* Right column — settings toolbar on top (lg+), leaderboard below.
+                    Always visible on lg+, full-width when the leaderboard is active. */}
+                <aside className={`shrink-0 flex flex-col overflow-hidden ${
+                    isLeaderboardActive ? 'flex-1' : 'hidden lg:flex w-80'
                 }`}>
-                    <Leaderboard refreshTrigger={refreshKey} />
+                    <HeaderToolbar onLogout={handleLogout} />
+                    <div className="flex-1 min-h-0">
+                        <Leaderboard refreshTrigger={refreshKey} />
+                    </div>
                 </aside>
             </div>
         </div>

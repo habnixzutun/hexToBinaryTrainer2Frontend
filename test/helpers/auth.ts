@@ -34,7 +34,10 @@ export function authValue(overrides: Partial<AuthValue> = {}): AuthValue {
     refreshUser: vi.fn().mockResolvedValue(undefined),
     applyGameResult: vi.fn(),
     startGuest: vi.fn(),
+    leaveGuest: vi.fn(),
     recordGuestAnswer: vi.fn(),
+    welcomeView: 'login',
+    clearWelcomeView: vi.fn(),
     clearError: vi.fn(),
     ...overrides,
   }

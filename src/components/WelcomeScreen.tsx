@@ -59,10 +59,12 @@ function readResetTokenFromUrl(): string | null {
 // ==================== Component ====================
 
 export default function WelcomeScreen(): ReactElement {
-    // Lazy init: landing on a verify-email/reset-password link sets the starting view
+    const { startGuest, welcomeView, clearWelcomeView } = useAuth();
+    // Lazy init: a reset-password link wins; otherwise open the view requested
+    // by the AuthContext (e.g. 'register' after a guest clicked "Create account")
     const [view, setView] = useState<AuthView>(() => {
         if (readResetTokenFromUrl() !== null) return 'reset-password';
-        return 'login';
+        return welcomeView;
     });
     const [registeredEmail, setRegisteredEmail] = useState<string>('');
     const [resetToken, setResetToken] = useState<string | null>(() => readResetTokenFromUrl());
@@ -75,7 +77,14 @@ export default function WelcomeScreen(): ReactElement {
     const verifySubmittedRef = useRef(false);
     const { t, locale, setLocale } = useI18n();
     const { theme, toggleTheme } = useTheme();
-    const { startGuest } = useAuth();
+
+    // The requested start view is a one-time hint: consume it once read, so
+    // the next visit to the WelcomeScreen starts with login again.
+    useEffect(() => {
+        if (welcomeView !== 'login') {
+            clearWelcomeView();
+        }
+    }, [welcomeView, clearWelcomeView]);
 
     /**
      * Submit the verification token from the URL exactly once.

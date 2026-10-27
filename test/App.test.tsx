@@ -261,5 +261,17 @@ describe('App', () => {
       expect(await screen.findByRole('heading', { name: 'Willkommen zurück' })).toBeInTheDocument()
       expect(mockedAuthApi.logout).not.toHaveBeenCalled()
     })
+
+    it('takes a guest straight to the registration via the account menu', async () => {
+      const user = userEvent.setup()
+      render(<App />)
+      await screen.findByRole('heading', { name: 'Willkommen zurück' })
+
+      await user.click(screen.getByRole('button', { name: 'Als Gast testen' }))
+      await user.click(await screen.findByRole('button', { name: 'Konto' }))
+      await user.click(screen.getByRole('button', { name: 'Konto erstellen' }))
+
+      expect(await screen.findByRole('heading', { name: 'Konto erstellen' })).toBeInTheDocument()
+    })
   })
 })
