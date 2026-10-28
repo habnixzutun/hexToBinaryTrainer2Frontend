@@ -2,13 +2,18 @@
  * Auth Context: Global authentication state management.
  *
  * Provides:
- * - User state (authenticated user info + stats)
+ * - User state (authenticated user info + XP economy)
+ * - The raw last /answer response (HUD progress, level-up toast)
  * - Auth methods (login, register, logout, refreshUser)
  * - Loading and error states
  * - Automatic user restoration on app startup
+ *
+ * Server wins: the /answer payload is the only writer of the economy fields.
+ * Nothing here recomputes XP, streaks or levels locally — an optimistic chain
+ * that diverges from the backend is exactly what US-38 removes.
  */
 
-import { createContext, useContext, useState, useEffect, type ReactNode, type ReactElement } from 'react';
+import { createContext, useCallback, useContext, useState, useEffect, type ReactNode, type ReactElement } from 'react';
 import {
     login as apiLogin,
     register as apiRegister,
@@ -18,28 +23,51 @@ import {
     type UserMeResponse,
     type LoginRequest,
     type RegisterRequest
-} from '../services/authApi';
-import { getAccessToken, clearAccessToken } from '../utils/tokenManager';
-import { setScoreCache, clearScoreCache, type CachedScore } from '../utils/scoreCache';
-import type { GameSubmitResponse } from '../services/api';
+} from '../services/authApi.ts';
+import { getAccessToken, clearAccessToken } from '../utils/tokenManager.ts';
+import { setScoreCache, clearScoreCache } from '../utils/scoreCache.ts';
+import type { GameAnswerResponse, UnlockEntry } from '../services/api.ts';
 
 // ==================== Types ====================
 
 interface AuthContextType {
     user: UserMeResponse | null;
+    /** Raw payload of the last POST /api/game/answer — the HUD renders from it. */
+    lastAnswer: GameAnswerResponse | null;
+    /** `newly_unlocked` of that answer; cleared by dismissLevelUp(). */
+    pendingUnlocks: readonly UnlockEntry[];
     loading: boolean;
     error: string | null;
     login: (data: LoginRequest) => Promise<void>;
     register: (data: RegisterRequest) => Promise<void>;
     logout: () => Promise<void>;
     refreshUser: () => Promise<void>;
-    applyGameResult: (result: GameSubmitResponse) => void;
+    applyGameResult: (answer: GameAnswerResponse) => void;
+    dismissLevelUp: () => void;
     clearError: () => void;
 }
 
 // ==================== Context ====================
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+/**
+ * The economy fields /api/user/me and /api/game/answer have in common.
+ * Listed explicitly so a dropped field fails the compile, not the player.
+ */
+function economyOf(answer: GameAnswerResponse): Pick<
+    UserMeResponse,
+    'total_xp' | 'level' | 'current_streak' | 'best_streak' | 'correct_count' | 'incorrect_count'
+> {
+    return {
+        total_xp: answer.total_xp,
+        level: answer.level,
+        current_streak: answer.current_streak,
+        best_streak: answer.best_streak,
+        correct_count: answer.correct_count,
+        incorrect_count: answer.incorrect_count,
+    };
+}
 
 // ==================== Provider ====================
 
@@ -49,6 +77,8 @@ interface AuthProviderProps {
 
 export function AuthProvider({ children }: AuthProviderProps): ReactElement {
     const [user, setUser] = useState<UserMeResponse | null>(null);
+    const [lastAnswer, setLastAnswer] = useState<GameAnswerResponse | null>(null);
+    const [pendingUnlocks, setPendingUnlocks] = useState<readonly UnlockEntry[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -61,8 +91,21 @@ export function AuthProvider({ children }: AuthProviderProps): ReactElement {
         setScoreCache(userData.id, {
             correct_count: userData.correct_count,
             incorrect_count: userData.incorrect_count,
-            points: userData.points,
+            total_xp: userData.total_xp,
+            level: userData.level,
+            current_streak: userData.current_streak,
+            best_streak: userData.best_streak,
         });
+    };
+
+    /**
+     * Drop every per-account figure — used on logout and when a session cannot
+     * be restored, so the next player never sees the previous one's HUD.
+     */
+    const clearSessionState = (): void => {
+        setUser(null);
+        setLastAnswer(null);
+        setPendingUnlocks([]);
     };
 
     /**
@@ -84,6 +127,7 @@ export function AuthProvider({ children }: AuthProviderProps): ReactElement {
                 syncScoreCache(userData);
             } catch {
                 // No valid session - not an error, just show the login screen
+                clearSessionState();
                 clearAccessToken();
             } finally {
                 setLoading(false);
@@ -150,7 +194,7 @@ export function AuthProvider({ children }: AuthProviderProps): ReactElement {
         try {
             const userId = user?.id;
             await apiLogout();
-            setUser(null);
+            clearSessionState();
             if (userId) {
                 clearScoreCache(userId);
             }
@@ -163,7 +207,8 @@ export function AuthProvider({ children }: AuthProviderProps): ReactElement {
     /**
      * Refresh user data from backend.
      *
-     * Called after game actions to update stats. Syncs score cache on success.
+     * Fallback path for players who skipped a submit (network blip, tab was
+     * backgrounded). A /answer response makes this round-trip unnecessary.
      */
     const refreshUser = async (): Promise<void> => {
         try {
@@ -177,35 +222,39 @@ export function AuthProvider({ children }: AuthProviderProps): ReactElement {
     };
 
     /**
-     * Apply game result from submitCorrect/submitIncorrect.
-     *
-     * Updates user state and syncs score cache without an extra API call.
-     * Backend remains single source of truth — this is an optimistic update
-     * based on the API response.
+     * Apply a /answer response: server numbers win over whatever the client
+     * assumed, the raw payload is kept for the HUD and the unlock toast.
      */
-    const applyGameResult = (result: GameSubmitResponse): void => {
-        setUser(prev => {
-            if (prev === null) return prev;
-            const updated: UserMeResponse = {
-                ...prev,
-                correct_count: result.correct_count,
-                incorrect_count: result.incorrect_count,
-                points: result.points,
-            };
-            syncScoreCache(updated);
-            return updated;
-        });
+    const applyGameResult = (answer: GameAnswerResponse): void => {
+        setLastAnswer(answer);
+        setPendingUnlocks([...answer.newly_unlocked]);
+
+        if (user === null) return;
+
+        const updated: UserMeResponse = { ...user, ...economyOf(answer) };
+        setUser(updated);
+        syncScoreCache(updated);
+    };
+
+    /**
+     * Close the level-up toast. The progress numbers stay — the toast is not
+     * the owner of the answer.
+     */
+    const dismissLevelUp = (): void => {
+        setPendingUnlocks([]);
     };
 
     /**
      * Clear error message.
      */
-    const clearError = (): void => {
+    const clearError = useCallback((): void => {
         setError(null);
-    };
+    }, []);
 
     const value: AuthContextType = {
         user,
+        lastAnswer,
+        pendingUnlocks,
         loading,
         error,
         login,
@@ -213,6 +262,7 @@ export function AuthProvider({ children }: AuthProviderProps): ReactElement {
         logout,
         refreshUser,
         applyGameResult,
+        dismissLevelUp,
         clearError,
     };
 

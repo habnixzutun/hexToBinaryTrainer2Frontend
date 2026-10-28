@@ -6,33 +6,60 @@
  * - Automatic token refresh on 401 responses
  * - Request retry after successful refresh
  * - Credentials: 'include' for httponly refresh token cookies
+ * - Structured ApiError on non-2xx (status, detail, Retry-After, locked level)
+ *
+ * Sprint 4 (US-38): the answer submit path is unified. The client sends ONLY
+ * what it knows — mode, bit_width, is_correct — and the server computes every
+ * economy figure. Client-computed points/streak/level never leave the browser.
  */
 
-import { getAccessToken, clearAccessToken } from '../utils/tokenManager';
-import { refreshAccessToken } from './authApi';
+import { getAccessToken, clearAccessToken } from '../utils/tokenManager.ts';
+import { refreshAccessToken } from './authApi.ts';
+import { buildApiError } from './apiError.ts';
+import type { GameMode } from '../constants/gameModes.ts';
 
 const BASE_URL: string = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
 
 // ==================== Types ====================
 
+/** Frozen Sprint 4 leaderboard shape (OQ-9): XP economy, no legacy `points`. */
 export interface LeaderboardEntry {
     user_id: string;
     username: string;
+    total_xp: number;
+    level: number;
     correct_count: number;
     incorrect_count: number;
-    points: number;
 }
 
 export interface LeaderboardResponse {
     entries: LeaderboardEntry[];
 }
 
-export interface GameSubmitResponse {
-    message: string;
-    user_id: string;
+/** One entry of `newly_unlocked`: a tier this level opened. */
+export interface UnlockEntry {
+    mode: GameMode;
+    bit_width: number;
+    min_level: number;
+}
+
+/**
+ * Normative 200 response of POST /api/game/answer (US-33 golden fixture).
+ *
+ * `xp_delta` is 0 on a floor-blocked penalty (OQ-4) — that is a real event
+ * (the streak still resets), so callers must not read 0 as "nothing happened".
+ */
+export interface GameAnswerResponse {
+    xp_delta: number;
+    total_xp: number;
+    level: number;
+    xp_in_level: number;
+    xp_required_for_next_level: number;
+    current_streak: number;
+    best_streak: number;
     correct_count: number;
     incorrect_count: number;
-    points: number;
+    readonly newly_unlocked: readonly UnlockEntry[];
 }
 
 // ==================== HTTP Client ====================
@@ -95,49 +122,37 @@ async function authenticatedFetch(
 
 export const gameApi = {
     /**
-     * Submit a correct answer.
+     * Submit an answer and return the server-computed economy state.
      *
-     * @param bits - Number of bits in the question
-     * @returns Updated user stats
+     * The ONLY submit path since US-38: mode + bit width + correctness travel
+     * to the server, everything else (XP, streak, level, unlocks) travels back.
+     *
+     * @param mode - Backend mode, not the UI direction
+     * @param bitWidth - Question width in BITS in every mode (OQ-7)
+     * @param isCorrect - Whether the player's answer matched
+     * @throws ApiError with status 401/403/404/422/429 and the parsed detail
      */
-    async submitCorrect(bits: number): Promise<GameSubmitResponse> {
-        const response = await authenticatedFetch(`${BASE_URL}/api/game/correct`, {
+    async submitAnswer(mode: GameMode, bitWidth: number, isCorrect: boolean): Promise<GameAnswerResponse> {
+        const response = await authenticatedFetch(`${BASE_URL}/api/game/answer`, {
             method: 'POST',
-            body: JSON.stringify({ bits }),
+            body: JSON.stringify({ mode, bit_width: bitWidth, is_correct: isCorrect }),
         });
 
         if (!response.ok) {
-            const error = await response.json().catch(() => ({ detail: 'Failed to submit correct answer' }));
-            throw new Error(error.detail || 'Failed to submit correct answer');
+            throw await buildApiError(response, 'Failed to submit answer');
         }
 
-        return await response.json();
+        // Contract is frozen in the sprint plan; the HUD clamps every derived
+        // figure and scoreCache validates strictly, so a cast is the accepted
+        // boundary here (deep schema validation is tracked for US-39).
+        return (await response.json()) as GameAnswerResponse;
     },
 
     /**
-     * Submit an incorrect answer.
+     * Get the leaderboard (top 50 by total XP).
      *
-     * @param bits - Number of bits in the question
-     * @returns Updated user stats
-     */
-    async submitIncorrect(bits: number): Promise<GameSubmitResponse> {
-        const response = await authenticatedFetch(`${BASE_URL}/api/game/incorrect`, {
-            method: 'POST',
-            body: JSON.stringify({ bits }),
-        });
-
-        if (!response.ok) {
-            const error = await response.json().catch(() => ({ detail: 'Failed to submit incorrect answer' }));
-            throw new Error(error.detail || 'Failed to submit incorrect answer');
-        }
-
-        return await response.json();
-    },
-
-    /**
-     * Get leaderboard (top 50 users by points).
-     *
-     * @returns Leaderboard entries
+     * Public endpoint (OQ-9): no Authorization header, no refresh cookie —
+     * sending credentials here would leak the session to a public read.
      */
     async getLeaderboard(): Promise<LeaderboardEntry[]> {
         const response = await fetch(`${BASE_URL}/api/game/leaderboard`, {
@@ -149,7 +164,7 @@ export const gameApi = {
             throw new Error('Failed to fetch leaderboard');
         }
 
-        const data: LeaderboardResponse = await response.json();
+        const data = (await response.json()) as LeaderboardResponse;
         return data.entries;
     },
 };

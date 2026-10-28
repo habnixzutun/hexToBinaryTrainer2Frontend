@@ -1,65 +1,110 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, X, ArrowRight } from 'lucide-react';
-import { gameApi, type GameSubmitResponse } from '../services/api.ts';
+import { type GameAnswerResponse } from '../services/api.ts';
+import { modeForDirection, tierGates, type HexBinDirection } from '../constants/gameModes.ts';
+import { useAnswerSubmission } from '../hooks/useAnswerSubmission.ts';
 import { useI18n } from '../i18n/useI18n.ts';
 import { flashAccent } from '../utils/flashAccent.ts';
+import AnswerFeedback, { QUESTION_DELAY_MS, WRONG_FEEDBACK_MS } from './AnswerFeedback.tsx';
+import TierLockBadge from './TierLockBadge.tsx';
 import AppFooter from './AppFooter.tsx';
-
-type Mode = 'HexToBin' | 'HexToDec' | 'BinToHex' | 'BinToDec' | 'DecToHex' | 'DecToBin';
-
-const BIT_OPTIONS = [4, 8, 16, 32];
 
 interface Props {
     onUpdate: () => void;
-    onGameResult?: (result: GameSubmitResponse) => void;
-    activeMode?: Mode;
+    /** Receives the raw /answer payload so the server numbers stay authoritative. */
+    onGameResult?: (result: GameAnswerResponse) => void;
+    activeMode?: HexBinDirection;
     bits?: number;
     onBitsChange?: (bits: number) => void;
+    /**
+     * Level from the profile. Omitted renders every tier selectable — only
+     * isolated component tests do that; in the app the level is always known.
+     */
+    playerLevel?: number;
 }
 
-export default function HexBinTrainer({ onUpdate, onGameResult, activeMode: externalMode, bits: externalBits, onBitsChange }: Props) {
+/** Accessible description for a locked tier (US-39 AC-2). */
+const lockHintId = (bits: number): string => `hex-bit-lock-${bits}`;
+
+/** The tier a round was generated for — a stale round is detectable by key. */
+const roundKey = (mode: HexBinDirection, bits: number): string => `${mode}:${bits}`;
+
+interface Round {
+    readonly key: string;
+    /**
+     * Monotonic, so focus and transitions can follow every round even when two
+     * rounds in a row land on the same value (a real possibility on 4 bits).
+     */
+    readonly index: number;
+    readonly question: string;
+    readonly correctAnswer: string;
+}
+
+/**
+ * The dice live at module scope: the component body stays pure, which is what
+ * lets a new round be generated during render instead of from an effect.
+ */
+const createRound = (mode: HexBinDirection, bits: number, index: number): Round => {
+    const max = Math.pow(2, bits) - 1;
+    const min = Math.pow(2, bits - 4) - 1;
+    const v = Math.floor(Math.random() * (max - min + 1) + min);
+    const hex = v.toString(16).toUpperCase();
+    const bin = v.toString(2).padStart(bits, '0');
+    const dec = v.toString(10);
+    const pairs: Record<HexBinDirection, [string, string]> = {
+        HexToBin: [hex, bin], HexToDec: [hex, dec],
+        BinToHex: [bin, hex], BinToDec: [bin, dec],
+        DecToHex: [dec, hex], DecToBin: [dec, bin],
+    };
+    const [question, correctAnswer] = pairs[mode];
+    return { key: roundKey(mode, bits), index, question, correctAnswer };
+};
+
+export default function HexBinTrainer({ onUpdate, onGameResult, activeMode: externalMode, bits: externalBits, onBitsChange, playerLevel }: Props) {
     const { t } = useI18n();
 
-    const [internalMode] = useState<Mode>('HexToBin');
+    const [internalMode] = useState<HexBinDirection>('HexToBin');
     const activeMode = externalMode ?? internalMode;
 
     const [internalBits, setInternalBits] = useState(8);
     const bits = externalBits ?? internalBits;
     const setBits = onBitsChange ?? setInternalBits;
 
-    const [question, setQuestion] = useState('');
-    const [correctAnswer, setCorrectAnswer] = useState('');
+    const [round, setRound] = useState<Round>(() => createRound(activeMode, bits, 0));
     const [userAnswer, setUserAnswer] = useState('');
-    const [feedback, setFeedback] = useState<'none' | 'correct' | 'wrong' | 'error'>('none');
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [feedback, setFeedback] = useState<'none' | 'correct' | 'wrong'>('none');
+    // A 403 means our unlock view drifted from the server's — pull the profile
+    // so the tier list catches up instead of dead-ending on the hint (AC-4).
+    const { submit, isSubmitting, errorMessage, cooldownMs, clearError } = useAnswerSubmission(onUpdate);
     const inputRef = useRef<HTMLInputElement>(null);
 
-    const generateQuestion = useCallback((): void => {
-        const max = Math.pow(2, bits) - 1;
-        const min = Math.pow(2, bits - 4) - 1;
-        const v = Math.floor(Math.random() * (max - min + 1) + min);
-        const hex = v.toString(16).toUpperCase();
-        const bin = v.toString(2).padStart(bits, '0');
-        const dec = v.toString(10);
-        const qa: Record<Mode, [string, string]> = {
-            HexToBin: [hex, bin], HexToDec: [hex, dec],
-            BinToHex: [bin, hex], BinToDec: [bin, dec],
-            DecToHex: [dec, hex], DecToBin: [dec, bin],
-        };
-        const [q, a] = qa[activeMode];
-        setQuestion(q);
-        setCorrectAnswer(a);
+    const tiers = tierGates(modeForDirection(activeMode), playerLevel ?? null);
+
+    // Changing tier is changing round. Adjusting during render (React's prev-
+    // value pattern) puts the new question in the same commit as the tab click;
+    // an effect would paint the stale question once more, and the compiler
+    // rejects setState in an effect body outright.
+    const key = roundKey(activeMode, bits);
+    if (round.key !== key) {
+        setRound(createRound(activeMode, bits, round.index + 1));
         setUserAnswer('');
         setFeedback('none');
-        setTimeout(() => inputRef.current?.focus(), 0);
-    }, [activeMode, bits]);
+    }
 
-    useEffect(() => { generateQuestion(); }, [generateQuestion]);
-
+    // The caret follows the round: a fresh question and a finished submission
+    // both hand focus back to the input.
+    const focusToken = isSubmitting ? null : round.index;
     useEffect(() => {
-        if (!isSubmitting) inputRef.current?.focus();
-    }, [isSubmitting]);
+        if (focusToken === null) return;
+        inputRef.current?.focus();
+    }, [focusToken]);
+
+    const startNextRound = (): void => {
+        setRound(createRound(activeMode, bits, round.index + 1));
+        setUserAnswer('');
+        setFeedback('none');
+    };
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
         const targetFormat = activeMode.split('To')[1];
@@ -69,37 +114,43 @@ export default function HexBinTrainer({ onUpdate, onGameResult, activeMode: exte
         };
         const pattern = targetFormat !== undefined ? FILTERS[targetFormat] : undefined;
         setUserAnswer(pattern !== undefined ? raw.replace(pattern, '') : raw);
+        if (errorMessage !== null) clearError();
     };
 
     const handleCheck = async (): Promise<void> => {
-        if (isSubmitting || !userAnswer.trim()) return;
-        setIsSubmitting(true);
-        const normalize = (s: string) => s.trim().toUpperCase().replace(/^0+/, '');
-        const isCorrect = normalize(userAnswer) === normalize(correctAnswer);
-        try {
-            if (isCorrect) {
-                setFeedback('correct');
-                flashAccent('correct');
-                const result = await gameApi.submitCorrect(bits);
-                onGameResult?.(result) ?? onUpdate();
-                setTimeout(generateQuestion, 600);
-            } else {
-                setFeedback('wrong');
-                flashAccent('wrong');
-                const result = await gameApi.submitIncorrect(bits);
-                onGameResult?.(result) ?? onUpdate();
-                setTimeout(() => setFeedback('none'), 1000);
-            }
-        } catch (e: unknown) {
-            console.error('API error:', e);
-            setFeedback('error');
-            setTimeout(() => setFeedback('none'), 2000);
-        } finally {
-            setIsSubmitting(false);
+        if (isSubmitting || cooldownMs !== null || !userAnswer.trim()) return;
+
+        const normalize = (s: string): string => s.trim().toUpperCase().replace(/^0+/, '');
+        const isCorrect = normalize(userAnswer) === normalize(round.correctAnswer);
+
+        // Feedback is optimistic locally; the economy numbers that follow are
+        // not — they come back from the server untouched.
+        setFeedback(isCorrect ? 'correct' : 'wrong');
+        flashAccent(isCorrect ? 'correct' : 'wrong');
+
+        const result = await submit(modeForDirection(activeMode), bits, isCorrect);
+        if (result === null) return;
+
+        if (onGameResult !== undefined) {
+            onGameResult(result);
+        } else {
+            onUpdate();
+        }
+
+        if (isCorrect) {
+            setTimeout(startNextRound, QUESTION_DELAY_MS);
+        } else {
+            setTimeout(() => setFeedback('none'), WRONG_FEEDBACK_MS);
         }
     };
 
     const [fromLabel, toLabel] = activeMode.split('To') as [string, string];
+
+    // One message slot: a server error replaces the local verdict instead of
+    // stacking a second alert next to it.
+    const isNegative = errorMessage !== null || feedback === 'wrong';
+    const feedbackText = errorMessage ?? (feedback === 'wrong' ? t.wrong : feedback === 'correct' ? t.correctAnswer : null);
+    const isBlocked = isSubmitting || cooldownMs !== null || !userAnswer.trim();
 
     return (
         <div className="flex flex-col h-full" role="region" aria-label="Hex/Binary trainer">
@@ -109,20 +160,27 @@ export default function HexBinTrainer({ onUpdate, onGameResult, activeMode: exte
                 role="tablist"
                 aria-label="Bit selection"
             >
-                {BIT_OPTIONS.map((b) => (
+                {tiers.map(({ bitWidth: b, minLevel, isUnlocked: unlocked }) => (
                     <button
                         key={b}
-                        onClick={() => setBits(b)}
+                        // A locked tab keeps no handler at all: neither pointer
+                        // nor keyboard activation can select it (AC-2).
+                        onClick={unlocked ? () => setBits(b) : undefined}
                         role="tab"
                         aria-selected={bits === b}
+                        aria-disabled={unlocked ? undefined : 'true'}
                         aria-label={`${b} ${t.bits}`}
-                        className={`px-4 h-full text-sm font-medium transition-colors border-b-2 -mb-px whitespace-nowrap ${
+                        aria-describedby={unlocked ? undefined : lockHintId(b)}
+                        className={`px-4 h-full text-sm font-medium transition-colors border-b-2 -mb-px whitespace-nowrap flex items-center gap-1 ${
                             bits === b
                                 ? 'text-on-surface border-accent'
                                 : 'text-on-surface-faint border-transparent hover:text-on-surface-dim'
-                        }`}
+                        } ${unlocked ? '' : 'opacity-50'}`}
                     >
                         {b} {t.bits}
+                        {!unlocked && (
+                            <TierLockBadge minLevel={minLevel} hintId={lockHintId(b)} hint={t.lockedUntilLevel(minLevel)} />
+                        )}
                     </button>
                 ))}
                 <div className="ml-auto shrink-0">
@@ -148,14 +206,14 @@ export default function HexBinTrainer({ onUpdate, onGameResult, activeMode: exte
                         >
                             <AnimatePresence mode="wait">
                                 <motion.span
-                                    key={question}
+                                    key={round.question}
                                     initial={{ opacity: 0, y: -8 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, y: 8 }}
                                     transition={{ duration: 0.15 }}
                                     className="font-mono text-2xl sm:text-3xl md:text-4xl tracking-widest text-on-surface select-none break-all text-center leading-snug"
                                 >
-                                    {question}
+                                    {round.question}
                                 </motion.span>
                             </AnimatePresence>
                         </div>
@@ -172,9 +230,8 @@ export default function HexBinTrainer({ onUpdate, onGameResult, activeMode: exte
                             {toLabel}
                         </label>
                         <div className={`flex-1 flex items-center justify-center rounded-lg border min-h-36 px-4 sm:px-6 py-8 transition-colors ${
-                            feedback === 'wrong' ? 'border-error-text/60 bg-error-muted' :
+                            isNegative ? 'border-error-text/60 bg-error-muted' :
                             feedback === 'correct' ? 'border-accent/60 bg-accent-muted' :
-                            feedback === 'error' ? 'border-error-text/60 bg-error-muted' :
                             'border-outline bg-surface-alt focus-within:border-accent'
                         }`}>
                             <input
@@ -201,53 +258,14 @@ export default function HexBinTrainer({ onUpdate, onGameResult, activeMode: exte
 
                 {/* Feedback + Check button below boxes */}
                 <div className="flex flex-col items-center gap-3 w-full max-w-3xl">
-                    <AnimatePresence>
-                        {feedback === 'wrong' && (
-                            <motion.p
-                                initial={{ opacity: 0, y: -4 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0 }}
-                                className="text-base text-error-text font-mono"
-                                role="alert"
-                                aria-live="assertive"
-                            >
-                                {t.wrong}
-                            </motion.p>
-                        )}
-                        {feedback === 'correct' && (
-                            <motion.p
-                                initial={{ opacity: 0, y: -4 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0 }}
-                                className="text-base text-accent font-mono"
-                                role="status"
-                                aria-live="polite"
-                            >
-                                <Check size={18} strokeWidth={2.5} className="inline mr-1" aria-hidden="true" />
-                                {t.correctAnswer}
-                            </motion.p>
-                        )}
-                        {feedback === 'error' && (
-                            <motion.p
-                                initial={{ opacity: 0, y: -4 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0 }}
-                                className="text-base text-error-text font-mono"
-                                role="alert"
-                                aria-live="assertive"
-                            >
-                                <X size={18} strokeWidth={2.5} className="inline mr-1" aria-hidden="true" />
-                                {t.errorSaving}
-                            </motion.p>
-                        )}
-                    </AnimatePresence>
+                    <AnswerFeedback message={feedbackText} negative={isNegative} />
                     <motion.button
                         onClick={handleCheck}
-                        disabled={isSubmitting || !userAnswer.trim()}
+                        disabled={isBlocked}
                         whileTap={{ scale: 0.98 }}
                         aria-label={feedback === 'wrong' ? 'Check answer (incorrect)' : 'Check answer'}
                         className={`w-full flex items-center justify-center gap-2.5 px-8 py-3.5 rounded-lg text-lg font-semibold transition-all duration-200 ${
-                            !userAnswer.trim() || isSubmitting
+                            isBlocked
                                 ? 'text-on-surface-subtle bg-surface-raised cursor-not-allowed'
                                 : feedback === 'wrong'
                                     ? 'text-white bg-error-text hover:bg-error-text/90 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-error-text focus-visible:ring-offset-2 focus-visible:ring-offset-surface'

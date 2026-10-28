@@ -5,6 +5,7 @@ import {
   refreshAccessToken,
   register,
   verifyEmail,
+  type UserMeResponse,
 } from '../../src/services/authApi.ts'
 import { clearAccessToken, getAccessToken, setAccessToken } from '../../src/utils/tokenManager.ts'
 
@@ -24,13 +25,17 @@ const nonJsonResponse = (status: number) => ({
   },
 })
 
-const user = {
+// Typed so a drift in the GET /api/user/me economy shape fails here first.
+const user: UserMeResponse = {
   id: 'user-1',
   username: 'alice',
   email: 'alice@example.com',
   correct_count: 3,
   incorrect_count: 1,
-  points: 42,
+  total_xp: 252,
+  level: 3,
+  current_streak: 2,
+  best_streak: 6,
 }
 
 describe('authApi', () => {

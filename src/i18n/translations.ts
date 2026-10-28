@@ -1,3 +1,5 @@
+import type { GameMode } from '../constants/gameModes.ts';
+
 export type Locale = 'de' | 'en';
 
 export const translations = {
@@ -101,7 +103,24 @@ export const translations = {
         // Stats
         correct: 'Richtig',
         wrong: 'Falsch',
-        score: 'Punkte',
+
+        // XP economy (Sprint 4 / US-38) — the only numbers the HUD owns
+        hudLabel: 'Trainingsfortschritt',
+        xp: 'XP',
+        levelLabel: 'Stufe',
+        streak: 'Serie',
+        bestStreak: 'Beste Serie',
+        xpProgress: (current: number, required: number) => `${current} von ${required} XP`,
+        levelUpToast: (level: number) => `Stufe ${level} erreicht!`,
+        lockedUntilLevel: (level: number) => `Freigeschaltet ab Stufe ${level}.`,
+        rateLimited: (seconds: number) => `Zu viele Antworten hintereinander. Bitte ${seconds} Sekunden warten.`,
+        dismissNotice: 'Hinweis ausblenden',
+        modeNames: {
+            hex_to_bin: 'Hex ↔ Bin',
+            hex_to_dec: 'Hex ↔ Dec',
+            bin_to_dec: 'Bin ↔ Dec',
+            unicode: 'Unicode',
+        },
 
         // HexBinTrainer
         bits: 'Bits',
@@ -134,7 +153,7 @@ export const translations = {
         leaderboardTitle: 'Bestenliste',
         rank: 'Platz',
         name: 'Name',
-        points: 'Punkte ✨',
+        leaderboardError: 'Bestenliste konnte nicht geladen werden.',
         me: '(Du)',
 
         // Sidebar
@@ -248,7 +267,24 @@ export const translations = {
         // Stats
         correct: 'Correct',
         wrong: 'Wrong',
-        score: 'Score',
+
+        // XP economy (Sprint 4 / US-38) — the only numbers the HUD owns
+        hudLabel: 'Training progress',
+        xp: 'XP',
+        levelLabel: 'Level',
+        streak: 'Streak',
+        bestStreak: 'Best streak',
+        xpProgress: (current: number, required: number) => `${current} of ${required} XP`,
+        levelUpToast: (level: number) => `Level ${level} reached!`,
+        lockedUntilLevel: (level: number) => `Unlocks at level ${level}.`,
+        rateLimited: (seconds: number) => `Too many answers in a row. Please wait ${seconds} seconds.`,
+        dismissNotice: 'Dismiss notice',
+        modeNames: {
+            hex_to_bin: 'Hex ↔ Bin',
+            hex_to_dec: 'Hex ↔ Dec',
+            bin_to_dec: 'Bin ↔ Dec',
+            unicode: 'Unicode',
+        },
 
         // HexBinTrainer
         bits: 'Bits',
@@ -281,7 +317,7 @@ export const translations = {
         leaderboardTitle: 'Leaderboard',
         rank: 'Rank',
         name: 'Name',
-        points: 'Points ✨',
+        leaderboardError: 'Leaderboard could not be loaded.',
         me: '(You)',
 
         // Sidebar
@@ -395,7 +431,19 @@ export type Translations = {
     // Stats
     correct: string;
     wrong: string;
-    score: string;
+
+    // XP economy (Sprint 4 / US-38)
+    hudLabel: string;
+    xp: string;
+    levelLabel: string;
+    streak: string;
+    bestStreak: string;
+    xpProgress: (current: number, required: number) => string;
+    levelUpToast: (level: number) => string;
+    lockedUntilLevel: (level: number) => string;
+    rateLimited: (seconds: number) => string;
+    dismissNotice: string;
+    modeNames: Record<GameMode, string>;
 
     // HexBinTrainer
     bits: string;
@@ -428,7 +476,7 @@ export type Translations = {
     leaderboardTitle: string;
     rank: string;
     name: string;
-    points: string;
+    leaderboardError: string;
     me: string;
 
     // Sidebar

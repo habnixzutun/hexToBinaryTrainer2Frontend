@@ -2,7 +2,7 @@ import { userEvent } from '@testing-library/user-event'
 import { render, screen, waitFor, within } from '../src/test-utils.tsx'
 import App from '../src/App.tsx'
 import * as authApi from '../src/services/authApi.ts'
-import { gameApi } from '../src/services/api.ts'
+import { gameApi, type GameAnswerResponse, type LeaderboardEntry } from '../src/services/api.ts'
 import { testUser } from './helpers/auth.ts'
 
 // Real AuthProvider + AuthGate; only the HTTP layer is mocked.
@@ -16,8 +16,7 @@ vi.mock('../src/services/authApi.ts', () => ({
 
 vi.mock('../src/services/api.ts', () => ({
   gameApi: {
-    submitCorrect: vi.fn(),
-    submitIncorrect: vi.fn(),
+    submitAnswer: vi.fn(),
     getLeaderboard: vi.fn(),
   },
 }))
@@ -49,6 +48,25 @@ Object.defineProperty(window, 'localStorage', {
 const DESKTOP_WIDTH = 1280
 const MOBILE_WIDTH = 500
 
+const leaderboardEntries: LeaderboardEntry[] = [
+  { user_id: 'u-1', username: 'Alice', total_xp: 1320, level: 6, correct_count: 10, incorrect_count: 2 },
+  { user_id: 'user-1', username: 'TestUser', total_xp: 50, level: 1, correct_count: 5, incorrect_count: 2 },
+]
+
+/** L1 -> 58 of 100 XP: the server computes everything, the client only renders. */
+const answer: GameAnswerResponse = {
+  xp_delta: 8,
+  total_xp: 58,
+  level: 1,
+  xp_in_level: 58,
+  xp_required_for_next_level: 100,
+  current_streak: 1,
+  best_streak: 3,
+  correct_count: 6,
+  incorrect_count: 2,
+  newly_unlocked: [],
+}
+
 const setViewportWidth = (width: number): void => {
   Object.defineProperty(window, 'innerWidth', { configurable: true, writable: true, value: width })
 }
@@ -75,17 +93,8 @@ describe('App', () => {
     mockedAuthApi.getCurrentUser.mockResolvedValue(testUser)
     mockedAuthApi.logout.mockResolvedValue({ message: 'Logged out.' })
 
-    mockedGameApi.getLeaderboard.mockResolvedValue([
-      { user_id: 'u-1', username: 'Alice', correct_count: 10, incorrect_count: 2, points: 100 },
-      { user_id: 'user-1', username: 'TestUser', correct_count: 5, incorrect_count: 2, points: 50 },
-    ])
-    mockedGameApi.submitCorrect.mockResolvedValue({
-      message: 'Correct answer recorded',
-      user_id: 'user-1',
-      correct_count: 6,
-      incorrect_count: 2,
-      points: 58,
-    })
+    mockedGameApi.getLeaderboard.mockResolvedValue(leaderboardEntries)
+    mockedGameApi.submitAnswer.mockResolvedValue(answer)
   })
 
   afterEach(() => {
@@ -116,8 +125,18 @@ describe('App', () => {
     // Sidebar shows data from GET /api/user/me
     const sidebar = screen.getByLabelText('Main navigation')
     expect(within(sidebar).getByText('TestUser')).toBeInTheDocument()
-    // correct / incorrect / points
-    expect(within(sidebar).getByLabelText('Your statistics').textContent).toBe('5OK2ERR50PTS')
+    // correct / incorrect / total XP
+    expect(within(sidebar).getByLabelText('Your statistics').textContent).toBe('5OK2ERR50XP')
+  })
+
+  it('holds the XP progress back until the server supplies it (cold start)', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await screen.findByRole('heading', { name: 'Willkommen zurück' })
+    await loginThroughForm(user)
+
+    expect(screen.queryByRole('progressbar')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Stufe')).toHaveTextContent('1')
   })
 
   it('stays on the login screen and shows the error when loading the user fails', async () => {
@@ -136,10 +155,7 @@ describe('App', () => {
     expect(screen.queryByLabelText('Main navigation')).not.toBeInTheDocument()
   })
 
-  it('refreshes the user stats after a game action', async () => {
-    mockedAuthApi.getCurrentUser
-      .mockResolvedValueOnce(testUser)
-      .mockResolvedValueOnce({ ...testUser, correct_count: 6, points: 58 })
+  it('applies the server answer to the HUD and the sidebar without a second round-trip', async () => {
     const user = userEvent.setup()
     render(<App />)
     await screen.findByRole('heading', { name: 'Willkommen zurück' })
@@ -150,13 +166,22 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: /check answer/i }))
 
     await waitFor(() => {
-      expect(mockedGameApi.submitCorrect).toHaveBeenCalledWith(8)
-      expect(mockedAuthApi.getCurrentUser).toHaveBeenCalledTimes(2)
+      expect(mockedGameApi.submitAnswer).toHaveBeenCalledWith('hex_to_bin', 8, true)
     })
+    // applyGameResult replaces the refreshUser() call the /answer response makes redundant.
+    expect(mockedAuthApi.getCurrentUser).toHaveBeenCalledTimes(1)
+
     const stats = within(screen.getByLabelText('Main navigation')).getByLabelText('Your statistics')
     await waitFor(() => {
-      expect(stats.textContent).toBe('6OK2ERR58PTS')
+      expect(stats.textContent).toBe('6OK2ERR58XP')
     })
+
+    // The HUD renders the progress straight off the /answer payload (AC-2).
+    const bar = await screen.findByRole('progressbar')
+    expect(bar).toHaveAttribute('aria-valuenow', '58')
+    expect(bar).toHaveAttribute('aria-valuemax', '100')
+    expect(screen.getByLabelText('Serie')).toHaveTextContent('1')
+    expect(screen.getByLabelText('Beste Serie')).toHaveTextContent('3')
   })
 
   it('logs out and returns to the login screen', async () => {

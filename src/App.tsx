@@ -8,10 +8,16 @@ import Leaderboard from './components/Leaderboard.tsx';
 import WelcomeScreen from './components/WelcomeScreen.tsx';
 import { AuthProvider, useAuth } from './contexts/AuthContext.tsx';
 import { CookieBanner } from './components/CookieBanner.tsx';
-import type { GameSubmitResponse } from './services/api.ts';
+import GameHud from './components/GameHud.tsx';
+import type { HexBinDirection } from './constants/gameModes.ts';
+import type { GameAnswerResponse } from './services/api.ts';
 
 export type ActiveApp = 'hex' | 'unicode' | 'leaderboard';
-export type HexBinMode = 'HexToBin' | 'HexToDec' | 'BinToHex' | 'BinToDec' | 'DecToHex' | 'DecToBin';
+/**
+ * UI directions are a display concern; the backend only ever sees the mapped
+ * mode. Re-exported so `Sidebar` and the trainer share one definition.
+ */
+export type HexBinMode = HexBinDirection;
 
 /**
  * Main App Component (authenticated).
@@ -45,7 +51,8 @@ function AuthenticatedApp(): ReactElement {
         setRefreshKey(prev => prev + 1);
     };
 
-    const handleGameResult = (result: GameSubmitResponse): void => {
+    /** The /answer payload already carries the new economy — no second round-trip. */
+    const handleGameResult = (result: GameAnswerResponse): void => {
         applyGameResult(result);
         setRefreshKey(prev => prev + 1);
     };
@@ -100,47 +107,54 @@ function AuthenticatedApp(): ReactElement {
                 onBytesChange={setBytes}
             />
 
-            {/* Main content */}
-            <div className="flex flex-1 min-w-0 overflow-hidden">
-                {/* Trainer area — hidden when leaderboard is active on large viewports */}
-                {!isLeaderboardActive && (
-                    <main id="main-content" className="flex-1 overflow-y-auto border-r border-outline-faint" role="main">
-                        <AnimatePresence mode="wait">
-                            <motion.div
-                                key={activeApp}
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                transition={{ duration: 0.15 }}
-                                className="h-full"
-                            >
-                                {activeApp === 'hex' ? (
-                                    <HexBinTrainer
-                                        onUpdate={updateUserData}
-                                        onGameResult={handleGameResult}
-                                        activeMode={activeMode}
-                                        bits={bits}
-                                        onBitsChange={setBits}
-                                    />
-                                ) : (
-                                    <UnicodeTrainer
-                                        onUpdate={updateUserData}
-                                        onGameResult={handleGameResult}
-                                        bytes={bytes}
-                                        onBytesChange={setBytes}
-                                    />
-                                )}
-                            </motion.div>
-                        </AnimatePresence>
-                    </main>
-                )}
+            {/* Main content: the HUD spans the whole play area, trainers and
+                leaderboard share the row underneath it. */}
+            <div className="flex flex-1 min-w-0 flex-col overflow-hidden">
+                <GameHud />
 
-                {/* Leaderboard panel — always visible on lg+, full-width when active */}
-                <aside className={`shrink-0 overflow-y-auto ${
-                    isLeaderboardActive ? 'flex-1' : 'hidden lg:block w-80'
-                }`}>
-                    <Leaderboard refreshTrigger={refreshKey} />
-                </aside>
+                <div className="flex flex-1 min-h-0 overflow-hidden">
+                    {/* Trainer area — hidden when leaderboard is active on large viewports */}
+                    {!isLeaderboardActive && (
+                        <main id="main-content" className="flex-1 overflow-y-auto border-r border-outline-faint" role="main">
+                            <AnimatePresence mode="wait">
+                                <motion.div
+                                    key={activeApp}
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    transition={{ duration: 0.15 }}
+                                    className="h-full"
+                                >
+                                    {activeApp === 'hex' ? (
+                                        <HexBinTrainer
+                                            onUpdate={updateUserData}
+                                            onGameResult={handleGameResult}
+                                            activeMode={activeMode}
+                                            bits={bits}
+                                            onBitsChange={setBits}
+                                            playerLevel={user.level}
+                                        />
+                                    ) : (
+                                        <UnicodeTrainer
+                                            onUpdate={updateUserData}
+                                            onGameResult={handleGameResult}
+                                            bytes={bytes}
+                                            onBytesChange={setBytes}
+                                            playerLevel={user.level}
+                                        />
+                                    )}
+                                </motion.div>
+                            </AnimatePresence>
+                        </main>
+                    )}
+
+                    {/* Leaderboard panel — always visible on lg+, full-width when active */}
+                    <aside className={`shrink-0 overflow-y-auto ${
+                        isLeaderboardActive ? 'flex-1' : 'hidden lg:block w-80'
+                    }`}>
+                        <Leaderboard refreshTrigger={refreshKey} />
+                    </aside>
+                </div>
             </div>
         </div>
     );

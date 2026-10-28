@@ -5,8 +5,12 @@ import React from 'react'
 // Mock framer-motion globally for all tests to avoid animation delays
 vi.mock('framer-motion', () => {
   const createMockComponent = (tagName: string) => {
+    // Animation props are dropped; everything else reaches the real DOM node.
+    const MOTION_ONLY = ['initial', 'animate', 'exit', 'transition', 'whileHover', 'whileTap']
     return ({ children, ...props }: { children: React.ReactNode; [key: string]: unknown }) => {
-      const { initial, animate, exit, transition, whileHover, whileTap, ...rest } = props
+      const rest = Object.fromEntries(
+        Object.entries(props).filter(([name]) => !MOTION_ONLY.includes(name))
+      )
       return React.createElement(tagName, rest, children)
     }
   }
