@@ -9,6 +9,8 @@ import WelcomeScreen from './components/WelcomeScreen.tsx';
 import { AuthProvider, useAuth } from './contexts/AuthContext.tsx';
 import { CookieBanner } from './components/CookieBanner.tsx';
 import GameHud from './components/GameHud.tsx';
+import HeaderToolbar from './components/header/HeaderToolbar.tsx';
+import MobileSettingsMenu from './components/header/MobileSettingsMenu.tsx';
 import type { HexBinDirection } from './constants/gameModes.ts';
 import type { GameAnswerResponse } from './services/api.ts';
 
@@ -20,12 +22,13 @@ export type ActiveApp = 'hex' | 'unicode' | 'leaderboard';
 export type HexBinMode = HexBinDirection;
 
 /**
- * Main App Component (authenticated).
+ * Main App Component (authenticated or guest).
  *
- * Only rendered when user is authenticated.
+ * Only rendered for a logged-in user or a guest. Guests get the same UI,
+ * but their answers are counted in memory instead of being sent to the backend.
  */
 function AuthenticatedApp(): ReactElement {
-    const { user, refreshUser, applyGameResult, logout } = useAuth();
+    const { user, isGuest, refreshUser, applyGameResult, recordGuestAnswer, logout } = useAuth();
     const [activeApp, setActiveApp] = useState<ActiveApp>('hex');
     const [activeMode, setActiveMode] = useState<HexBinMode>('HexToBin');
     const [refreshKey, setRefreshKey] = useState(0);
@@ -57,7 +60,7 @@ function AuthenticatedApp(): ReactElement {
         setRefreshKey(prev => prev + 1);
     };
 
-    if (!user) {
+    if (!user && !isGuest) {
         return (
             <div className="flex items-center justify-center h-screen bg-surface">
                 <Loader2 className="w-8 h-8 text-accent animate-spin" />
@@ -89,12 +92,12 @@ function AuthenticatedApp(): ReactElement {
                 <span className="ml-2 text-base font-bold tracking-wider text-on-surface-dim uppercase">
                     IT Trainer
                 </span>
+                <MobileSettingsMenu onLogout={handleLogout} />
             </header>
 
             <Sidebar
                 activeApp={activeApp}
                 setActiveApp={setActiveApp}
-                onLogout={handleLogout}
                 isMobileMenuOpen={isMobileMenuOpen}
                 setIsMobileMenuOpen={setIsMobileMenuOpen}
                 hideLeaderboardNav={!isMobile && !isLeaderboardActive}
@@ -108,7 +111,8 @@ function AuthenticatedApp(): ReactElement {
             />
 
             {/* Main content: the HUD spans the whole play area, trainers and
-                leaderboard share the row underneath it. */}
+                the right column (settings toolbar + leaderboard) share the row
+                underneath it. */}
             <div className="flex flex-1 min-w-0 flex-col overflow-hidden">
                 <GameHud />
 
@@ -129,18 +133,20 @@ function AuthenticatedApp(): ReactElement {
                                         <HexBinTrainer
                                             onUpdate={updateUserData}
                                             onGameResult={handleGameResult}
+                                            onGuestAnswer={isGuest ? recordGuestAnswer : undefined}
                                             activeMode={activeMode}
                                             bits={bits}
                                             onBitsChange={setBits}
-                                            playerLevel={user.level}
+                                            playerLevel={user?.level}
                                         />
                                     ) : (
                                         <UnicodeTrainer
                                             onUpdate={updateUserData}
                                             onGameResult={handleGameResult}
+                                            onGuestAnswer={isGuest ? recordGuestAnswer : undefined}
                                             bytes={bytes}
                                             onBytesChange={setBytes}
-                                            playerLevel={user.level}
+                                            playerLevel={user?.level}
                                         />
                                     )}
                                 </motion.div>
@@ -148,11 +154,15 @@ function AuthenticatedApp(): ReactElement {
                         </main>
                     )}
 
-                    {/* Leaderboard panel — always visible on lg+, full-width when active */}
-                    <aside className={`shrink-0 overflow-y-auto ${
-                        isLeaderboardActive ? 'flex-1' : 'hidden lg:block w-80'
+                    {/* Right column — settings toolbar on top (lg+), leaderboard below.
+                        Always visible on lg+, full-width when the leaderboard is active. */}
+                    <aside className={`shrink-0 flex flex-col overflow-hidden ${
+                        isLeaderboardActive ? 'flex-1' : 'hidden lg:flex w-80'
                     }`}>
-                        <Leaderboard refreshTrigger={refreshKey} />
+                        <HeaderToolbar onLogout={handleLogout} />
+                        <div className="flex-1 min-h-0 overflow-y-auto">
+                            <Leaderboard refreshTrigger={refreshKey} />
+                        </div>
                     </aside>
                 </div>
             </div>
@@ -164,7 +174,7 @@ function AuthenticatedApp(): ReactElement {
  * Root App Component with Auth Gate.
  *
  * Shows WelcomeScreen for unauthenticated users,
- * AuthenticatedApp for authenticated users.
+ * AuthenticatedApp for authenticated users and guests.
  */
 export default function App(): ReactElement {
     return (
@@ -181,7 +191,7 @@ export default function App(): ReactElement {
  * before login too.
  */
 function AuthGate(): ReactElement {
-    const { user, loading } = useAuth();
+    const { user, isGuest, loading } = useAuth();
 
     return (
         <>
@@ -189,7 +199,7 @@ function AuthGate(): ReactElement {
                 <div className="flex items-center justify-center h-screen bg-surface">
                     <Loader2 className="w-8 h-8 text-accent animate-spin" />
                 </div>
-            ) : user ? (
+            ) : user || isGuest ? (
                 <AuthenticatedApp />
             ) : (
                 <WelcomeScreen />

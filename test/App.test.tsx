@@ -4,6 +4,7 @@ import App from '../src/App.tsx'
 import * as authApi from '../src/services/authApi.ts'
 import { gameApi, type GameAnswerResponse, type LeaderboardEntry } from '../src/services/api.ts'
 import { testUser } from './helpers/auth.ts'
+import { setPersistenceEnabled } from '../src/utils/persistence.ts'
 
 // Real AuthProvider + AuthGate; only the HTTP layer is mocked.
 vi.mock('../src/services/authApi.ts', () => ({
@@ -82,6 +83,7 @@ describe('App', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     localStorageMock.clear()
+    setPersistenceEnabled(true)
     setViewportWidth(DESKTOP_WIDTH)
 
     // Mock Math.random for deterministic questions (8 bits → hex "87")
@@ -190,7 +192,7 @@ describe('App', () => {
     await screen.findByRole('heading', { name: 'Willkommen zurück' })
     await loginThroughForm(user)
 
-    await user.click(screen.getByLabelText(/sitzung beenden/i))
+    await user.click(screen.getByLabelText(/ausloggen/i))
 
     expect(await screen.findByRole('heading', { name: 'Willkommen zurück' })).toBeInTheDocument()
     expect(mockedAuthApi.logout).toHaveBeenCalledTimes(1)
@@ -240,5 +242,60 @@ describe('App', () => {
 
     await user.click(screen.getByRole('button', { name: 'Hex/Binary trainer' }))
     expect(await screen.findByRole('region', { name: /hex\/binary trainer/i })).toBeInTheDocument()
+  })
+
+  describe('guest mode', () => {
+    it('lets a guest train without backend calls or localStorage writes', async () => {
+      const user = userEvent.setup()
+      render(<App />)
+      await screen.findByRole('heading', { name: 'Willkommen zurück' })
+
+      await user.click(screen.getByRole('button', { name: 'Als Gast testen' }))
+      await screen.findByRole('region', { name: /hex\/binary trainer/i })
+      localStorageMock.setItem.mockClear()
+
+      // Correct answer for hex "87"
+      await user.type(screen.getByRole('textbox'), '10000111')
+      await user.click(screen.getByRole('button', { name: /check answer/i }))
+
+      const stats = screen.getByLabelText('Your statistics')
+      await waitFor(() => expect(within(stats).getByText('1')).toBeInTheDocument())
+      expect(within(stats).getByText('–')).toBeInTheDocument()
+      expect(screen.getByText('Gast')).toBeInTheDocument()
+
+      // Changing the theme as a guest must not be persisted
+      await user.click(screen.getByRole('button', { name: 'Switch to light mode' }))
+
+      expect(mockedGameApi.submitAnswer).not.toHaveBeenCalled()
+      expect(mockedAuthApi.getCurrentUser).not.toHaveBeenCalled()
+      expect(localStorageMock.setItem).not.toHaveBeenCalled()
+
+      // The public leaderboard is still visible
+      expect(await screen.findByText('Alice')).toBeInTheDocument()
+    })
+
+    it('returns to the welcome screen when the guest leaves', async () => {
+      const user = userEvent.setup()
+      render(<App />)
+      await screen.findByRole('heading', { name: 'Willkommen zurück' })
+
+      await user.click(screen.getByRole('button', { name: 'Als Gast testen' }))
+      await user.click(await screen.findByRole('button', { name: 'Gastmodus beenden' }))
+
+      expect(await screen.findByRole('heading', { name: 'Willkommen zurück' })).toBeInTheDocument()
+      expect(mockedAuthApi.logout).not.toHaveBeenCalled()
+    })
+
+    it('takes a guest straight to the registration via the account menu', async () => {
+      const user = userEvent.setup()
+      render(<App />)
+      await screen.findByRole('heading', { name: 'Willkommen zurück' })
+
+      await user.click(screen.getByRole('button', { name: 'Als Gast testen' }))
+      await user.click(await screen.findByRole('button', { name: 'Konto' }))
+      await user.click(screen.getByRole('button', { name: 'Konto erstellen' }))
+
+      expect(await screen.findByRole('heading', { name: 'Konto erstellen' })).toBeInTheDocument()
+    })
   })
 })

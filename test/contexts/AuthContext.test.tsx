@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from '../../src/contexts/AuthContext.tsx'
 import * as authApi from '../../src/services/authApi.ts'
 import { clearAccessToken, getAccessToken, setAccessToken } from '../../src/utils/tokenManager.ts'
 import { SCORE_CACHE_VERSION, getScoreCache } from '../../src/utils/scoreCache.ts'
+import { isPersistenceEnabled, setPersistenceEnabled } from '../../src/utils/persistence.ts'
 import type { GameAnswerResponse, UnlockEntry } from '../../src/services/api.ts'
 import type { UserMeResponse } from '../../src/services/authApi.ts'
 
@@ -306,5 +307,95 @@ describe('AuthContext', () => {
       expect(result.current.user).toBeNull()
       expect(getScoreCache('user-1')).toBeNull()
     })
+  })
+})
+
+describe('AuthContext guest mode', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    clearAccessToken()
+    setPersistenceEnabled(true)
+    // No session on startup
+    mockedApi.refreshAccessToken.mockRejectedValue(new Error('Missing refresh token.'))
+  })
+
+  afterEach(() => {
+    setPersistenceEnabled(true)
+  })
+
+  async function startAsGuest() {
+    const hook = renderHook(() => useAuth(), { wrapper })
+    await waitFor(() => expect(hook.result.current.loading).toBe(false))
+    act(() => hook.result.current.startGuest())
+    return hook
+  }
+
+  it('starts a guest session without a user and turns off persistence', async () => {
+    const { result } = await startAsGuest()
+
+    expect(result.current.isGuest).toBe(true)
+    expect(result.current.user).toBeNull()
+    expect(result.current.guestStats).toEqual({ correct_count: 0, incorrect_count: 0 })
+    expect(isPersistenceEnabled()).toBe(false)
+  })
+
+  it('counts guest answers in memory only', async () => {
+    const { result } = await startAsGuest()
+
+    act(() => result.current.recordGuestAnswer(true))
+    act(() => result.current.recordGuestAnswer(true))
+    act(() => result.current.recordGuestAnswer(false))
+
+    expect(result.current.guestStats).toEqual({ correct_count: 2, incorrect_count: 1 })
+  })
+
+  it('ignores guest answers when not in guest mode', async () => {
+    const { result } = renderHook(() => useAuth(), { wrapper })
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    act(() => result.current.recordGuestAnswer(true))
+
+    expect(result.current.isGuest).toBe(false)
+    expect(result.current.guestStats).toBeNull()
+  })
+
+  it('does not call the backend when a guest refreshes or leaves', async () => {
+    const { result } = await startAsGuest()
+
+    await act(() => result.current.refreshUser())
+    await act(() => result.current.logout())
+
+    expect(mockedApi.getCurrentUser).not.toHaveBeenCalled()
+    expect(mockedApi.logout).not.toHaveBeenCalled()
+    expect(result.current.isGuest).toBe(false)
+    expect(result.current.guestStats).toBeNull()
+    expect(isPersistenceEnabled()).toBe(true)
+  })
+
+  it('ignores game results while in guest mode', async () => {
+    const { result } = await startAsGuest()
+
+    act(() => result.current.applyGameResult(answerFixture))
+
+    expect(result.current.user).toBeNull()
+    expect(result.current.guestStats).toEqual({ correct_count: 0, incorrect_count: 0 })
+    // The HUD stays empty too: a guest never receives an /answer payload, so
+    // one must not leak into their session either.
+    expect(result.current.lastAnswer).toBeNull()
+    expect(getScoreCache('user-1')).toBeNull()
+  })
+
+  it('leaves guest mode towards registration and can reset the hint', async () => {
+    const { result } = await startAsGuest()
+    expect(result.current.welcomeView).toBe('login')
+
+    act(() => result.current.leaveGuest('register'))
+
+    expect(result.current.isGuest).toBe(false)
+    expect(result.current.welcomeView).toBe('register')
+    expect(isPersistenceEnabled()).toBe(true)
+
+    act(() => result.current.clearWelcomeView())
+    expect(result.current.welcomeView).toBe('login')
   })
 })

@@ -4,6 +4,7 @@
  * Provides:
  * - User state (authenticated user info + XP economy)
  * - The raw last /answer response (HUD progress, level-up toast)
+ * - Guest mode (try the app without an account, nothing is persisted)
  * - Auth methods (login, register, logout, refreshUser)
  * - Loading and error states
  * - Automatic user restoration on app startup
@@ -26,9 +27,39 @@ import {
 } from '../services/authApi.ts';
 import { getAccessToken, clearAccessToken } from '../utils/tokenManager.ts';
 import { setScoreCache, clearScoreCache } from '../utils/scoreCache.ts';
+import { setPersistenceEnabled } from '../utils/persistence.ts';
 import type { GameAnswerResponse, UnlockEntry } from '../services/api.ts';
 
 // ==================== Types ====================
+
+/**
+ * Answer counters for a guest. Kept in memory only — gone after a reload.
+ *
+ * No points: the scoring rule lives in the backend and is not duplicated here.
+ */
+export interface GuestStats {
+    correct_count: number;
+    incorrect_count: number;
+}
+
+/**
+ * Who is using the app right now.
+ *
+ * A union instead of `user` + `isGuest` flags: the impossible combination
+ * "guest and logged in at the same time" cannot be represented.
+ */
+type Session =
+    | { kind: 'anonymous' }
+    | { kind: 'guest'; stats: GuestStats }
+    | { kind: 'user'; user: UserMeResponse };
+
+const ANONYMOUS: Session = { kind: 'anonymous' };
+
+/**
+ * View the WelcomeScreen should open with. Set when a guest clicks
+ * "Create account", read once by the WelcomeScreen, then reset to 'login'.
+ */
+export type WelcomeView = 'login' | 'register';
 
 interface AuthContextType {
     user: UserMeResponse | null;
@@ -36,6 +67,8 @@ interface AuthContextType {
     lastAnswer: GameAnswerResponse | null;
     /** `newly_unlocked` of that answer; cleared by dismissLevelUp(). */
     pendingUnlocks: readonly UnlockEntry[];
+    isGuest: boolean;
+    guestStats: GuestStats | null;
     loading: boolean;
     error: string | null;
     login: (data: LoginRequest) => Promise<void>;
@@ -44,6 +77,11 @@ interface AuthContextType {
     refreshUser: () => Promise<void>;
     applyGameResult: (answer: GameAnswerResponse) => void;
     dismissLevelUp: () => void;
+    startGuest: () => void;
+    leaveGuest: (nextView?: WelcomeView) => void;
+    recordGuestAnswer: (isCorrect: boolean) => void;
+    welcomeView: WelcomeView;
+    clearWelcomeView: () => void;
     clearError: () => void;
 }
 
@@ -76,11 +114,20 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps): ReactElement {
-    const [user, setUser] = useState<UserMeResponse | null>(null);
+    const [session, setSession] = useState<Session>(ANONYMOUS);
     const [lastAnswer, setLastAnswer] = useState<GameAnswerResponse | null>(null);
     const [pendingUnlocks, setPendingUnlocks] = useState<readonly UnlockEntry[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [welcomeView, setWelcomeView] = useState<WelcomeView>('login');
+
+    const user = session.kind === 'user' ? session.user : null;
+    const isGuest = session.kind === 'guest';
+    const guestStats = session.kind === 'guest' ? session.stats : null;
+
+    const setUser = (userData: UserMeResponse | null): void => {
+        setSession(userData ? { kind: 'user', user: userData } : ANONYMOUS);
+    };
 
     /**
      * Sync user stats to localStorage cache.
@@ -99,13 +146,21 @@ export function AuthProvider({ children }: AuthProviderProps): ReactElement {
     };
 
     /**
+     * Drop the HUD state — the previous player's numbers must never render for
+     * the next one, not even as a stale toast.
+     */
+    const clearAnswerState = (): void => {
+        setLastAnswer(null);
+        setPendingUnlocks([]);
+    };
+
+    /**
      * Drop every per-account figure — used on logout and when a session cannot
      * be restored, so the next player never sees the previous one's HUD.
      */
     const clearSessionState = (): void => {
         setUser(null);
-        setLastAnswer(null);
-        setPendingUnlocks([]);
+        clearAnswerState();
     };
 
     /**
@@ -187,9 +242,15 @@ export function AuthProvider({ children }: AuthProviderProps): ReactElement {
      * Logout and clear authentication state.
      *
      * Clears user state and removes score cache for this user.
+     * For a guest it simply ends guest mode — there is no server session.
      */
     const logout = async (): Promise<void> => {
         setError(null);
+
+        if (session.kind === 'guest') {
+            leaveGuest('login');
+            return;
+        }
 
         try {
             const userId = user?.id;
@@ -211,6 +272,9 @@ export function AuthProvider({ children }: AuthProviderProps): ReactElement {
      * backgrounded). A /answer response makes this round-trip unnecessary.
      */
     const refreshUser = async (): Promise<void> => {
+        // A guest has no account on the server — nothing to refresh
+        if (session.kind !== 'user') return;
+
         try {
             const userData = await getCurrentUser();
             setUser(userData);
@@ -226,14 +290,19 @@ export function AuthProvider({ children }: AuthProviderProps): ReactElement {
      * assumed, the raw payload is kept for the HUD and the unlock toast.
      */
     const applyGameResult = (answer: GameAnswerResponse): void => {
+        // A guest's answers are counted locally; a /answer payload must not
+        // touch their HUD either.
+        if (session.kind === 'guest') return;
+
         setLastAnswer(answer);
         setPendingUnlocks([...answer.newly_unlocked]);
 
-        if (user === null) return;
-
-        const updated: UserMeResponse = { ...user, ...economyOf(answer) };
-        setUser(updated);
-        syncScoreCache(updated);
+        setSession(prev => {
+            if (prev.kind !== 'user') return prev;
+            const updated: UserMeResponse = { ...prev.user, ...economyOf(answer) };
+            syncScoreCache(updated);
+            return { kind: 'user', user: updated };
+        });
     };
 
     /**
@@ -242,6 +311,55 @@ export function AuthProvider({ children }: AuthProviderProps): ReactElement {
      */
     const dismissLevelUp = (): void => {
         setPendingUnlocks([]);
+    };
+
+    /**
+     * Start guest mode: use the app without an account.
+     *
+     * Turns off all localStorage writes so the guest session leaves nothing
+     * behind. Results are never sent to the backend.
+     */
+    const startGuest = (): void => {
+        setError(null);
+        setPersistenceEnabled(false);
+        // A guest sees no leftovers of the previous session's HUD.
+        clearAnswerState();
+        setSession({ kind: 'guest', stats: { correct_count: 0, incorrect_count: 0 } });
+    };
+
+    /**
+     * End guest mode and return to the WelcomeScreen.
+     *
+     * @param nextView - view the WelcomeScreen opens with ('register' for
+     *                   "Create account", 'login' otherwise)
+     */
+    const leaveGuest = (nextView: WelcomeView = 'login'): void => {
+        setPersistenceEnabled(true);
+        setWelcomeView(nextView);
+        clearSessionState();
+    };
+
+    /**
+     * Reset the WelcomeScreen start view after it has been read once.
+     */
+    const clearWelcomeView = (): void => {
+        setWelcomeView('login');
+    };
+
+    /**
+     * Count a guest answer in memory only.
+     */
+    const recordGuestAnswer = (isCorrect: boolean): void => {
+        setSession(prev => {
+            if (prev.kind !== 'guest') return prev;
+            return {
+                kind: 'guest',
+                stats: {
+                    correct_count: prev.stats.correct_count + (isCorrect ? 1 : 0),
+                    incorrect_count: prev.stats.incorrect_count + (isCorrect ? 0 : 1),
+                },
+            };
+        });
     };
 
     /**
@@ -255,6 +373,8 @@ export function AuthProvider({ children }: AuthProviderProps): ReactElement {
         user,
         lastAnswer,
         pendingUnlocks,
+        isGuest,
+        guestStats,
         loading,
         error,
         login,
@@ -263,6 +383,11 @@ export function AuthProvider({ children }: AuthProviderProps): ReactElement {
         refreshUser,
         applyGameResult,
         dismissLevelUp,
+        startGuest,
+        leaveGuest,
+        recordGuestAnswer,
+        welcomeView,
+        clearWelcomeView,
         clearError,
     };
 

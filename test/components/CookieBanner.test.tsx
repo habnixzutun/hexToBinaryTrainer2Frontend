@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '../../src/test-utils.tsx';
 import { describe, it, expect, beforeEach } from 'vitest';
-import { CookieBanner, COOKIE_CONSENT_KEY } from '../../src/components/CookieBanner';
+import { CookieBanner, COOKIE_CONSENT_KEY } from '../../src/components/CookieBanner.tsx';
 
 describe('CookieBanner', () => {
     beforeEach(() => {

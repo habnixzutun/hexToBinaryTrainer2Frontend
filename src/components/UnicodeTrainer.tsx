@@ -14,13 +14,16 @@ interface Props {
     onUpdate: () => void;
     /** Receives the raw /answer payload so the server numbers stay authoritative. */
     onGameResult?: (result: GameAnswerResponse) => void;
+    /** Guest mode: count the answer locally instead of calling the backend. */
+    onGuestAnswer?: ((isCorrect: boolean) => void) | undefined;
     bytes?: number;
     onBytesChange?: (bytes: number) => void;
     /**
-     * Level from the profile. Omitted renders every tier selectable — only
-     * isolated component tests do that; in the app the level is always known.
+     * Level from the profile. `undefined` renders every tier selectable — an
+     * isolated component test, or a guest (no profile, no gating: the server
+     * never sees their answers).
      */
-    playerLevel?: number;
+    playerLevel?: number | undefined;
 }
 
 /** Accessible description for a locked tier (US-39 AC-2). */
@@ -71,7 +74,7 @@ const createRound = (bytes: number, index: number): Round => {
     };
 };
 
-export default function UnicodeTrainer({ onUpdate, onGameResult, bytes: externalBytes, onBytesChange, playerLevel }: Props) {
+export default function UnicodeTrainer({ onUpdate, onGameResult, onGuestAnswer, bytes: externalBytes, onBytesChange, playerLevel }: Props) {
     const [internalBytes, setInternalBytes] = useState(1);
     const bytes = externalBytes ?? internalBytes;
     const setBytes = onBytesChange ?? setInternalBytes;
@@ -132,14 +135,19 @@ export default function UnicodeTrainer({ onUpdate, onGameResult, bytes: external
         setFeedback(isCorrect ? 'correct' : 'wrong');
         flashAccent(isCorrect ? 'correct' : 'wrong');
 
-        // OQ-7: the UI counts bytes, the wire always carries bits.
-        const result = await submit('unicode', bitsForBytes(bytes), isCorrect);
-        if (result === null) return;
-
-        if (onGameResult !== undefined) {
-            onGameResult(result);
+        if (onGuestAnswer !== undefined) {
+            // Guest mode: counted in memory, no request and no cooldown to arm.
+            onGuestAnswer(isCorrect);
         } else {
-            onUpdate();
+            // OQ-7: the UI counts bytes, the wire always carries bits.
+            const result = await submit('unicode', bitsForBytes(bytes), isCorrect);
+            if (result === null) return;
+
+            if (onGameResult !== undefined) {
+                onGameResult(result);
+            } else {
+                onUpdate();
+            }
         }
 
         if (isCorrect) {

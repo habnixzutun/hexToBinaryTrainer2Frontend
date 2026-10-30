@@ -295,4 +295,27 @@ describe('HexBinTrainer', () => {
       expect(mockSubmitAnswer).toHaveBeenCalledWith('hex_to_bin', 32, false)
     })
   })
+
+  it('counts the answer locally and skips the backend in guest mode', async () => {
+    const onGuestAnswer = vi.fn()
+    render(<HexBinTrainer onUpdate={mockOnUpdate} onGuestAnswer={onGuestAnswer} />)
+
+    const input = screen.getByRole('textbox')
+    const submitButton = screen.getByRole('button', { name: /check answer/i })
+
+    // Correct answer for hex "87"
+    fireEvent.change(input, { target: { value: BIN } })
+    fireEvent.click(submitButton)
+    await waitFor(() => expect(screen.getByText(/Richtig/i)).toBeInTheDocument())
+    expect(onGuestAnswer).toHaveBeenCalledWith(true)
+
+    // Wrong answer
+    fireEvent.change(input, { target: { value: '1' } })
+    fireEvent.click(submitButton)
+    await waitFor(() => expect(onGuestAnswer).toHaveBeenCalledWith(false))
+
+    // Nothing left the browser: no /answer, no profile refresh.
+    expect(mockSubmitAnswer).not.toHaveBeenCalled()
+    expect(mockOnUpdate).not.toHaveBeenCalled()
+  })
 })

@@ -185,4 +185,24 @@ describe('WelcomeScreen', () => {
 
     expect(screen.getByRole('toolbar', { name: /settings/i })).toBeInTheDocument()
   })
+
+
+  it('starts guest mode from the login view', async () => {
+    const user = userEvent.setup()
+    render(<WelcomeScreen />)
+
+    expect(screen.getByText(/Es wird nichts gespeichert/)).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Als Gast testen' }))
+
+    expect(auth.startGuest).toHaveBeenCalledTimes(1)
+  })
+
+  it('opens the registration view when requested by the AuthContext and consumes the hint', () => {
+    auth = authValue({ user: null, welcomeView: 'register' })
+    mockUseAuth.mockReturnValue(auth)
+    render(<WelcomeScreen />)
+
+    expect(screen.getByRole('heading', { name: 'Konto erstellen' })).toBeInTheDocument()
+    expect(auth.clearWelcomeView).toHaveBeenCalledTimes(1)
+  })
 })

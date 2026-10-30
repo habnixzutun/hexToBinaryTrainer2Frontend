@@ -10,11 +10,12 @@
 
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { motion } from 'framer-motion';
-import { Terminal, Globe, Sun, Moon, ArrowLeft } from 'lucide-react';
+import { Terminal, Globe, Sun, Moon, ArrowLeft, UserRound } from 'lucide-react';
 import { useI18n } from '../i18n/useI18n.ts';
 import { type Locale } from '../i18n/translations.ts';
 import { useTheme } from '../theme/useTheme.ts';
 import { verifyEmail } from '../services/authApi.ts';
+import { useAuth } from '../contexts/AuthContext.tsx';
 import LoginForm from './auth/LoginForm.tsx';
 import RegisterForm from './auth/RegisterForm.tsx';
 import VerifyEmailScreen from './auth/VerifyEmailScreen.tsx';
@@ -58,10 +59,12 @@ function readResetTokenFromUrl(): string | null {
 // ==================== Component ====================
 
 export default function WelcomeScreen(): ReactElement {
-    // Lazy init: landing on a verify-email/reset-password link sets the starting view
+    const { startGuest, welcomeView, clearWelcomeView } = useAuth();
+    // Lazy init: a reset-password link wins; otherwise open the view requested
+    // by the AuthContext (e.g. 'register' after a guest clicked "Create account")
     const [view, setView] = useState<AuthView>(() => {
         if (readResetTokenFromUrl() !== null) return 'reset-password';
-        return 'login';
+        return welcomeView;
     });
     const [registeredEmail, setRegisteredEmail] = useState<string>('');
     const [resetToken, setResetToken] = useState<string | null>(() => readResetTokenFromUrl());
@@ -74,6 +77,14 @@ export default function WelcomeScreen(): ReactElement {
     const verifySubmittedRef = useRef(false);
     const { t, locale, setLocale } = useI18n();
     const { theme, toggleTheme } = useTheme();
+
+    // The requested start view is a one-time hint: consume it once read, so
+    // the next visit to the WelcomeScreen starts with login again.
+    useEffect(() => {
+        if (welcomeView !== 'login') {
+            clearWelcomeView();
+        }
+    }, [welcomeView, clearWelcomeView]);
 
     /**
      * Submit the verification token from the URL exactly once.
@@ -207,10 +218,29 @@ export default function WelcomeScreen(): ReactElement {
                             transition={{ duration: 0.2 }}
                         >
                             {view === 'login' && (
-                                <LoginForm
-                                    onSwitchToRegister={() => setView('register')}
-                                    onForgotPassword={handleForgotPassword}
-                                />
+                                <>
+                                    <LoginForm
+                                        onSwitchToRegister={() => setView('register')}
+                                        onForgotPassword={handleForgotPassword}
+                                    />
+                                    {/* Guest mode: try the app without an account */}
+                                    <div className="mt-6 pt-6 border-t border-outline-faint space-y-2">
+                                        <motion.button
+                                            type="button"
+                                            onClick={startGuest}
+                                            whileHover={{ scale: 1.02 }}
+                                            whileTap={{ scale: 0.98 }}
+                                            aria-describedby="guest-mode-hint"
+                                            className="w-full flex items-center justify-center gap-2 bg-surface-alt hover:bg-surface-raised border border-outline text-on-surface font-semibold py-2 rounded-md text-sm transition-all"
+                                        >
+                                            <UserRound className="w-4 h-4" aria-hidden="true" />
+                                            <span>{t.guestModeButton}</span>
+                                        </motion.button>
+                                        <p id="guest-mode-hint" className="text-xs text-on-surface-faint text-center leading-relaxed">
+                                            {t.guestModeHint}
+                                        </p>
+                                    </div>
+                                </>
                             )}
                             {view === 'register' && (
                                 <RegisterForm

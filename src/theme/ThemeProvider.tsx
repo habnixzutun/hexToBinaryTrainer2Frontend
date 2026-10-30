@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ThemeContext, type Theme } from './themeContext.ts';
+import { persistItem } from '../utils/persistence.ts';
 
 interface Props {
     children: React.ReactNode;
@@ -23,7 +24,7 @@ export function ThemeProvider({ children }: Props) {
         } else {
             root.classList.remove('dark');
         }
-        localStorage.setItem(THEME_KEY, theme);
+        persistItem(THEME_KEY, theme);
     }, [theme]);
 
     const toggleTheme = useCallback(() => {

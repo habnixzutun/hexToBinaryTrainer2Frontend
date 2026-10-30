@@ -177,7 +177,6 @@ describe('unlock gating (US-39)', () => {
     ): ComponentProps<typeof Sidebar> => ({
       activeApp: 'hex',
       setActiveApp: vi.fn(),
-      onLogout: vi.fn(),
       isMobileMenuOpen: false,
       setIsMobileMenuOpen: vi.fn(),
       hideLeaderboardNav: false,

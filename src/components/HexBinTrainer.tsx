@@ -14,14 +14,17 @@ interface Props {
     onUpdate: () => void;
     /** Receives the raw /answer payload so the server numbers stay authoritative. */
     onGameResult?: (result: GameAnswerResponse) => void;
+    /** Guest mode: count the answer locally instead of calling the backend. */
+    onGuestAnswer?: ((isCorrect: boolean) => void) | undefined;
     activeMode?: HexBinDirection;
     bits?: number;
     onBitsChange?: (bits: number) => void;
     /**
-     * Level from the profile. Omitted renders every tier selectable — only
-     * isolated component tests do that; in the app the level is always known.
+     * Level from the profile. `undefined` renders every tier selectable — an
+     * isolated component test, or a guest (no profile, no gating: the server
+     * never sees their answers).
      */
-    playerLevel?: number;
+    playerLevel?: number | undefined;
 }
 
 /** Accessible description for a locked tier (US-39 AC-2). */
@@ -61,7 +64,7 @@ const createRound = (mode: HexBinDirection, bits: number, index: number): Round 
     return { key: roundKey(mode, bits), index, question, correctAnswer };
 };
 
-export default function HexBinTrainer({ onUpdate, onGameResult, activeMode: externalMode, bits: externalBits, onBitsChange, playerLevel }: Props) {
+export default function HexBinTrainer({ onUpdate, onGameResult, onGuestAnswer, activeMode: externalMode, bits: externalBits, onBitsChange, playerLevel }: Props) {
     const { t } = useI18n();
 
     const [internalMode] = useState<HexBinDirection>('HexToBin');
@@ -128,13 +131,18 @@ export default function HexBinTrainer({ onUpdate, onGameResult, activeMode: exte
         setFeedback(isCorrect ? 'correct' : 'wrong');
         flashAccent(isCorrect ? 'correct' : 'wrong');
 
-        const result = await submit(modeForDirection(activeMode), bits, isCorrect);
-        if (result === null) return;
-
-        if (onGameResult !== undefined) {
-            onGameResult(result);
+        if (onGuestAnswer !== undefined) {
+            // Guest mode: counted in memory, no request and no cooldown to arm.
+            onGuestAnswer(isCorrect);
         } else {
-            onUpdate();
+            const result = await submit(modeForDirection(activeMode), bits, isCorrect);
+            if (result === null) return;
+
+            if (onGameResult !== undefined) {
+                onGameResult(result);
+            } else {
+                onUpdate();
+            }
         }
 
         if (isCorrect) {

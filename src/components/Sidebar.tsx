@@ -1,9 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Terminal, Hash, Binary, LogOut, Globe, Trophy, Sun, Moon, ChevronDown } from 'lucide-react';
+import { Terminal, Hash, Binary, Trophy, ChevronDown } from 'lucide-react';
 import { useI18n } from '../i18n/useI18n.ts';
-import { type Locale } from '../i18n/translations.ts';
-import { useTheme } from '../theme/useTheme.ts';
 import { useAuth } from '../contexts/AuthContext.tsx';
 import { type ActiveApp, type HexBinMode } from '../App.tsx';
 import {
@@ -20,7 +18,6 @@ import BitByteSelector, { type LockedOption } from './BitByteSelector.tsx';
 interface Props {
     activeApp: ActiveApp;
     setActiveApp: (app: ActiveApp) => void;
-    onLogout: () => void;
     isMobileMenuOpen: boolean;
     setIsMobileMenuOpen: (open: boolean) => void;
     hideLeaderboardNav: boolean;
@@ -36,7 +33,6 @@ interface Props {
 export default function Sidebar({
     activeApp,
     setActiveApp,
-    onLogout,
     isMobileMenuOpen,
     setIsMobileMenuOpen,
     hideLeaderboardNav,
@@ -48,15 +44,13 @@ export default function Sidebar({
     bytes,
     onBytesChange,
 }: Props) {
-    const { user } = useAuth();
-    const { t, locale, setLocale } = useI18n();
-    const { theme, toggleTheme } = useTheme();
+    const { t, locale } = useI18n();
+    const { user, isGuest, guestStats } = useAuth();
+    const correctCount = isGuest ? guestStats?.correct_count ?? 0 : user?.correct_count || 0;
+    const incorrectCount = isGuest ? guestStats?.incorrect_count ?? 0 : user?.incorrect_count || 0;
+    // Guests have no XP: the scoring rule lives in the backend only
+    const xpLabel = isGuest ? '–' : (user?.total_xp || 0).toLocaleString(locale);
     const [isHexExpanded, setIsHexExpanded] = useState(true);
-
-    const toggleLocale = (): void => {
-        const next: Locale = locale === 'de' ? 'en' : 'de';
-        setLocale(next);
-    };
 
     const navItems = [
         { id: 'hex' as const, label: t.navHexBin, icon: Hash, ariaLabel: 'Hex/Binary trainer' },
@@ -254,57 +248,23 @@ export default function Sidebar({
                     {/* User info */}
                     <div className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-accent shrink-0" role="status" aria-label="Online" />
-                        <span className="text-base text-on-surface-dim font-medium truncate">{user?.username || 'User'}</span>
+                        <span className="text-base text-on-surface-dim font-medium truncate">{isGuest ? t.guestName : user?.username || 'User'}</span>
                     </div>
 
                     {/* Stats row */}
                     <div className="grid grid-cols-3 gap-1 text-center" aria-label="Your statistics">
                         <div>
-                            <div className="text-lg font-bold text-emerald-600">{user?.correct_count || 0}</div>
+                            <div className="text-lg font-bold text-emerald-600">{correctCount}</div>
                             <div className="text-xs text-on-surface-faint uppercase tracking-wide" aria-label="Correct answers">OK</div>
                         </div>
                         <div>
-                            <div className="text-lg font-bold text-error-text">{user?.incorrect_count || 0}</div>
+                            <div className="text-lg font-bold text-error-text">{incorrectCount}</div>
                             <div className="text-xs text-on-surface-faint uppercase tracking-wide" aria-label="Wrong answers">ERR</div>
                         </div>
                         <div>
-                            <div className="text-lg font-bold text-points">{(user?.total_xp || 0).toLocaleString(locale)}</div>
+                            <div className="text-lg font-bold text-points">{xpLabel}</div>
                             <div className="text-xs text-on-surface-faint uppercase tracking-wide" aria-label={t.xp}>{t.xp}</div>
                         </div>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex items-center gap-1.5">
-                        <motion.button
-                            onClick={toggleTheme}
-                            whileTap={{ scale: 0.95 }}
-                            className="flex items-center gap-1.5 px-2.5 min-h-[44px] rounded text-sm text-on-surface-faint hover:text-on-surface-dim transition-colors"
-                            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-                            title={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
-                        >
-                            {theme === 'dark'
-                                ? <Sun strokeWidth={1.5} size={15} aria-hidden="true" />
-                                : <Moon strokeWidth={1.5} size={15} aria-hidden="true" />
-                            }
-                        </motion.button>
-                        <motion.button
-                            onClick={toggleLocale}
-                            whileTap={{ scale: 0.95 }}
-                            className="flex items-center gap-1.5 px-2.5 min-h-[44px] rounded text-sm font-semibold text-on-surface-faint hover:text-on-surface-dim transition-colors"
-                            aria-label={locale === 'de' ? 'Switch to English' : 'Auf Deutsch wechseln'}
-                        >
-                            <Globe strokeWidth={1.5} size={15} aria-hidden="true" />
-                            {locale === 'de' ? 'EN' : 'DE'}
-                        </motion.button>
-                        <motion.button
-                            onClick={onLogout}
-                            whileTap={{ scale: 0.95 }}
-                            className="flex items-center gap-1.5 px-2.5 min-h-[44px] rounded text-sm text-on-surface-faint hover:text-error-text transition-colors ml-auto"
-                            aria-label={t.logoutTitle}
-                            title={t.logoutTitle}
-                        >
-                            <LogOut strokeWidth={1.5} size={15} aria-hidden="true" />
-                        </motion.button>
                     </div>
                 </div>
             </aside>

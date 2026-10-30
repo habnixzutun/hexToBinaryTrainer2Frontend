@@ -11,7 +11,8 @@
 
 import { type ReactElement, useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { useI18n } from '../i18n/useI18n';
+import { useI18n } from '../i18n/useI18n.ts';
+import { persistItem } from '../utils/persistence.ts';
 
 export const COOKIE_CONSENT_KEY = 'cookieConsent';
 const COOKIE_CONSENT_VALUE = 'accepted';
@@ -34,14 +35,11 @@ function hasConsent(): boolean {
 /**
  * Record cookie consent in localStorage.
  *
- * Silently fails if storage is unavailable — banner will reappear next visit.
+ * Skipped in guest mode and when storage is unavailable — the banner will
+ * reappear next visit.
  */
 function recordConsent(): void {
-    try {
-        localStorage.setItem(COOKIE_CONSENT_KEY, COOKIE_CONSENT_VALUE);
-    } catch {
-        // ignore — banner will reappear next visit
-    }
+    persistItem(COOKIE_CONSENT_KEY, COOKIE_CONSENT_VALUE);
 }
 
 /** Exit animation duration in ms — must match the transition duration on motion.div. */
