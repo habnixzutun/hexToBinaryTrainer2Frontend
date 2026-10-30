@@ -11,7 +11,7 @@
 
 import { type ReactElement, useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { useI18n } from '../i18n/useI18n';
+import { useI18n } from '../i18n/useI18n.ts';
 import { persistItem } from '../utils/persistence.ts';
 
 export const COOKIE_CONSENT_KEY = 'cookieConsent';

@@ -3,14 +3,17 @@ import type { UserMeResponse } from '../../src/services/authApi.ts'
 
 type AuthValue = ReturnType<typeof useAuth>
 
-// Shape returned by GET /api/user/me
+// Shape returned by GET /api/user/me (Sprint 4 economy fields, US-37 contract).
 export const testUser: UserMeResponse = {
   id: 'user-1',
   username: 'TestUser',
   email: 'test@example.com',
   correct_count: 5,
   incorrect_count: 2,
-  points: 50,
+  total_xp: 50,
+  level: 1,
+  current_streak: 0,
+  best_streak: 3,
 }
 
 /**
@@ -24,6 +27,8 @@ export const testUser: UserMeResponse = {
 export function authValue(overrides: Partial<AuthValue> = {}): AuthValue {
   return {
     user: testUser,
+    lastAnswer: null,
+    pendingUnlocks: [],
     isGuest: false,
     guestStats: null,
     loading: false,
@@ -33,6 +38,7 @@ export function authValue(overrides: Partial<AuthValue> = {}): AuthValue {
     logout: vi.fn().mockResolvedValue(undefined),
     refreshUser: vi.fn().mockResolvedValue(undefined),
     applyGameResult: vi.fn(),
+    dismissLevelUp: vi.fn(),
     startGuest: vi.fn(),
     leaveGuest: vi.fn(),
     recordGuestAnswer: vi.fn(),

@@ -4,11 +4,16 @@ import { Terminal, Hash, Binary, Trophy, ChevronDown } from 'lucide-react';
 import { useI18n } from '../i18n/useI18n.ts';
 import { useAuth } from '../contexts/AuthContext.tsx';
 import { type ActiveApp, type HexBinMode } from '../App.tsx';
-import BitByteSelector from './BitByteSelector.tsx';
-
-const HEX_BIN_MODES: HexBinMode[] = ['HexToBin', 'HexToDec', 'BinToHex', 'BinToDec', 'DecToHex', 'DecToBin'];
-const BIT_OPTIONS = [4, 8, 16, 32];
-const BYTE_OPTIONS = [1, 2, 3, 4];
+import {
+    HEX_BIN_MODES,
+    CONVERSION_BIT_WIDTHS,
+    UNICODE_BYTE_OPTIONS,
+    bytesForBits,
+    lockedLevelsFor,
+    modeForDirection,
+    type GameMode,
+} from '../constants/gameModes.ts';
+import BitByteSelector, { type LockedOption } from './BitByteSelector.tsx';
 
 interface Props {
     activeApp: ActiveApp;
@@ -39,12 +44,12 @@ export default function Sidebar({
     bytes,
     onBytesChange,
 }: Props) {
-    const { t } = useI18n();
+    const { t, locale } = useI18n();
     const { user, isGuest, guestStats } = useAuth();
     const correctCount = isGuest ? guestStats?.correct_count ?? 0 : user?.correct_count || 0;
     const incorrectCount = isGuest ? guestStats?.incorrect_count ?? 0 : user?.incorrect_count || 0;
-    // Guests have no points: the scoring rule lives in the backend only
-    const pointsLabel = isGuest ? '–' : user?.points || 0;
+    // Guests have no XP: the scoring rule lives in the backend only
+    const xpLabel = isGuest ? '–' : (user?.total_xp || 0).toLocaleString(locale);
     const [isHexExpanded, setIsHexExpanded] = useState(true);
 
     const navItems = [
@@ -66,6 +71,21 @@ export default function Sidebar({
             onHexModeChange(mode);
         }
     };
+
+    const playerLevel = user?.level ?? null;
+
+    /** D-2 seed → the option list's own unit, with localized lock copy. */
+    const lockedOptionsFor = (
+        mode: GameMode,
+        toOptionValue: (bitWidth: number) => number = (bitWidth) => bitWidth
+    ): readonly LockedOption[] =>
+        Object.entries(lockedLevelsFor(mode, playerLevel, toOptionValue)).map(
+            ([option, minLevel]) => ({
+                value: Number(option),
+                minLevel,
+                hint: t.lockedUntilLevel(minLevel),
+            })
+        );
 
     return (
         <>
@@ -199,19 +219,24 @@ export default function Sidebar({
                         <div className="mt-4">
                             {activeApp === 'hex' ? (
                                 <BitByteSelector
-                                    options={BIT_OPTIONS}
+                                    options={CONVERSION_BIT_WIDTHS}
                                     value={bits!}
                                     onChange={onBitsChange!}
                                     label={t.bits}
                                     singularLabel=""
+                                    lockedOptions={lockedOptionsFor(
+                                        modeForDirection(activeHexMode ?? 'HexToBin')
+                                    )}
                                 />
                             ) : (
                                 <BitByteSelector
-                                    options={BYTE_OPTIONS}
+                                    options={UNICODE_BYTE_OPTIONS}
                                     value={bytes!}
                                     onChange={onBytesChange!}
                                     label={t.bytes}
                                     singularLabel={t.byte}
+                                    // The gate speaks bits, this list counts bytes.
+                                    lockedOptions={lockedOptionsFor('unicode', bytesForBits)}
                                 />
                             )}
                         </div>
@@ -237,8 +262,8 @@ export default function Sidebar({
                             <div className="text-xs text-on-surface-faint uppercase tracking-wide" aria-label="Wrong answers">ERR</div>
                         </div>
                         <div>
-                            <div className="text-lg font-bold text-points">{pointsLabel}</div>
-                            <div className="text-xs text-on-surface-faint uppercase tracking-wide" aria-label="Points">PTS</div>
+                            <div className="text-lg font-bold text-points">{xpLabel}</div>
+                            <div className="text-xs text-on-surface-faint uppercase tracking-wide" aria-label={t.xp}>{t.xp}</div>
                         </div>
                     </div>
                 </div>

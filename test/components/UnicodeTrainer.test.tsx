@@ -1,17 +1,31 @@
-import { render, screen, fireEvent, waitFor } from '../../src/test-utils.tsx'
+import { render, screen, fireEvent, waitFor, act } from '../../src/test-utils.tsx'
 import UnicodeTrainer from '../../src/components/UnicodeTrainer.tsx'
-import { gameApi } from '../../src/services/api.ts'
+import { gameApi, type GameAnswerResponse } from '../../src/services/api.ts'
+import { ApiError } from '../../src/services/apiError.ts'
+import { BITS_PER_BYTE, UNICODE_BYTE_OPTIONS, bitsForBytes } from '../../src/constants/gameModes.ts'
 
 // Mock the game API
 vi.mock('../../src/services/api.ts', () => ({
   gameApi: {
-    submitCorrect: vi.fn(),
-    submitIncorrect: vi.fn(),
+    submitAnswer: vi.fn(),
+    getLeaderboard: vi.fn(),
   },
 }))
 
-const mockSubmitCorrect = vi.mocked(gameApi.submitCorrect)
-const mockSubmitIncorrect = vi.mocked(gameApi.submitIncorrect)
+const mockSubmitAnswer = vi.mocked(gameApi.submitAnswer)
+
+const answer: GameAnswerResponse = {
+  xp_delta: 64,
+  total_xp: 1320,
+  level: 6,
+  xp_in_level: 0,
+  xp_required_for_next_level: 760,
+  current_streak: 4,
+  best_streak: 7,
+  correct_count: 42,
+  incorrect_count: 5,
+  newly_unlocked: [],
+}
 
 // Mock localStorage
 const localStorageMock = (() => {
@@ -34,6 +48,13 @@ Object.defineProperty(window, 'localStorage', {
   value: localStorageMock,
 })
 
+/** bytes=1 + Math.random()=0.5 -> cp 64 (U+0040 '@') -> UTF-8 '01000000'. */
+const ONE_BYTE_ANSWER = '01000000'
+/** bytes=2 + Math.random()=0.5 -> cp 1088 (U+0440) -> UTF-8 16 bits. */
+const TWO_BYTE_ANSWER = '1101000110000000'
+
+const byteCases: Array<[number]> = UNICODE_BYTE_OPTIONS.map((bytes) => [bytes])
+
 describe('UnicodeTrainer', () => {
   let mockOnUpdate: ReturnType<typeof vi.fn<() => void>>
 
@@ -42,37 +63,29 @@ describe('UnicodeTrainer', () => {
     localStorageMock.clear()
     mockOnUpdate = vi.fn()
 
-    // Mock Math.random for deterministic questions
     vi.spyOn(Math, 'random').mockReturnValue(0.5)
 
-    // Setup default API mock responses
-    mockSubmitCorrect.mockResolvedValue({
-      message: 'Correct answer recorded',
-      user_id: 'user-1',
-      correct_count: 6,
-      incorrect_count: 2,
-      points: 58,
-    })
-    mockSubmitIncorrect.mockResolvedValue({
-      message: 'Incorrect answer recorded',
-      user_id: 'user-1',
-      correct_count: 5,
-      incorrect_count: 3,
-      points: 18,
-    })
+    mockSubmitAnswer.mockResolvedValue(answer)
   })
 
   afterEach(() => {
+    vi.useRealTimers()
     vi.restoreAllMocks()
   })
+
+  const typeAnswer = (value: string): void => {
+    fireEvent.change(screen.getByRole('textbox'), { target: { value } })
+  }
+
+  const pressCheck = (): void => {
+    fireEvent.click(screen.getByRole('button', { name: /check answer/i }))
+  }
 
   it('renders without crashing and shows initial state', () => {
     render(<UnicodeTrainer onUpdate={mockOnUpdate} />)
 
-    // Should render the trainer interface
     expect(screen.getByRole('region', { name: /unicode trainer/i })).toBeInTheDocument()
 
-    // Should show byte tabs
     expect(screen.getByRole('tab', { name: '1 Byte' })).toBeInTheDocument()
     expect(screen.getByRole('tab', { name: '2 Bytes' })).toBeInTheDocument()
     expect(screen.getByRole('tab', { name: '3 Bytes' })).toBeInTheDocument()
@@ -83,8 +96,6 @@ describe('UnicodeTrainer', () => {
     render(<UnicodeTrainer onUpdate={mockOnUpdate} />)
 
     const input = screen.getByRole('textbox')
-
-    // Type mixed input - only 0 and 1 should remain
     fireEvent.change(input, { target: { value: '01ab01' } })
     expect(input).toHaveValue('0101')
   })
@@ -92,28 +103,20 @@ describe('UnicodeTrainer', () => {
   it('handles correct answer flow with API call and feedback', async () => {
     render(<UnicodeTrainer onUpdate={mockOnUpdate} />)
 
-    const input = screen.getByRole('textbox')
-    const submitButton = screen.getByRole('button', { name: /check answer/i })
+    typeAnswer(ONE_BYTE_ANSWER)
+    expect(screen.getByRole('button', { name: /check answer/i })).not.toBeDisabled()
+    pressCheck()
 
-    // With Math.random()=0.5 and bytes=1: cp=64 (U+0040='@'), correctAnswer='01000000'
-    fireEvent.change(input, { target: { value: '01000000' } })
-
-    // Submit button should be enabled
-    expect(submitButton).not.toBeDisabled()
-
-    // Click submit
-    fireEvent.click(submitButton)
-
-    // Should show correct feedback
     await waitFor(() => {
       expect(screen.getByRole('status')).toBeInTheDocument()
       expect(screen.getByText(/Richtig/i)).toBeInTheDocument()
     })
 
-    // Should call API with correct parameters (bytes*8 = 8)
-    expect(mockSubmitCorrect).toHaveBeenCalledWith(8)
+    // OQ-7: the byte selector stays the UI unit, the wire always carries bits.
+    await waitFor(() => {
+      expect(mockSubmitAnswer).toHaveBeenCalledWith('unicode', 8, true)
+    })
 
-    // Should notify parent so it can refresh user stats
     await waitFor(() => {
       expect(mockOnUpdate).toHaveBeenCalledTimes(1)
     })
@@ -122,26 +125,16 @@ describe('UnicodeTrainer', () => {
   it('handles wrong answer flow with API call and feedback', async () => {
     render(<UnicodeTrainer onUpdate={mockOnUpdate} />)
 
-    const input = screen.getByRole('textbox')
-    const submitButton = screen.getByRole('button', { name: /check answer/i })
+    typeAnswer('00000000')
+    pressCheck()
 
-    // Type wrong answer (correct is '01000000')
-    fireEvent.change(input, { target: { value: '00000000' } })
-
-    // Click submit
-    fireEvent.click(submitButton)
-
-    // Should show wrong feedback with alert role
     await waitFor(() => {
-      const alert = screen.getByRole('alert')
-      expect(alert).toBeInTheDocument()
-      expect(alert).toHaveTextContent(/Falsch/i)
+      expect(screen.getByRole('alert')).toHaveTextContent(/Falsch/i)
+    })
+    await waitFor(() => {
+      expect(mockSubmitAnswer).toHaveBeenCalledWith('unicode', 8, false)
     })
 
-    // Should call API with correct parameters
-    expect(mockSubmitIncorrect).toHaveBeenCalledWith(8)
-
-    // Should notify parent so it can refresh user stats
     await waitFor(() => {
       expect(mockOnUpdate).toHaveBeenCalledTimes(1)
     })
@@ -151,68 +144,98 @@ describe('UnicodeTrainer', () => {
     render(<UnicodeTrainer onUpdate={mockOnUpdate} />)
 
     const input = screen.getByRole('textbox')
-
-    // Type correct answer (cp=64 → '01000000')
-    fireEvent.change(input, { target: { value: '01000000' } })
-
-    // Press Enter
+    typeAnswer(ONE_BYTE_ANSWER)
     fireEvent.keyDown(input, { key: 'Enter', code: 'Enter' })
 
-    // Should trigger submit and call API
     await waitFor(() => {
-      expect(mockSubmitCorrect).toHaveBeenCalledWith(8)
+      expect(mockSubmitAnswer).toHaveBeenCalledWith('unicode', 8, true)
     })
   })
 
   it('switches byte tabs and generates new question in correct range', () => {
     render(<UnicodeTrainer onUpdate={mockOnUpdate} />)
 
-    // Click 2 Bytes tab
     const twoBytesTab = screen.getByRole('tab', { name: '2 Bytes' })
     fireEvent.click(twoBytesTab)
 
-    // Should update aria-selected
     expect(twoBytesTab).toHaveAttribute('aria-selected', 'true')
-
-    // Should show a Unicode question (U+XXXX format)
     expect(screen.getByText(/U\+[0-9A-F]{4}/i)).toBeInTheDocument()
   })
 
+  it.each(byteCases)(
+    'sends %i bits for the %i-byte tier (OQ-7)',
+    async (bytes) => {
+      render(<UnicodeTrainer onUpdate={mockOnUpdate} bytes={bytes} />)
+
+      // The answer length is irrelevant for this assertion — only the unit is.
+      typeAnswer('00000000')
+      pressCheck()
+
+      await waitFor(() => {
+        expect(mockSubmitAnswer).toHaveBeenCalledWith('unicode', bitsForBytes(bytes), false)
+      })
+      expect(bitsForBytes(bytes)).toBe(bytes * BITS_PER_BYTE)
+    }
+  )
+
+  it('sends 16 bits for the two-byte tier', async () => {
+    render(<UnicodeTrainer onUpdate={mockOnUpdate} />)
+
+    fireEvent.click(screen.getByRole('tab', { name: '2 Bytes' }))
+    typeAnswer(TWO_BYTE_ANSWER)
+    pressCheck()
+
+    await waitFor(() => {
+      expect(mockSubmitAnswer).toHaveBeenCalledWith('unicode', 16, true)
+    })
+  })
+
   it('handles API failure gracefully with error feedback', async () => {
-    // Mock API to reject
-    mockSubmitCorrect.mockRejectedValue(new Error('Network error'))
+    mockSubmitAnswer.mockRejectedValue(new TypeError('Network error'))
 
     render(<UnicodeTrainer onUpdate={mockOnUpdate} />)
 
-    const input = screen.getByRole('textbox')
-    const submitButton = screen.getByRole('button', { name: /check answer/i })
+    typeAnswer(ONE_BYTE_ANSWER)
+    pressCheck()
 
-    // Type correct answer to trigger the correct path (which will fail)
-    fireEvent.change(input, { target: { value: '01000000' } })
-
-    // Click submit
-    fireEvent.click(submitButton)
-
-    // Should show error feedback
     await waitFor(() => {
-      expect(screen.getByRole('alert')).toBeInTheDocument()
-      expect(screen.getByText(/Fehler beim Speichern/i)).toBeInTheDocument()
+      expect(screen.getByRole('alert')).toHaveTextContent(/Fehler beim Speichern/i)
     })
 
-    // Should NOT call onUpdate
     expect(mockOnUpdate).not.toHaveBeenCalled()
+  })
+
+  it('blocks further submissions during the 429 backoff (AC-3)', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    mockSubmitAnswer.mockRejectedValue(
+      new ApiError({ status: 429, detail: 'Too many answers.', retryAfterSeconds: 25 })
+    )
+
+    render(<UnicodeTrainer onUpdate={mockOnUpdate} />)
+
+    typeAnswer(ONE_BYTE_ANSWER)
+    await act(async () => {
+      pressCheck()
+    })
+
+    expect(screen.getByRole('alert')).toHaveTextContent(/25/)
+    const button = screen.getByRole('button', { name: /check answer/i })
+    expect(button).toBeDisabled()
+    expect(screen.getAllByRole('alert')).toHaveLength(1)
+
+    await act(async () => {
+      vi.advanceTimersByTime(25_000)
+    })
+    expect(button).not.toBeDisabled()
+    expect(mockSubmitAnswer).toHaveBeenCalledTimes(1)
   })
 
   it('has proper accessibility attributes', () => {
     render(<UnicodeTrainer onUpdate={mockOnUpdate} />)
 
-    // Should have region landmark
     expect(screen.getByRole('region', { name: /unicode trainer/i })).toBeInTheDocument()
-
-    // Should have tablist
     expect(screen.getByRole('tablist', { name: /byte selection/i })).toBeInTheDocument()
 
-    // Should have input with label
     const input = screen.getByRole('textbox')
     expect(input).toBeInTheDocument()
     expect(input).toHaveAttribute('aria-label', 'UTF-8 binary answer')
@@ -235,8 +258,8 @@ describe('UnicodeTrainer', () => {
     fireEvent.click(submitButton)
     await waitFor(() => expect(onGuestAnswer).toHaveBeenCalledWith(false))
 
-    expect(mockSubmitCorrect).not.toHaveBeenCalled()
-    expect(mockSubmitIncorrect).not.toHaveBeenCalled()
+    // Nothing left the browser: no /answer, no profile refresh.
+    expect(mockSubmitAnswer).not.toHaveBeenCalled()
     expect(mockOnUpdate).not.toHaveBeenCalled()
   })
 })

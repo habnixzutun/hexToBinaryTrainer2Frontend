@@ -2,6 +2,7 @@ import type { ComponentProps } from 'react'
 import { render, screen, fireEvent } from '../../src/test-utils.tsx'
 import Sidebar from '../../src/components/Sidebar.tsx'
 import type { ActiveApp } from '../../src/App.tsx'
+import { CONVERSION_BIT_WIDTHS, UNICODE_BYTE_OPTIONS } from '../../src/constants/gameModes.ts'
 import { authValue } from '../helpers/auth.ts'
 
 const mockUseAuth = vi.hoisted(() => vi.fn())
@@ -49,21 +50,61 @@ describe('Sidebar', () => {
     }
   })
 
-  it('renders user name and stats correctly', () => {
+  it('renders user name and the XP economy stats (no legacy points)', () => {
     render(<Sidebar {...defaultProps} />)
 
     // Should show user name
     expect(screen.getByText('TestUser')).toBeInTheDocument()
 
-    // Should show stats: correct (OK), incorrect (ERR), points (PTS)
-    expect(screen.getByText('5')).toBeInTheDocument() // correct
-    expect(screen.getByText('2')).toBeInTheDocument() // incorrect
-    expect(screen.getByText('50')).toBeInTheDocument() // points
+    // Stats: correct (OK), incorrect (ERR), total XP
+    expect(screen.getByText('5')).toBeInTheDocument() // correct_count
+    expect(screen.getByText('2')).toBeInTheDocument() // incorrect_count
+    expect(screen.getByText('50')).toBeInTheDocument() // total_xp
 
     // Check stat labels
     expect(screen.getByLabelText('Correct answers')).toBeInTheDocument()
     expect(screen.getByLabelText('Wrong answers')).toBeInTheDocument()
-    expect(screen.getByLabelText('Points')).toBeInTheDocument()
+    expect(screen.getByLabelText('XP')).toBeInTheDocument()
+
+    // The points unit is gone from the UI.
+    expect(screen.queryByText('PTS')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Points')).not.toBeInTheDocument()
+  })
+
+  it('drives the mobile bit selector from the shared width table', () => {
+    render(
+      <Sidebar
+        {...defaultProps}
+        isMobile
+        bits={8}
+        onBitsChange={vi.fn()}
+        bytes={1}
+        onBytesChange={vi.fn()}
+      />
+    )
+
+    for (const width of CONVERSION_BIT_WIDTHS) {
+      expect(screen.getByRole('button', { name: `${width} Bits` })).toBeInTheDocument()
+    }
+  })
+
+  it('drives the mobile byte selector from the shared byte options', () => {
+    render(
+      <Sidebar
+        {...defaultProps}
+        activeApp="unicode"
+        isMobile
+        bits={8}
+        onBitsChange={vi.fn()}
+        bytes={1}
+        onBytesChange={vi.fn()}
+      />
+    )
+
+    expect(screen.getByRole('button', { name: '1 Byte' })).toBeInTheDocument()
+    for (const bytes of UNICODE_BYTE_OPTIONS.slice(1)) {
+      expect(screen.getByRole('button', { name: `${bytes} Bytes` })).toBeInTheDocument()
+    }
   })
 
   it('renders three navigation buttons with correct aria-labels', () => {

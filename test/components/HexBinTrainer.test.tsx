@@ -1,17 +1,32 @@
 import { render, screen, fireEvent, waitFor } from '../../src/test-utils.tsx'
 import HexBinTrainer from '../../src/components/HexBinTrainer.tsx'
-import { gameApi } from '../../src/services/api.ts'
+import { gameApi, type GameAnswerResponse } from '../../src/services/api.ts'
+import { ApiError } from '../../src/services/apiError.ts'
+import { HEX_BIN_MODES, modeForDirection, type GameMode, type HexBinDirection } from '../../src/constants/gameModes.ts'
 
-// Mock the game API
+// Mock the game API — US-38 ships a single unified submit path.
 vi.mock('../../src/services/api.ts', () => ({
   gameApi: {
-    submitCorrect: vi.fn(),
-    submitIncorrect: vi.fn(),
+    submitAnswer: vi.fn(),
+    getLeaderboard: vi.fn(),
   },
 }))
 
-const mockSubmitCorrect = vi.mocked(gameApi.submitCorrect)
-const mockSubmitIncorrect = vi.mocked(gameApi.submitIncorrect)
+const mockSubmitAnswer = vi.mocked(gameApi.submitAnswer)
+
+/** Server-computed economy payload; the client never derives any of these. */
+const answer: GameAnswerResponse = {
+  xp_delta: 32,
+  total_xp: 1280,
+  level: 5,
+  xp_in_level: 88,
+  xp_required_for_next_level: 508,
+  current_streak: 2,
+  best_streak: 7,
+  correct_count: 41,
+  incorrect_count: 5,
+  newly_unlocked: [],
+}
 
 // Mock localStorage
 const localStorageMock = (() => {
@@ -34,6 +49,20 @@ Object.defineProperty(window, 'localStorage', {
   value: localStorageMock,
 })
 
+/** bits=8 + Math.random()=0.5 -> value 135 -> hex 87, bin 10000111, dec 135. */
+const BIN = '10000111'
+const HEX = '87'
+const DEC = '135'
+
+const directionCases: Array<[HexBinDirection, GameMode, string]> = [
+  ['HexToBin', 'hex_to_bin', BIN],
+  ['BinToHex', 'hex_to_bin', HEX],
+  ['HexToDec', 'hex_to_dec', DEC],
+  ['DecToHex', 'hex_to_dec', HEX],
+  ['BinToDec', 'bin_to_dec', DEC],
+  ['DecToBin', 'bin_to_dec', BIN],
+]
+
 describe('HexBinTrainer', () => {
   let mockOnUpdate: ReturnType<typeof vi.fn<() => void>>
 
@@ -46,31 +75,24 @@ describe('HexBinTrainer', () => {
     // With bits=8, range [15, 255], random=0.5 → value = floor(0.5 * 241) + 15 = 135 = 0x87
     vi.spyOn(Math, 'random').mockReturnValue(0.5)
 
-    // Setup default API mock responses
-    mockSubmitCorrect.mockResolvedValue({
-      message: 'Correct answer recorded',
-      user_id: 'user-1',
-      correct_count: 6,
-      incorrect_count: 2,
-      points: 58,
-    })
-    mockSubmitIncorrect.mockResolvedValue({
-      message: 'Incorrect answer recorded',
-      user_id: 'user-1',
-      correct_count: 5,
-      incorrect_count: 3,
-      points: 18,
-    })
+    mockSubmitAnswer.mockResolvedValue(answer)
   })
 
   afterEach(() => {
     vi.restoreAllMocks()
   })
 
+  const typeAnswer = (value: string): void => {
+    fireEvent.change(screen.getByRole('textbox'), { target: { value } })
+  }
+
+  const pressCheck = (): void => {
+    fireEvent.click(screen.getByRole('button', { name: /check answer/i }))
+  }
+
   it('renders without crashing', () => {
     render(<HexBinTrainer onUpdate={mockOnUpdate} />)
 
-    // Should render the trainer interface
     expect(screen.getByRole('region', { name: /hex\/binary trainer/i })).toBeInTheDocument()
   })
 
@@ -91,8 +113,6 @@ describe('HexBinTrainer', () => {
   it('generates deterministic question with mocked random', () => {
     render(<HexBinTrainer onUpdate={mockOnUpdate} />)
 
-    // With bits=8, random=0.5: value = 135 = 0x87
-    // Default mode is HexToBin, so question shows hex "87"
     expect(screen.getByText('87')).toBeInTheDocument()
   })
 
@@ -109,27 +129,19 @@ describe('HexBinTrainer', () => {
   it('handles correct answer flow with API call and feedback', async () => {
     render(<HexBinTrainer onUpdate={mockOnUpdate} />)
 
-    const input = screen.getByRole('textbox')
-    const submitButton = screen.getByRole('button', { name: /check answer/i })
+    typeAnswer(BIN)
+    expect(screen.getByRole('button', { name: /check answer/i })).not.toBeDisabled()
+    pressCheck()
 
-    // Type correct answer for hex "87" → binary "10000111"
-    fireEvent.change(input, { target: { value: '10000111' } })
-
-    // Submit button should be enabled
-    expect(submitButton).not.toBeDisabled()
-
-    // Click submit
-    fireEvent.click(submitButton)
-
-    // Should show correct feedback
     await waitFor(() => {
       expect(screen.getByRole('status')).toBeInTheDocument()
       expect(screen.getByText(/Richtig/i)).toBeInTheDocument()
     })
 
-    // Should call API with the number of bits
-    expect(mockSubmitCorrect).toHaveBeenCalledWith(8)
-    expect(mockSubmitIncorrect).not.toHaveBeenCalled()
+    // The wire payload is (mode, bits, is_correct) — bits, never byte counts.
+    await waitFor(() => {
+      expect(mockSubmitAnswer).toHaveBeenCalledWith('hex_to_bin', 8, true)
+    })
 
     // Should notify parent so it can refresh user stats
     await waitFor(() => {
@@ -140,56 +152,33 @@ describe('HexBinTrainer', () => {
   it('handles wrong answer flow with API call and feedback', async () => {
     render(<HexBinTrainer onUpdate={mockOnUpdate} />)
 
-    const input = screen.getByRole('textbox')
-    const submitButton = screen.getByRole('button', { name: /check answer/i })
+    typeAnswer('11111111')
+    pressCheck()
 
-    // Type wrong answer
-    fireEvent.change(input, { target: { value: '11111111' } })
-
-    // Click submit
-    fireEvent.click(submitButton)
-
-    // Should show wrong feedback with alert role
     await waitFor(() => {
-      const alert = screen.getByRole('alert')
-      expect(alert).toBeInTheDocument()
-      // German locale is default, so check for "Falsch"
-      expect(alert).toHaveTextContent(/Falsch/i)
+      expect(screen.getByRole('alert')).toHaveTextContent(/Falsch/i)
+    })
+    await waitFor(() => {
+      expect(mockSubmitAnswer).toHaveBeenCalledWith('hex_to_bin', 8, false)
     })
 
-    // Should call API with the number of bits
-    expect(mockSubmitIncorrect).toHaveBeenCalledWith(8)
-    expect(mockSubmitCorrect).not.toHaveBeenCalled()
-
-    // Should notify parent so it can refresh user stats
     await waitFor(() => {
       expect(mockOnUpdate).toHaveBeenCalledTimes(1)
     })
   })
 
   it('handles API failure gracefully with error feedback', async () => {
-    // Mock API to reject
-    mockSubmitCorrect.mockRejectedValue(new Error('Network error'))
-    vi.spyOn(console, 'error').mockImplementation(() => {})
+    mockSubmitAnswer.mockRejectedValue(new TypeError('Network error'))
 
     render(<HexBinTrainer onUpdate={mockOnUpdate} />)
 
-    const input = screen.getByRole('textbox')
-    const submitButton = screen.getByRole('button', { name: /check answer/i })
+    typeAnswer(BIN)
+    pressCheck()
 
-    // Type correct answer
-    fireEvent.change(input, { target: { value: '10000111' } })
-
-    // Click submit
-    fireEvent.click(submitButton)
-
-    // Should show error feedback
     await waitFor(() => {
-      expect(screen.getByRole('alert')).toBeInTheDocument()
-      expect(screen.getByText(/Fehler beim Speichern/i)).toBeInTheDocument()
+      expect(screen.getByRole('alert')).toHaveTextContent(/Fehler beim Speichern/i)
     })
 
-    // Should NOT call onUpdate
     expect(mockOnUpdate).not.toHaveBeenCalled()
   })
 
@@ -197,26 +186,18 @@ describe('HexBinTrainer', () => {
     render(<HexBinTrainer onUpdate={mockOnUpdate} />)
 
     const input = screen.getByRole('textbox')
-
-    // Type correct answer
-    fireEvent.change(input, { target: { value: '10000111' } })
-
-    // Press Enter
+    typeAnswer(BIN)
     fireEvent.keyDown(input, { key: 'Enter', code: 'Enter' })
 
-    // Should trigger submit and call API
     await waitFor(() => {
-      expect(mockSubmitCorrect).toHaveBeenCalledWith(8)
+      expect(mockSubmitAnswer).toHaveBeenCalledWith('hex_to_bin', 8, true)
     })
   })
 
   it('uses the mode passed in from the sidebar', () => {
     render(<HexBinTrainer onUpdate={mockOnUpdate} activeMode="HexToDec" />)
 
-    // Mode label is shown in the top bar
     expect(screen.getByLabelText('Current mode')).toHaveTextContent('Hex → Dec')
-
-    // Question is still hex "87", but the answer is decimal now
     expect(screen.getByText('87')).toBeInTheDocument()
     const input = screen.getByRole('textbox')
     fireEvent.change(input, { target: { value: '123abc' } })
@@ -232,7 +213,6 @@ describe('HexBinTrainer', () => {
     expect(fourBitsTab).toHaveAttribute('aria-selected', 'true')
     expect(screen.getByRole('tab', { name: '8 Bits' })).toHaveAttribute('aria-selected', 'false')
 
-    // With bits=4, range [0, 15], random=0.5 → value = floor(0.5 * 16) + 0 = 8 = 0x8
     expect(screen.getByText('8')).toBeInTheDocument()
   })
 
@@ -245,6 +225,76 @@ describe('HexBinTrainer', () => {
     expect(mockOnBitsChange).toHaveBeenCalledWith(16)
   })
 
+  describe('direction -> mode mapping (US-38 AC-1)', () => {
+    it('covers all six UI directions', () => {
+      expect(directionCases).toHaveLength(HEX_BIN_MODES.length)
+      for (const [direction] of directionCases) {
+        expect(HEX_BIN_MODES).toContain(direction)
+      }
+    })
+
+    it.each(directionCases)(
+      'submits the %s direction as backend mode %s',
+      async (direction, mode, value) => {
+        render(<HexBinTrainer onUpdate={mockOnUpdate} activeMode={direction} />)
+
+        typeAnswer(value)
+        pressCheck()
+
+        await waitFor(() => {
+          expect(mockSubmitAnswer).toHaveBeenCalledWith(mode, 8, true)
+        })
+      }
+    )
+
+    it('derives the mode from the shared mapper instead of a local copy', () => {
+      render(<HexBinTrainer onUpdate={mockOnUpdate} activeMode="DecToBin" />)
+
+      expect(screen.getByLabelText('Current mode')).toHaveTextContent('Dec → Bin')
+      expect(modeForDirection('DecToBin')).toBe('bin_to_dec')
+    })
+  })
+
+  it('hands the raw /answer response to the parent so the server wins', async () => {
+    const onGameResult = vi.fn()
+    render(<HexBinTrainer onUpdate={mockOnUpdate} onGameResult={onGameResult} />)
+
+    typeAnswer(BIN)
+    pressCheck()
+
+    await waitFor(() => {
+      expect(onGameResult).toHaveBeenCalledWith(answer)
+    })
+    // applyGameResult replaces the extra /api/user/me round-trip.
+    expect(mockOnUpdate).not.toHaveBeenCalled()
+  })
+
+  it('names the required level when the answer is locked (AC-3)', async () => {
+    mockSubmitAnswer.mockRejectedValue(
+      new ApiError({ status: 403, detail: 'Content locked until level 13' })
+    )
+
+    render(<HexBinTrainer onUpdate={mockOnUpdate} />)
+
+    typeAnswer(BIN)
+    pressCheck()
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent('Freigeschaltet ab Stufe 13.')
+    })
+  })
+
+  it('sends the bit width — not a byte count — for a 32-bit question', async () => {
+    render(<HexBinTrainer onUpdate={mockOnUpdate} bits={32} />)
+
+    // A 32-bit question is 32 chars long, so the 8-bit answer is simply wrong.
+    typeAnswer(BIN)
+    pressCheck()
+
+    await waitFor(() => {
+      expect(mockSubmitAnswer).toHaveBeenCalledWith('hex_to_bin', 32, false)
+    })
+  })
 
   it('counts the answer locally and skips the backend in guest mode', async () => {
     const onGuestAnswer = vi.fn()
@@ -254,7 +304,7 @@ describe('HexBinTrainer', () => {
     const submitButton = screen.getByRole('button', { name: /check answer/i })
 
     // Correct answer for hex "87"
-    fireEvent.change(input, { target: { value: '10000111' } })
+    fireEvent.change(input, { target: { value: BIN } })
     fireEvent.click(submitButton)
     await waitFor(() => expect(screen.getByText(/Richtig/i)).toBeInTheDocument())
     expect(onGuestAnswer).toHaveBeenCalledWith(true)
@@ -264,8 +314,8 @@ describe('HexBinTrainer', () => {
     fireEvent.click(submitButton)
     await waitFor(() => expect(onGuestAnswer).toHaveBeenCalledWith(false))
 
-    expect(mockSubmitCorrect).not.toHaveBeenCalled()
-    expect(mockSubmitIncorrect).not.toHaveBeenCalled()
+    // Nothing left the browser: no /answer, no profile refresh.
+    expect(mockSubmitAnswer).not.toHaveBeenCalled()
     expect(mockOnUpdate).not.toHaveBeenCalled()
   })
 })

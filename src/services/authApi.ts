@@ -10,7 +10,7 @@
  * - GET /api/user/me - Get current user info + stats
  */
 
-import { getAccessToken, setAccessToken, clearAccessToken } from '../utils/tokenManager';
+import { getAccessToken, setAccessToken, clearAccessToken } from '../utils/tokenManager.ts';
 
 const BASE_URL: string = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
 
@@ -54,13 +54,17 @@ export interface LogoutResponse {
     message: string;
 }
 
+/** GET /api/user/me — Sprint 4 economy shape (no legacy `points`). */
 export interface UserMeResponse {
     id: string;
     username: string;
     email: string;
     correct_count: number;
     incorrect_count: number;
-    points: number;
+    total_xp: number;
+    level: number;
+    current_streak: number;
+    best_streak: number;
 }
 
 export interface RequestPasswordResetRequest {

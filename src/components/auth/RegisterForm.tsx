@@ -16,8 +16,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion } from 'framer-motion';
 import { Mail, User, UserPlus } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
-import { useI18n } from '../../i18n/useI18n';
+import { useAuth } from '../../contexts/AuthContext.tsx';
+import { useI18n } from '../../i18n/useI18n.ts';
 import PasswordInput from './PasswordInput.tsx';
 
 // ==================== Types ====================
