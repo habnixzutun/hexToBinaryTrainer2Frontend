@@ -37,8 +37,9 @@ const goldenAnswer: GameAnswerResponse = {
   newly_unlocked: [],
 }
 
+// US-43: the V2 entry is exactly {user_id, username, total_xp, level}.
 const entries: LeaderboardEntry[] = [
-  { user_id: 'u-1', username: 'Alice', total_xp: 1320, level: 6, correct_count: 42, incorrect_count: 5 },
+  { user_id: 'u-1', username: 'Alice', total_xp: 1320, level: 6 },
 ]
 
 describe('gameApi', () => {
@@ -193,6 +194,19 @@ describe('gameApi', () => {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
       })
+    })
+
+    it('passes a four-field V2 payload through untouched (US-43)', async () => {
+      // Mirrors the merged backend schema: LeaderboardEntryV2 has no statistic
+      // columns, so the client must not expect any to arrive.
+      mockFetch.mockResolvedValueOnce(
+        jsonResponse(200, { entries: [{ user_id: 'u-1', username: 'Alice', total_xp: 1320, level: 6 }] })
+      )
+
+      const result = await gameApi.getLeaderboard()
+
+      expect(result).toHaveLength(1)
+      expect(Object.keys(result[0]!)).toEqual(['user_id', 'username', 'total_xp', 'level'])
     })
 
     it('stays public — no Authorization header even with a live token (OQ-9)', async () => {

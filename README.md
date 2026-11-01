@@ -21,6 +21,32 @@ If you are developing a production application, we recommend using TypeScript wi
 
 ### Changelog
 
+**Sprint 5 · US-43 — Bestenliste auf vier Felder reduziert** (`feature/us-43-leaderboard-frontend`)
+
+*Changed*
+- `LeaderboardEntry` in `src/services/api.ts` ist jetzt exakt
+  `{user_id, username, total_xp, level}` — passend zu `LeaderboardEntryV2` des Backends
+  (PR habnixzutun/hexToBinaryTrainer2Backend#48). Die Schalter `correct_count` und
+  `incorrect_count` sind vom Wire-Contract verschwunden: das sind Profilkennzahlen
+  (`GET /api/user/me`), keine Bestenlisten-Daten, und die Rangliste sortiert allein nach XP.
+- `src/components/Leaderboard.tsx` rendert damit drei Datenspalten (**Name · Stufe · XP**)
+  hinter dem Rang-Spacer; die ✓-/✗-Spalten samt zugehörigem Spaltenkopf sind entfallen.
+- Das „(Du)"-Badge hängt nun an `entry.user_id === user?.id` statt am Anzeigenamen.
+  Vorher galt ein Eintrag als „einer selbst", wenn der Name glich — ein Namenswechsler
+  verlor sein Badge, und ein gleichnamiger Anderer bekam es.
+- Der „ewige Nummer eins"-Hinweis für `Max` bleibt bewusst namebasiert: er ist Hauslore,
+  kein Identitätsnachweis, und `username` ist weiterhin Teil des Payloads.
+
+*Tests*
+- `test/components/Leaderboard.test.tsx` hält die Vier-Felder-Form als Compile-Time-Vertrag
+  fest (`keyof LeaderboardEntry` muss exakt die vier Namen sein), pinnt die drei Spalten,
+  das Ausbleiben von ✓/✗, die Badge-Zuordnung per `user_id` (inkl. Gegenprobe: gleicher
+  Name + fremde ID ⇒ kein Badge) und den Gast-Fall.
+- `test/services/api.test.ts` prüft den unversehrten Durchgriff eines Vier-Felder-Payloads;
+  die Fixtures in `test/App.test.tsx` / `test/App.gameHud.test.tsx` wurden mitgezogen.
+- Kein Screenshot: die README führt die Changelog-Einträge textuell, und die Bestenliste
+  braucht Live-Daten vom noch nicht gemergten Backend-PR.
+
 **Sprint 5 · US-45 — HUD entfernt, LevelUpToast in `App` umgesiedelt** (`feature/us-45-remove-gamehud`)
 
 *Removed*

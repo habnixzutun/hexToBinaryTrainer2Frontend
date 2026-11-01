@@ -38,8 +38,9 @@ vi.mock('../src/services/api.ts', () => ({
 const mockedAuthApi = vi.mocked(authApi)
 const mockedGameApi = vi.mocked(gameApi)
 
+// US-43: the V2 entry is four fields — no per-statistic columns on the wire.
 const leaderboardEntries: LeaderboardEntry[] = [
-  { user_id: 'u-1', username: 'Alice', total_xp: 1320, level: 6, correct_count: 10, incorrect_count: 2 },
+  { user_id: 'u-1', username: 'Alice', total_xp: 1320, level: 6 },
 ]
 
 /** D-2 seed: L2 opens the 16-bit hex conversion. The toast lists exactly this. */

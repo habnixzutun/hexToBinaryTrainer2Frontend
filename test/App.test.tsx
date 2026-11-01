@@ -49,9 +49,10 @@ Object.defineProperty(window, 'localStorage', {
 const DESKTOP_WIDTH = 1280
 const MOBILE_WIDTH = 500
 
+// US-43: four V2 fields only — the statistic columns left the wire contract.
 const leaderboardEntries: LeaderboardEntry[] = [
-  { user_id: 'u-1', username: 'Alice', total_xp: 1320, level: 6, correct_count: 10, incorrect_count: 2 },
-  { user_id: 'user-1', username: 'TestUser', total_xp: 50, level: 1, correct_count: 5, incorrect_count: 2 },
+  { user_id: 'u-1', username: 'Alice', total_xp: 1320, level: 6 },
+  { user_id: 'user-1', username: 'TestUser', total_xp: 50, level: 1 },
 ]
 
 /** L1 -> 58 of 100 XP: the server computes everything, the client only renders. */

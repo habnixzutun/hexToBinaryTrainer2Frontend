@@ -105,17 +105,11 @@ export default function Leaderboard({ refreshTrigger }: Props) {
                 </p>
             )}
 
-            {/* Column headers */}
+            {/* Column headers — US-43: three data columns behind the rank spacer */}
             <div className="flex items-center px-5 py-3 shrink-0" role="row" aria-label="Leaderboard columns">
                 <span className="w-8 shrink-0" role="columnheader" aria-label="Rank" />
                 <span className="flex-1 text-xs font-semibold uppercase tracking-widest text-on-surface-faint" role="columnheader">
                     {t.name}
-                </span>
-                <span className="w-10 text-xs font-semibold uppercase tracking-widest text-on-surface-faint text-right" role="columnheader" aria-label="Correct answers">
-                    <span aria-hidden="true">✓</span>
-                </span>
-                <span className="w-10 text-xs font-semibold uppercase tracking-widest text-on-surface-faint text-right" role="columnheader" aria-label="Wrong answers">
-                    <span aria-hidden="true">✗</span>
                 </span>
                 <span className="w-10 text-xs font-semibold uppercase tracking-widest text-on-surface-faint text-right" role="columnheader">
                     {t.levelLabel}
@@ -134,7 +128,9 @@ export default function Leaderboard({ refreshTrigger }: Props) {
                 aria-atomic="false"
             >
                 {data.map((entry, idx) => {
-                    const isMe = entry.username === user?.username;
+                    // US-43: identity is the stable id, never the display name —
+                    // a player who renames themselves keeps their badge.
+                    const isMe = entry.user_id === user?.id;
                     const showEternalTooltip = promoted && idx === 0;
                     const xpLabel = entry.total_xp.toLocaleString(locale);
 
@@ -178,16 +174,6 @@ export default function Leaderboard({ refreshTrigger }: Props) {
                                         <Info size={12} className="text-on-surface-faint" aria-label={ETERNAL_TOOLTIP} />
                                     </span>
                                 )}
-                            </span>
-
-                            {/* Correct */}
-                            <span className="w-10 text-sm font-mono text-on-surface-faint text-right" aria-label={`${entry.correct_count} correct`}>
-                                {entry.correct_count}
-                            </span>
-
-                            {/* Incorrect */}
-                            <span className="w-10 text-sm font-mono text-on-surface-faint text-right" aria-label={`${entry.incorrect_count} wrong`}>
-                                {entry.incorrect_count}
                             </span>
 
                             {/* Level */}
