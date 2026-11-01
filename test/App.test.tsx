@@ -133,14 +133,18 @@ describe('App', () => {
     expect(within(sidebar).getByLabelText('Your statistics').textContent).toBe('5OK2ERR50XP')
   })
 
-  it('holds the XP progress back until the server supplies it (cold start)', async () => {
+  it('shows the sidebar figures and no unlock notice on a cold start', async () => {
+    // US-45 removed the HUD bar, so a freshly logged-in player sees the numbers
+    // from GET /api/user/me in the sidebar and nothing above the play area.
     const user = userEvent.setup()
     render(<App />)
     await screen.findByRole('heading', { name: 'Willkommen zurück' })
     await loginThroughForm(user)
 
+    expect(within(screen.getByLabelText('Main navigation')).getByLabelText('Your statistics').textContent)
+      .toBe('5OK2ERR50XP')
     expect(screen.queryByRole('progressbar')).not.toBeInTheDocument()
-    expect(screen.getByLabelText('Stufe')).toHaveTextContent('1')
+    expect(screen.queryByRole('status', { name: /Stufe/ })).not.toBeInTheDocument()
   })
 
   it('stays on the login screen and shows the error when loading the user fails', async () => {
@@ -159,7 +163,7 @@ describe('App', () => {
     expect(screen.queryByLabelText('Main navigation')).not.toBeInTheDocument()
   })
 
-  it('applies the server answer to the HUD and the sidebar without a second round-trip', async () => {
+  it('applies the server answer to the sidebar without a second round-trip', async () => {
     const user = userEvent.setup()
     render(<App />)
     await screen.findByRole('heading', { name: 'Willkommen zurück' })
@@ -181,12 +185,11 @@ describe('App', () => {
       expect(stats.textContent).toBe('6OK2ERR58XP')
     })
 
-    // The HUD renders the progress straight off the /answer payload (AC-2).
-    const bar = await screen.findByRole('progressbar')
-    expect(bar).toHaveAttribute('aria-valuenow', '58')
-    expect(bar).toHaveAttribute('aria-valuemax', '100')
-    expect(screen.getByLabelText('Serie')).toHaveTextContent('1')
-    expect(screen.getByLabelText('Beste Serie')).toHaveTextContent('3')
+    // US-45: the HUD bar is gone, so the /answer payload no longer drives a
+    // progress bar or a streak row — only the sidebar figures move.
+    expect(screen.queryByRole('progressbar')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Serie')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Beste Serie')).not.toBeInTheDocument()
   })
 
   it('logs out and returns to the login screen', async () => {

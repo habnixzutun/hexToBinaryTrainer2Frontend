@@ -22,8 +22,9 @@ interface Props {
 /**
  * Level-up notice.
  *
- * A level-up on its own is not news — the HUD already shows the new level. This
- * component only earns its pixels when the server actually opened something.
+ * A level-up on its own is not news. This component only earns its pixels when
+ * the server actually opened something. Since US-45 it is rendered by `App` as
+ * an overlay — the HUD bar that used to carry it is gone.
  */
 export default function LevelUpToast({ level, unlocks, onDismiss }: Props) {
     const { t } = useI18n();

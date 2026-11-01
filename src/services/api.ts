@@ -142,9 +142,9 @@ export const gameApi = {
             throw await buildApiError(response, 'Failed to submit answer');
         }
 
-        // Contract is frozen in the sprint plan; the HUD clamps every derived
-        // figure and scoreCache validates strictly, so a cast is the accepted
-        // boundary here (deep schema validation is tracked for US-39).
+        // Contract is frozen in the sprint plan; scoreCache validates the economy
+        // fields strictly and nothing is derived client-side, so a cast is the
+        // accepted boundary here (deep schema validation is tracked for US-39).
         return (await response.json()) as GameAnswerResponse;
     },
 

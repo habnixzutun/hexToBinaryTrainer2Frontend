@@ -28,7 +28,6 @@ export const testUser: UserMeResponse = {
 export function authValue(overrides: Partial<AuthValue> = {}): AuthValue {
   return {
     user: testUser,
-    lastAnswer: null,
     pendingUnlocks: [],
     isGuest: false,
     guestStats: null,

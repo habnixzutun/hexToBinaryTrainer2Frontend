@@ -3,7 +3,7 @@
  *
  * Provides:
  * - User state (authenticated user info + XP economy)
- * - The raw last /answer response (HUD progress, level-up toast)
+ * - The pending unlocks of the last /answer (level-up toast)
  * - Guest mode (try the app without an account, nothing is persisted)
  * - Auth methods (login, register, logout, refreshUser)
  * - Loading and error states
@@ -69,9 +69,7 @@ export type WelcomeNotice = 'passwordChanged' | null;
 
 interface AuthContextType {
     user: UserMeResponse | null;
-    /** Raw payload of the last POST /api/game/answer — the HUD renders from it. */
-    lastAnswer: GameAnswerResponse | null;
-    /** `newly_unlocked` of that answer; cleared by dismissLevelUp(). */
+    /** `newly_unlocked` of the last answer; cleared by dismissLevelUp(). */
     pendingUnlocks: readonly UnlockEntry[];
     isGuest: boolean;
     guestStats: GuestStats | null;
@@ -124,7 +122,6 @@ interface AuthProviderProps {
 
 export function AuthProvider({ children }: AuthProviderProps): ReactElement {
     const [session, setSession] = useState<Session>(ANONYMOUS);
-    const [lastAnswer, setLastAnswer] = useState<GameAnswerResponse | null>(null);
     const [pendingUnlocks, setPendingUnlocks] = useState<readonly UnlockEntry[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -156,21 +153,20 @@ export function AuthProvider({ children }: AuthProviderProps): ReactElement {
     };
 
     /**
-     * Drop the HUD state — the previous player's numbers must never render for
-     * the next one, not even as a stale toast.
+     * Drop the unlock toast — the previous player's unlocks must never render
+     * for the next one, not even as a stale notice.
      */
-    const clearAnswerState = (): void => {
-        setLastAnswer(null);
+    const clearUnlockState = (): void => {
         setPendingUnlocks([]);
     };
 
     /**
      * Drop every per-account figure — used on logout and when a session cannot
-     * be restored, so the next player never sees the previous one's HUD.
+     * be restored, so the next player never sees the previous one's numbers.
      */
     const clearSessionState = (): void => {
         setUser(null);
-        clearAnswerState();
+        clearUnlockState();
     };
 
     /**
@@ -323,14 +319,13 @@ export function AuthProvider({ children }: AuthProviderProps): ReactElement {
 
     /**
      * Apply a /answer response: server numbers win over whatever the client
-     * assumed, the raw payload is kept for the HUD and the unlock toast.
+     * assumed, and `newly_unlocked` is handed to the level-up toast.
      */
     const applyGameResult = (answer: GameAnswerResponse): void => {
         // A guest's answers are counted locally; a /answer payload must not
-        // touch their HUD either.
+        // touch their session either.
         if (session.kind === 'guest') return;
 
-        setLastAnswer(answer);
         setPendingUnlocks([...answer.newly_unlocked]);
 
         setSession(prev => {
@@ -342,8 +337,8 @@ export function AuthProvider({ children }: AuthProviderProps): ReactElement {
     };
 
     /**
-     * Close the level-up toast. The progress numbers stay — the toast is not
-     * the owner of the answer.
+     * Close the level-up toast. The economy numbers stay on `user` — the toast
+     * is not the owner of the answer.
      */
     const dismissLevelUp = (): void => {
         setPendingUnlocks([]);
@@ -359,8 +354,8 @@ export function AuthProvider({ children }: AuthProviderProps): ReactElement {
         setError(null);
         setWelcomeNotice(null);
         setPersistenceEnabled(false);
-        // A guest sees no leftovers of the previous session's HUD.
-        clearAnswerState();
+        // A guest sees no leftovers of the previous session's unlocks.
+        clearUnlockState();
         setSession({ kind: 'guest', stats: { correct_count: 0, incorrect_count: 0 } });
     };
 
@@ -408,7 +403,6 @@ export function AuthProvider({ children }: AuthProviderProps): ReactElement {
 
     const value: AuthContextType = {
         user,
-        lastAnswer,
         pendingUnlocks,
         isGuest,
         guestStats,

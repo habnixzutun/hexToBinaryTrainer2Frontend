@@ -31,22 +31,31 @@ describe('translations', () => {
     }
   })
 
-  it('carries the XP-economy HUD copy in both locales', () => {
+  it('carries the XP-economy copy the leaderboard, sidebar and toast need', () => {
+    // US-45 deleted the HUD bar: hudLabel, streak, bestStreak and xpProgress went
+    // with it. These are the economy keys that must still exist.
     for (const locale of LOCALES) {
       const t = copy(locale)
 
       expect(t.levelLabel.length).toBeGreaterThan(0)
-      expect(t.streak.length).toBeGreaterThan(0)
-      expect(t.bestStreak.length).toBeGreaterThan(0)
       expect(t.xp).toBe('XP')
       expect(t.dismissNotice.length).toBeGreaterThan(0)
       expect(t.leaderboardError.length).toBeGreaterThan(0)
     }
   })
 
-  it('interpolates the numbers the HUD and the error paths need', () => {
-    expect(copy('de').xpProgress(120, 760)).toBe('120 von 760 XP')
-    expect(copy('en').xpProgress(120, 760)).toBe('120 of 760 XP')
+  it('drops the HUD-only copy with the HUD bar (US-45)', () => {
+    for (const locale of LOCALES) {
+      const keys = Object.keys(copy(locale))
+
+      expect(keys).not.toContain('hudLabel')
+      expect(keys).not.toContain('streak')
+      expect(keys).not.toContain('bestStreak')
+      expect(keys).not.toContain('xpProgress')
+    }
+  })
+
+  it('interpolates the numbers the toast and the error paths need', () => {
     expect(copy('de').levelUpToast(8)).toContain('8')
     expect(copy('en').levelUpToast(8)).toContain('8')
     expect(copy('de').lockedUntilLevel(13)).toContain('13')
