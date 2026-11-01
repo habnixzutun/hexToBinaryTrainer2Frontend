@@ -2,7 +2,12 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, X, ArrowRight } from 'lucide-react';
 import { type GameAnswerResponse } from '../services/api.ts';
-import { modeForDirection, tierGates, type HexBinDirection } from '../constants/gameModes.ts';
+import {
+    defaultTierFor,
+    modeForDirection,
+    tierGates,
+    type HexBinDirection,
+} from '../constants/gameModes.ts';
 import { useAnswerSubmission } from '../hooks/useAnswerSubmission.ts';
 import { useI18n } from '../i18n/useI18n.ts';
 import { flashAccent } from '../utils/flashAccent.ts';
@@ -70,7 +75,12 @@ export default function HexBinTrainer({ onUpdate, onGameResult, onGuestAnswer, a
     const [internalMode] = useState<HexBinDirection>('HexToBin');
     const activeMode = externalMode ?? internalMode;
 
-    const [internalBits, setInternalBits] = useState(8);
+    // US-46: the uncontrolled fallback opens on the first tier the handed-in
+    // level owns, matching App rather than a hardcoded 8. `playerLevel` is
+    // `undefined` for an isolated mount, which reads as "no profile" → slot 1.
+    const [internalBits, setInternalBits] = useState(() =>
+        defaultTierFor(modeForDirection(activeMode), playerLevel ?? null)
+    );
     const bits = externalBits ?? internalBits;
     const setBits = onBitsChange ?? setInternalBits;
 

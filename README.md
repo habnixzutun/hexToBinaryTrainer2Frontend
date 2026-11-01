@@ -19,6 +19,32 @@ If you are developing a production application, we recommend using TypeScript wi
 
 ## Hex To Binary Trainer
 
+### Default Bit Selection (Tier-Unlock-System)
+
+Der Trainer startet bei jedem Login auf dem **niedrigsten Tier, das das Profil bereits
+freigeschaltet hat** — nicht auf einem hartcodierten Wert. Damit läuft die allererste Antwort
+eines frischen Accounts nie mehr in das serverseitige Unlock-Gate (früher: `bit_width=8`
+vorausgewählt ⇒ **403** für Level-1-Spieler).
+
+| Level | Vorausgewähltes Tier (hex/bin) | Begründung |
+|-------|-------------------------------|------------|
+| 1 (fresh) | **4 Bits** | Slot 1 der D-2-Ladder; als einziges ab Level 1 offen |
+| 4 | 4 Bits | 8 Bits sind *frei*, aber der Default bleibt Slot 1 (kein Zwangs-Hochsprung) |
+| 8 / 13 / 99 | 4 Bits | Default ist bewusst **immer** Slot 1 — der Spieler wechselt selbst |
+| Gast (kein Profil) | 4 Bits | „nichts gesperrt"-Semantik ⇒ ebenfalls Slot 1 |
+
+Die Higher-Tiers (8/16/32 Bits) werden **manuell** über die Bit-Leiste gewählt, sobald das Level
+sie freischaltet (4→L4, 16→L8, 32→L13). Gesperrte Tabs zeigen ein Schloss-Badge mit dem
+Freischalt-Level und sind nicht aktivierbar. Unicode ist nicht betroffen: `1 Byte` (= 8 Bits) ist
+dort bereits Slot 1 und ab Level 1 offen.
+
+Die Zuordnung ist eine reine Funktion aus dem eingefrorenen Seed in
+`src/constants/gameModes.ts` (`defaultTierFor(mode, playerLevel)`), kopiert aus dem Backend
+(`game_config.py`) — nie hartcodiert, dadurch kann der Default nicht in ein gesperrtes Tier driften.
+
+Details: Hand-Check-Anleitung in [`docs/US-46-hand-check.md`](./docs/US-46-hand-check.md);
+Story, Akzeptanzkriterien und Seed-Matrix in `docs/sprint5-plan.md` (Sprint-5-Plan, US-46).
+
 ### Frontend Testing
 
 Tests laufen mit Vitest + Testing Library (jsdom). Die Coverage-Schwelle liegt bei **80 %** (Lines, Functions, Branches, Statements) und wird im CI/lokal erzwungen.
