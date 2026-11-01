@@ -3,6 +3,7 @@ import HexBinTrainer from '../../src/components/HexBinTrainer.tsx'
 import { gameApi, type GameAnswerResponse } from '../../src/services/api.ts'
 import { ApiError } from '../../src/services/apiError.ts'
 import { HEX_BIN_MODES, modeForDirection, type GameMode, type HexBinDirection } from '../../src/constants/gameModes.ts'
+import { questionText, selectedTier } from '../helpers/tier.ts'
 
 // Mock the game API — US-38 ships a single unified submit path.
 vi.mock('../../src/services/api.ts', () => ({
@@ -49,7 +50,13 @@ Object.defineProperty(window, 'localStorage', {
   value: localStorageMock,
 })
 
-/** bits=8 + Math.random()=0.5 -> value 135 -> hex 87, bin 10000111, dec 135. */
+/**
+ * bits=8 + Math.random()=0.5 -> value 135 -> hex 87, bin 10000111, dec 135.
+ *
+ * US-46 made the default tier the first unlocked one (4 bits at level 1), so
+ * these 8-bit fixtures only hold when a test passes `bits={8}` explicitly. The
+ * default itself is owned by HexBinTrainer.defaultTier.test.tsx.
+ */
 const BIN = '10000111'
 const HEX = '87'
 const DEC = '135'
@@ -96,7 +103,12 @@ describe('HexBinTrainer', () => {
     expect(screen.getByRole('region', { name: /hex\/binary trainer/i })).toBeInTheDocument()
   })
 
-  it('shows bit selection tabs with 8 bits selected by default', () => {
+  /**
+   * US-46: the default used to be a hardcoded 8. It is now the first tier the
+   * handed-in level owns — 4 bits for a guest/isolated mount, where no profile
+   * means nothing is gated.
+   */
+  it('shows bit selection tabs with the first unlocked tier selected by default', () => {
     render(<HexBinTrainer onUpdate={mockOnUpdate} />)
 
     // In jsdom (no lg breakpoint) the tab bar is hidden via CSS, but still in the DOM
@@ -104,16 +116,16 @@ describe('HexBinTrainer', () => {
     const tabs = screen.getAllByRole('tab')
     expect(tabs).toHaveLength(4)
 
-    for (const b of [4, 16, 32]) {
+    for (const b of [8, 16, 32]) {
       expect(screen.getByRole('tab', { name: `${b} Bits` })).toHaveAttribute('aria-selected', 'false')
     }
-    expect(screen.getByRole('tab', { name: '8 Bits' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('tab', { name: '4 Bits' })).toHaveAttribute('aria-selected', 'true')
   })
 
   it('generates deterministic question with mocked random', () => {
-    render(<HexBinTrainer onUpdate={mockOnUpdate} />)
+    render(<HexBinTrainer onUpdate={mockOnUpdate} bits={8} />)
 
-    expect(screen.getByText('87')).toBeInTheDocument()
+    expect(questionText()).toBe(HEX)
   })
 
   it('filters input based on target format', () => {
@@ -127,7 +139,7 @@ describe('HexBinTrainer', () => {
   })
 
   it('handles correct answer flow with API call and feedback', async () => {
-    render(<HexBinTrainer onUpdate={mockOnUpdate} />)
+    render(<HexBinTrainer onUpdate={mockOnUpdate} bits={8} />)
 
     typeAnswer(BIN)
     expect(screen.getByRole('button', { name: /check answer/i })).not.toBeDisabled()
@@ -150,7 +162,7 @@ describe('HexBinTrainer', () => {
   })
 
   it('handles wrong answer flow with API call and feedback', async () => {
-    render(<HexBinTrainer onUpdate={mockOnUpdate} />)
+    render(<HexBinTrainer onUpdate={mockOnUpdate} bits={8} />)
 
     typeAnswer('11111111')
     pressCheck()
@@ -183,7 +195,7 @@ describe('HexBinTrainer', () => {
   })
 
   it('submits answer when Enter key is pressed', async () => {
-    render(<HexBinTrainer onUpdate={mockOnUpdate} />)
+    render(<HexBinTrainer onUpdate={mockOnUpdate} bits={8} />)
 
     const input = screen.getByRole('textbox')
     typeAnswer(BIN)
@@ -195,25 +207,32 @@ describe('HexBinTrainer', () => {
   })
 
   it('uses the mode passed in from the sidebar', () => {
-    render(<HexBinTrainer onUpdate={mockOnUpdate} activeMode="HexToDec" />)
+    render(<HexBinTrainer onUpdate={mockOnUpdate} activeMode="HexToDec" bits={8} />)
 
     expect(screen.getByLabelText('Current mode')).toHaveTextContent('Hex → Dec')
-    expect(screen.getByText('87')).toBeInTheDocument()
+    expect(questionText()).toBe(HEX)
     const input = screen.getByRole('textbox')
     fireEvent.change(input, { target: { value: '123abc' } })
     expect(input).toHaveValue('123')
   })
 
+  /**
+   * US-46 made 4 bits the default, so clicking the 4-bit tab would be a no-op
+   * and this test would pass without switching anything. It climbs to 8 instead,
+   * which is a real transition and reuses the 8-bit fixture.
+   */
   it('switches bits via tab and generates a question in the new range', () => {
     render(<HexBinTrainer onUpdate={mockOnUpdate} />)
 
-    const fourBitsTab = screen.getByRole('tab', { name: '4 Bits' })
-    fireEvent.click(fourBitsTab)
+    expect(selectedTier()).toBe(4)
 
-    expect(fourBitsTab).toHaveAttribute('aria-selected', 'true')
-    expect(screen.getByRole('tab', { name: '8 Bits' })).toHaveAttribute('aria-selected', 'false')
+    const eightBitsTab = screen.getByRole('tab', { name: '8 Bits' })
+    fireEvent.click(eightBitsTab)
 
-    expect(screen.getByText('8')).toBeInTheDocument()
+    expect(eightBitsTab).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('tab', { name: '4 Bits' })).toHaveAttribute('aria-selected', 'false')
+
+    expect(questionText()).toBe(HEX)
   })
 
   it('reports bit changes to the parent when controlled', () => {
@@ -236,7 +255,7 @@ describe('HexBinTrainer', () => {
     it.each(directionCases)(
       'submits the %s direction as backend mode %s',
       async (direction, mode, value) => {
-        render(<HexBinTrainer onUpdate={mockOnUpdate} activeMode={direction} />)
+        render(<HexBinTrainer onUpdate={mockOnUpdate} activeMode={direction} bits={8} />)
 
         typeAnswer(value)
         pressCheck()
@@ -298,7 +317,7 @@ describe('HexBinTrainer', () => {
 
   it('counts the answer locally and skips the backend in guest mode', async () => {
     const onGuestAnswer = vi.fn()
-    render(<HexBinTrainer onUpdate={mockOnUpdate} onGuestAnswer={onGuestAnswer} />)
+    render(<HexBinTrainer onUpdate={mockOnUpdate} onGuestAnswer={onGuestAnswer} bits={8} />)
 
     const input = screen.getByRole('textbox')
     const submitButton = screen.getByRole('button', { name: /check answer/i })

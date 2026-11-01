@@ -92,6 +92,28 @@ describe('UnicodeTrainer', () => {
     expect(screen.getByRole('tab', { name: '4 Bytes' })).toBeInTheDocument()
   })
 
+  /**
+   * US-46 AC 3, FE-12: the unicode trainer was never wrong, so this is a
+   * keep-it-wrong-side-up pin rather than a fix. 1 byte is slot 1 of the unicode
+   * ladder (min_level 1), so the byte display stays 1 at every level while the
+   * gate underneath it speaks 8 bits — see `defaultTierFor('unicode', …)` in
+   * test/constants/defaultTier.test.ts.
+   *
+   * The tabs above only prove the options *exist*; without this the default
+   * could drift to 2 bytes and every one of them would still render.
+   */
+  it.each([1, 4, 13])('keeps 1 byte selected by default at level %i', (level) => {
+    render(<UnicodeTrainer onUpdate={mockOnUpdate} playerLevel={level} />)
+
+    expect(screen.getByRole('tab', { name: '1 Byte' })).toHaveAttribute('aria-selected', 'true')
+    for (const bytes of [2, 3, 4]) {
+      expect(screen.getByRole('tab', { name: `${bytes} Bytes` })).toHaveAttribute(
+        'aria-selected',
+        'false'
+      )
+    }
+  })
+
   it('filters input to only allow 0 and 1 characters', () => {
     render(<UnicodeTrainer onUpdate={mockOnUpdate} />)
 

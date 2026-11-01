@@ -11,7 +11,7 @@ import { CookieBanner } from './components/CookieBanner.tsx';
 import GameHud from './components/GameHud.tsx';
 import HeaderToolbar from './components/header/HeaderToolbar.tsx';
 import MobileSettingsMenu from './components/header/MobileSettingsMenu.tsx';
-import type { HexBinDirection } from './constants/gameModes.ts';
+import { defaultTierFor, modeForDirection, type HexBinDirection } from './constants/gameModes.ts';
 import type { GameAnswerResponse } from './services/api.ts';
 
 export type ActiveApp = 'hex' | 'unicode' | 'leaderboard';
@@ -33,7 +33,13 @@ function AuthenticatedApp(): ReactElement {
     const [activeMode, setActiveMode] = useState<HexBinMode>('HexToBin');
     const [refreshKey, setRefreshKey] = useState(0);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const [bits, setBits] = useState(8);
+    // US-46: open on the first tier this profile owns. A hardcoded 8 sent every
+    // level-1 player's first answer into the server's unlock gate (403). The mode
+    // is derived from `activeMode` exactly like `HexBinTrainer` does, so the two
+    // call sites can never drift apart (review DRY point).
+    const [bits, setBits] = useState(() =>
+        defaultTierFor(modeForDirection(activeMode), user?.level ?? null)
+    );
     const [bytes, setBytes] = useState(1);
     const [isMobile, setIsMobile] = useState(() =>
         typeof window !== 'undefined' ? window.innerWidth < 1024 : false

@@ -86,7 +86,9 @@ describe('App', () => {
     setPersistenceEnabled(true)
     setViewportWidth(DESKTOP_WIDTH)
 
-    // Mock Math.random for deterministic questions (8 bits → hex "87")
+    // Mock Math.random for deterministic questions. US-46 moved the default to
+    // the first unlocked tier, so testUser (level 1) now opens on 4 bits:
+    // hex "8" → bin "1000". The 8-bit fixtures below are the old 8-bit default.
     vi.spyOn(Math, 'random').mockReturnValue(0.5)
 
     // No session on startup: no access token, no valid refresh cookie
@@ -163,12 +165,13 @@ describe('App', () => {
     await screen.findByRole('heading', { name: 'Willkommen zurück' })
     await loginThroughForm(user)
 
-    // hex "87" → binary "10000111"
-    await user.type(screen.getByRole('textbox'), '10000111')
+    // US-46: level 1 opens on the first unlocked tier, so the question is the
+    // 4-bit hex "8" → binary "1000", not the old 8-bit "87".
+    await user.type(screen.getByRole('textbox'), '1000')
     await user.click(screen.getByRole('button', { name: /check answer/i }))
 
     await waitFor(() => {
-      expect(mockedGameApi.submitAnswer).toHaveBeenCalledWith('hex_to_bin', 8, true)
+      expect(mockedGameApi.submitAnswer).toHaveBeenCalledWith('hex_to_bin', 4, true)
     })
     // applyGameResult replaces the refreshUser() call the /answer response makes redundant.
     expect(mockedAuthApi.getCurrentUser).toHaveBeenCalledTimes(1)
@@ -254,12 +257,19 @@ describe('App', () => {
       await screen.findByRole('region', { name: /hex\/binary trainer/i })
       localStorageMock.setItem.mockClear()
 
-      // Correct answer for hex "87"
-      await user.type(screen.getByRole('textbox'), '10000111')
+      // Correct answer for the 4-bit hex "8" (US-46 default for a level-less
+      // guest). A bare getByText('1') would also match the WRONG-answer
+      // counter, so pin the OK cell explicitly.
+      await user.type(screen.getByRole('textbox'), '1000')
       await user.click(screen.getByRole('button', { name: /check answer/i }))
 
       const stats = screen.getByLabelText('Your statistics')
-      await waitFor(() => expect(within(stats).getByText('1')).toBeInTheDocument())
+      const okCount = within(stats).getByLabelText('Correct answers')
+      await waitFor(() =>
+        expect(okCount.previousElementSibling?.textContent).toBe('1')
+      )
+      expect(within(stats).getByLabelText('Wrong answers').previousElementSibling?.textContent)
+        .toBe('0')
       expect(within(stats).getByText('–')).toBeInTheDocument()
       expect(screen.getByText('Gast')).toBeInTheDocument()
 

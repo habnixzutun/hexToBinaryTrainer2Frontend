@@ -143,6 +143,45 @@ export const tierGates = (mode: GameMode, playerLevel: number | null): readonly 
     });
 
 /**
+ * The tier a session opens on: the lowest one the profile already owns (US-46).
+ *
+ * Derived from the seed rather than hardcoded, so the preselected tier can never
+ * drift into a locked one — a level-1 account that opened on 8 bits had its very
+ * first answer rejected by the server gate with 403.
+ *
+ * Deliberately *not* the newest unlocked tier: auto-promoting would override a
+ * choice the player already made, and the plan pins the default to slot 1 for
+ * every level (AC 3). A level-13 player therefore still starts at 4 bits and
+ * climbs on their own.
+ *
+ * Slot 1 opens at level 1 in every mode of the seed, so a profile the ladder can
+ * actually hold always finds an unlocked tier and the throw stays unreachable.
+ *
+ * @param playerLevel - `null` while no profile is loaded (guest), which shares
+ *        {@link tierGates}' "nothing is gated" reading and lands on slot 1.
+ * @param gates - the gate list to pick from; defaults to the live seed for this
+ *        mode/level. Injectable so a test can hand in a *perturbed* ladder (one
+ *        where slot 1 is not the first unlocked tier) and prove the result tracks
+ *        the gates rather than a constant `BIT_WIDTHS_BY_MODE[mode][0]` — the
+ *        seed as shipped makes every default slot 1, so the real ladder alone
+ *        cannot distinguish "reads the level" from "ignores the level".
+ * @throws RangeError when the mode offers no unlocked tier — same loud failure
+ *         as {@link minLevelFor}, because a silent default here would repaint
+ *         the 403 trap this function exists to close.
+ */
+export function defaultTierFor(
+    mode: GameMode,
+    playerLevel: number | null,
+    gates: readonly TierGate[] = tierGates(mode, playerLevel)
+): number {
+    const firstOpen: TierGate | undefined = gates.find((gate) => gate.isUnlocked)
+    if (firstOpen === undefined) {
+        throw new RangeError(`No unlocked tier for ${mode} at level ${playerLevel} (D-2 seed)`)
+    }
+    return firstOpen.bitWidth
+}
+
+/**
  * `option value → min_level` for every still-locked tier, shaped for the generic
  * selectors. `toOptionValue` translates a wire width into the selector's unit —
  * identity for the bit selectors, {@link bytesForBits} for the byte selector.
