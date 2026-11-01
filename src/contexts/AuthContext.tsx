@@ -61,6 +61,12 @@ const ANONYMOUS: Session = { kind: 'anonymous' };
  */
 export type WelcomeView = 'login' | 'register';
 
+/**
+ * One-time message the WelcomeScreen shows above the login form. Set when the
+ * app ends a session on purpose, so the user learns why they were signed out.
+ */
+export type WelcomeNotice = 'passwordChanged' | null;
+
 interface AuthContextType {
     user: UserMeResponse | null;
     /** Raw payload of the last POST /api/game/answer — the HUD renders from it. */
@@ -74,6 +80,8 @@ interface AuthContextType {
     login: (data: LoginRequest) => Promise<void>;
     register: (data: RegisterRequest) => Promise<void>;
     logout: () => Promise<void>;
+    /** After a password change: drop the (server-revoked) session and explain why. */
+    endSessionAfterPasswordChange: () => Promise<void>;
     refreshUser: () => Promise<void>;
     applyGameResult: (answer: GameAnswerResponse) => void;
     dismissLevelUp: () => void;
@@ -82,6 +90,7 @@ interface AuthContextType {
     recordGuestAnswer: (isCorrect: boolean) => void;
     welcomeView: WelcomeView;
     clearWelcomeView: () => void;
+    welcomeNotice: WelcomeNotice;
     clearError: () => void;
 }
 
@@ -120,6 +129,7 @@ export function AuthProvider({ children }: AuthProviderProps): ReactElement {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [welcomeView, setWelcomeView] = useState<WelcomeView>('login');
+    const [welcomeNotice, setWelcomeNotice] = useState<WelcomeNotice>(null);
 
     const user = session.kind === 'user' ? session.user : null;
     const isGuest = session.kind === 'guest';
@@ -199,6 +209,7 @@ export function AuthProvider({ children }: AuthProviderProps): ReactElement {
      */
     const login = async (data: LoginRequest): Promise<void> => {
         setError(null);
+        setWelcomeNotice(null);
         setLoading(true);
 
         try {
@@ -266,6 +277,31 @@ export function AuthProvider({ children }: AuthProviderProps): ReactElement {
     };
 
     /**
+     * Leave the app after a successful password change.
+     *
+     * The backend has already revoked every refresh token, but the browser still
+     * holds the (now dead) cookie. Left alone, the next page load would present it
+     * to /refresh and the backend would read that as a replayed token: a security
+     * alert mail and a "suspicious activity" log entry. Calling /logout makes the
+     * backend delete the cookie. Its result does not matter (the session is gone
+     * either way), so a failure is swallowed and the local state is always cleared.
+     */
+    const endSessionAfterPasswordChange = async (): Promise<void> => {
+        const userId = user?.id;
+        try {
+            await apiLogout();
+        } catch {
+            // Nothing to restore: the server-side session is already revoked.
+        }
+        clearAccessToken();
+        clearSessionState();
+        if (userId) {
+            clearScoreCache(userId);
+        }
+        setWelcomeNotice('passwordChanged');
+    };
+
+    /**
      * Refresh user data from backend.
      *
      * Fallback path for players who skipped a submit (network blip, tab was
@@ -321,6 +357,7 @@ export function AuthProvider({ children }: AuthProviderProps): ReactElement {
      */
     const startGuest = (): void => {
         setError(null);
+        setWelcomeNotice(null);
         setPersistenceEnabled(false);
         // A guest sees no leftovers of the previous session's HUD.
         clearAnswerState();
@@ -380,6 +417,7 @@ export function AuthProvider({ children }: AuthProviderProps): ReactElement {
         login,
         register,
         logout,
+        endSessionAfterPasswordChange,
         refreshUser,
         applyGameResult,
         dismissLevelUp,
@@ -388,6 +426,7 @@ export function AuthProvider({ children }: AuthProviderProps): ReactElement {
         recordGuestAnswer,
         welcomeView,
         clearWelcomeView,
+        welcomeNotice,
         clearError,
     };
 

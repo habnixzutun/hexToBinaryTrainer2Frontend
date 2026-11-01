@@ -59,7 +59,7 @@ function readResetTokenFromUrl(): string | null {
 // ==================== Component ====================
 
 export default function WelcomeScreen(): ReactElement {
-    const { startGuest, welcomeView, clearWelcomeView } = useAuth();
+    const { startGuest, welcomeView, clearWelcomeView, welcomeNotice } = useAuth();
     // Lazy init: a reset-password link wins; otherwise open the view requested
     // by the AuthContext (e.g. 'register' after a guest clicked "Create account")
     const [view, setView] = useState<AuthView>(() => {
@@ -219,6 +219,11 @@ export default function WelcomeScreen(): ReactElement {
                         >
                             {view === 'login' && (
                                 <>
+                                    {welcomeNotice === 'passwordChanged' && (
+                                        <div className="mb-4 p-3 bg-accent/10 border border-accent/30 rounded-md" role="status">
+                                            <p className="text-xs text-accent">{t.accountPasswordChangedNotice}</p>
+                                        </div>
+                                    )}
                                     <LoginForm
                                         onSwitchToRegister={() => setView('register')}
                                         onForgotPassword={handleForgotPassword}

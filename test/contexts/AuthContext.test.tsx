@@ -28,6 +28,7 @@ const user: UserMeResponse = {
   level: 5,
   current_streak: 2,
   best_streak: 7,
+  next_username_change_at: null,
 }
 
 /**

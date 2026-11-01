@@ -21,6 +21,9 @@ interface VerifyLinkScreenProps {
     status: VerifyLinkStatus;
     errorMessage: string;
     onBackToLogin: () => void;
+    /** Overrides for flows other than account activation (e.g. email change). */
+    successSubtitle?: string;
+    buttonLabel?: string;
 }
 
 // ==================== Component ====================
@@ -29,6 +32,8 @@ export default function VerifyLinkScreen({
     status,
     errorMessage,
     onBackToLogin,
+    successSubtitle,
+    buttonLabel,
 }: VerifyLinkScreenProps): ReactElement {
     const { t } = useI18n();
 
@@ -66,7 +71,7 @@ export default function VerifyLinkScreen({
                 </h2>
                 {status === 'success' && (
                     <p className="text-sm text-on-surface-faint leading-relaxed">
-                        {t.authLinkVerifiedSubtitle}
+                        {successSubtitle ?? t.authLinkVerifiedSubtitle}
                     </p>
                 )}
                 {status === 'error' && errorMessage && (
@@ -82,7 +87,7 @@ export default function VerifyLinkScreen({
                     className="w-full flex items-center justify-center gap-2 bg-surface-alt hover:bg-surface-raised border border-outline text-on-surface font-semibold py-2 rounded-md text-sm transition-all"
                 >
                     <ArrowLeft className="w-4 h-4" aria-hidden="true" />
-                    <span>{t.authBackToLogin}</span>
+                    <span>{buttonLabel ?? t.authBackToLogin}</span>
                 </motion.button>
             )}
         </div>

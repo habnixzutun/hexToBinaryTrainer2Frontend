@@ -16,7 +16,7 @@ describe('HeaderToolbar', () => {
   })
 
   it('shows theme, language, account and logout from left to right', () => {
-    render(<HeaderToolbar onLogout={onLogout} />)
+    render(<HeaderToolbar onLogout={onLogout} onOpenAccountSettings={vi.fn()} />)
 
     const toolbar = screen.getByRole('toolbar', { name: 'Einstellungen' })
     const labels = Array.from(toolbar.querySelectorAll('button')).map((button) =>
@@ -26,7 +26,7 @@ describe('HeaderToolbar', () => {
   })
 
   it('toggles theme and language', () => {
-    render(<HeaderToolbar onLogout={onLogout} />)
+    render(<HeaderToolbar onLogout={onLogout} onOpenAccountSettings={vi.fn()} />)
 
     fireEvent.click(screen.getByLabelText(/switch to light mode/i))
     expect(screen.getByLabelText(/switch to dark mode/i)).toBeInTheDocument()
@@ -37,14 +37,14 @@ describe('HeaderToolbar', () => {
   })
 
   it('calls onLogout from the logout button', () => {
-    render(<HeaderToolbar onLogout={onLogout} />)
+    render(<HeaderToolbar onLogout={onLogout} onOpenAccountSettings={vi.fn()} />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Ausloggen' }))
     expect(onLogout).toHaveBeenCalledTimes(1)
   })
 
   it('opens the account menu with name and email and closes it on Escape', () => {
-    render(<HeaderToolbar onLogout={onLogout} />)
+    render(<HeaderToolbar onLogout={onLogout} onOpenAccountSettings={vi.fn()} />)
     const trigger = screen.getByRole('button', { name: 'Konto' })
     expect(trigger).toHaveAttribute('aria-expanded', 'false')
 
@@ -60,7 +60,7 @@ describe('HeaderToolbar', () => {
   })
 
   it('closes the account menu on a click outside', () => {
-    render(<HeaderToolbar onLogout={onLogout} />)
+    render(<HeaderToolbar onLogout={onLogout} onOpenAccountSettings={vi.fn()} />)
     fireEvent.click(screen.getByRole('button', { name: 'Konto' }))
     expect(screen.getByText(testUser.email)).toBeInTheDocument()
 
@@ -69,7 +69,7 @@ describe('HeaderToolbar', () => {
   })
 
   it('keeps the account menu open on a click inside it', () => {
-    render(<HeaderToolbar onLogout={onLogout} />)
+    render(<HeaderToolbar onLogout={onLogout} onOpenAccountSettings={vi.fn()} />)
     fireEvent.click(screen.getByRole('button', { name: 'Konto' }))
 
     fireEvent.mouseDown(screen.getByText(testUser.email))
@@ -79,7 +79,7 @@ describe('HeaderToolbar', () => {
   it('offers "create account" to a guest and labels logout as leaving guest mode', () => {
     const auth = authValue({ user: null, isGuest: true, guestStats: { correct_count: 0, incorrect_count: 0 } })
     mockUseAuth.mockReturnValue(auth)
-    render(<HeaderToolbar onLogout={onLogout} />)
+    render(<HeaderToolbar onLogout={onLogout} onOpenAccountSettings={vi.fn()} />)
 
     expect(screen.getByRole('button', { name: 'Gastmodus beenden' })).toBeInTheDocument()
 
@@ -88,5 +88,26 @@ describe('HeaderToolbar', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Konto erstellen' }))
 
     expect(auth.leaveGuest).toHaveBeenCalledWith('register')
+  })
+
+  it('closes the dropdown and opens the settings dialog for a signed-in user', () => {
+    mockUseAuth.mockReturnValue(authValue())
+    const onOpenAccountSettings = vi.fn()
+    render(<HeaderToolbar onLogout={onLogout} onOpenAccountSettings={onOpenAccountSettings} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Konto' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Kontoeinstellungen' }))
+
+    expect(onOpenAccountSettings).toHaveBeenCalledTimes(1)
+    expect(screen.queryByRole('button', { name: 'Kontoeinstellungen' })).not.toBeInTheDocument()
+  })
+
+  it('offers no settings entry to a guest', () => {
+    mockUseAuth.mockReturnValue(authValue({ user: null, isGuest: true }))
+    render(<HeaderToolbar onLogout={onLogout} onOpenAccountSettings={vi.fn()} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Konto' }))
+
+    expect(screen.queryByRole('button', { name: 'Kontoeinstellungen' })).not.toBeInTheDocument()
   })
 })

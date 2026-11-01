@@ -73,7 +73,7 @@ export interface GameAnswerResponse {
  * @param options - Fetch options
  * @returns Response object
  */
-async function authenticatedFetch(
+export async function authenticatedFetch(
     url: string,
     options: RequestInit = {}
 ): Promise<Response> {
