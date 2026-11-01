@@ -182,16 +182,11 @@ describe('AuthContext', () => {
     it('passes through EVERY economy field of the response — nothing is dropped', async () => {
       const { result } = await mountLoggedIn()
 
-      act(() => result.current.applyGameResult(answerFixture))
+      act(() => result.current.applyGameResult({ ...answerFixture, newly_unlocked: unlockFixture }))
 
-      // Every single response field survives somewhere: the HUD reads the raw
-      // answer, the sidebar reads the merged user, the cache mirrors the user.
-      expect(result.current.lastAnswer).toEqual(answerFixture)
-      for (const key of Object.keys(answerFixture) as (keyof GameAnswerResponse)[]) {
-        const rendered: unknown = result.current.lastAnswer?.[key]
-        const expected: unknown = answerFixture[key]
-        expect(rendered).toEqual(expected)
-      }
+      // US-45 dropped the raw payload (the HUD is gone). What survives is the
+      // merged user, the cache mirror, and the unlocks the toast renders.
+      expect(result.current.pendingUnlocks).toEqual(unlockFixture)
 
       const cached = getScoreCache('user-1')
       expect(cached).not.toBeNull()
@@ -247,9 +242,10 @@ describe('AuthContext', () => {
         })
       )
 
-      expect(result.current.lastAnswer?.xp_delta).toBe(0)
+      expect(result.current.user?.level).toBe(5)
       expect(result.current.user?.total_xp).toBe(1280)
       expect(result.current.user?.current_streak).toBe(0)
+      expect(result.current.pendingUnlocks).toEqual([])
     })
 
     it('records newly_unlocked and clears only the toast on dismiss', async () => {
@@ -262,23 +258,22 @@ describe('AuthContext', () => {
       act(() => result.current.dismissLevelUp())
 
       expect(result.current.pendingUnlocks).toEqual([])
-      // Dismissing the toast must not lose the progress numbers the HUD renders.
-      expect(result.current.lastAnswer?.xp_in_level).toBe(0)
-      expect(result.current.lastAnswer?.xp_required_for_next_level).toBe(760)
+      // Dismissing the toast must not lose the economy numbers the sidebar renders.
       expect(result.current.user?.level).toBe(6)
+      expect(result.current.user?.total_xp).toBe(1320)
     })
 
-    it('does not crash when no user is loaded, but still records the answer', async () => {
+    it('does not crash when no user is loaded, but still records the unlocks', async () => {
       mockedApi.refreshAccessToken.mockRejectedValue(new Error('Missing refresh token.'))
 
       const { result } = renderHook(() => useAuth(), { wrapper })
       await waitFor(() => expect(result.current.loading).toBe(false))
       expect(result.current.user).toBeNull()
 
-      act(() => result.current.applyGameResult(answerFixture))
+      act(() => result.current.applyGameResult({ ...answerFixture, newly_unlocked: unlockFixture }))
 
       expect(result.current.user).toBeNull()
-      expect(result.current.lastAnswer).toEqual(answerFixture)
+      expect(result.current.pendingUnlocks).toEqual(unlockFixture)
       expect(getScoreCache('user-1')).toBeNull()
     })
   })
@@ -376,13 +371,14 @@ describe('AuthContext guest mode', () => {
   it('ignores game results while in guest mode', async () => {
     const { result } = await startAsGuest()
 
-    act(() => result.current.applyGameResult(answerFixture))
+    // Carries an unlock on purpose: a leaking payload would surface a toast.
+    act(() => result.current.applyGameResult({ ...answerFixture, newly_unlocked: unlockFixture }))
 
     expect(result.current.user).toBeNull()
     expect(result.current.guestStats).toEqual({ correct_count: 0, incorrect_count: 0 })
-    // The HUD stays empty too: a guest never receives an /answer payload, so
-    // one must not leak into their session either.
-    expect(result.current.lastAnswer).toBeNull()
+    // No unlock toast either: a guest never receives an /answer payload, so one
+    // must not leak into their session.
+    expect(result.current.pendingUnlocks).toEqual([])
     expect(getScoreCache('user-1')).toBeNull()
   })
 

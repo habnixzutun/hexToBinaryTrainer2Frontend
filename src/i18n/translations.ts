@@ -104,13 +104,10 @@ export const translations = {
         correct: 'Richtig',
         wrong: 'Falsch',
 
-        // XP economy (Sprint 4 / US-38) — the only numbers the HUD owns
-        hudLabel: 'Trainingsfortschritt',
+        // XP economy (Sprint 4 / US-38) — US-45 retired the HUD bar, so only the
+        // copy the leaderboard, the sidebar and the unlock toast still use remains.
         xp: 'XP',
         levelLabel: 'Stufe',
-        streak: 'Serie',
-        bestStreak: 'Beste Serie',
-        xpProgress: (current: number, required: number) => `${current} von ${required} XP`,
         levelUpToast: (level: number) => `Stufe ${level} erreicht!`,
         lockedUntilLevel: (level: number) => `Freigeschaltet ab Stufe ${level}.`,
         rateLimited: (seconds: number) => `Zu viele Antworten hintereinander. Bitte ${seconds} Sekunden warten.`,
@@ -314,13 +311,10 @@ export const translations = {
         correct: 'Correct',
         wrong: 'Wrong',
 
-        // XP economy (Sprint 4 / US-38) — the only numbers the HUD owns
-        hudLabel: 'Training progress',
+        // XP economy (Sprint 4 / US-38) — US-45 retired the HUD bar, so only the
+        // copy the leaderboard, the sidebar and the unlock toast still use remains.
         xp: 'XP',
         levelLabel: 'Level',
-        streak: 'Streak',
-        bestStreak: 'Best streak',
-        xpProgress: (current: number, required: number) => `${current} of ${required} XP`,
         levelUpToast: (level: number) => `Level ${level} reached!`,
         lockedUntilLevel: (level: number) => `Unlocks at level ${level}.`,
         rateLimited: (seconds: number) => `Too many answers in a row. Please wait ${seconds} seconds.`,
@@ -524,13 +518,9 @@ export type Translations = {
     correct: string;
     wrong: string;
 
-    // XP economy (Sprint 4 / US-38)
-    hudLabel: string;
+    // XP economy (Sprint 4 / US-38) — the HUD bar is gone (US-45)
     xp: string;
     levelLabel: string;
-    streak: string;
-    bestStreak: string;
-    xpProgress: (current: number, required: number) => string;
     levelUpToast: (level: number) => string;
     lockedUntilLevel: (level: number) => string;
     rateLimited: (seconds: number) => string;

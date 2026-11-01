@@ -61,6 +61,13 @@ describe('LevelUpToast', () => {
     expect(onDismiss).toHaveBeenCalledTimes(1)
   })
 
+  it('gives the toast a bounded dwell time', () => {
+    // Product invariant, moved here with US-45 from GameHud.test.tsx: long enough to
+    // read a two-line unlock list, short enough never to sit on the next question.
+    expect(TOAST_AUTO_DISMISS_MS).toBeLessThanOrEqual(8000)
+    expect(TOAST_AUTO_DISMISS_MS).toBeGreaterThan(2000)
+  })
+
   it('cancels its pending timer when it unmounts early', () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
     const { unmount } = render(<LevelUpToast level={8} unlocks={twoUnlocks} onDismiss={onDismiss} />)

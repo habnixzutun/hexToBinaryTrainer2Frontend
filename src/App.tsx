@@ -8,7 +8,7 @@ import Leaderboard from './components/Leaderboard.tsx';
 import WelcomeScreen from './components/WelcomeScreen.tsx';
 import { AuthProvider, useAuth } from './contexts/AuthContext.tsx';
 import { CookieBanner } from './components/CookieBanner.tsx';
-import GameHud from './components/GameHud.tsx';
+import LevelUpToast from './components/LevelUpToast.tsx';
 import HeaderToolbar from './components/header/HeaderToolbar.tsx';
 import MobileSettingsMenu from './components/header/MobileSettingsMenu.tsx';
 import AccountSettingsModal from './components/account/AccountSettingsModal.tsx';
@@ -31,7 +31,7 @@ export type HexBinMode = HexBinDirection;
  * but their answers are counted in memory instead of being sent to the backend.
  */
 function AuthenticatedApp(): ReactElement {
-    const { user, isGuest, refreshUser, applyGameResult, recordGuestAnswer, logout } = useAuth();
+    const { user, isGuest, refreshUser, applyGameResult, recordGuestAnswer, dismissLevelUp, pendingUnlocks, logout } = useAuth();
     const [activeApp, setActiveApp] = useState<ActiveApp>('hex');
     const [activeMode, setActiveMode] = useState<HexBinMode>('HexToBin');
     const [refreshKey, setRefreshKey] = useState(0);
@@ -123,12 +123,10 @@ function AuthenticatedApp(): ReactElement {
                 onBytesChange={setBytes}
             />
 
-            {/* Main content: the HUD spans the whole play area, trainers and
-                the right column (settings toolbar + leaderboard) share the row
-                underneath it. */}
+            {/* Play area: trainer on the left, right column (settings toolbar +
+                leaderboard). The personal figures used to sit in a HUD bar above
+                this — US-45 dropped it, the sidebar owns them now. */}
             <div className="flex flex-1 min-w-0 flex-col overflow-hidden">
-                <GameHud />
-
                 <div className="flex flex-1 min-h-0 overflow-hidden">
                     {/* Trainer area — hidden when leaderboard is active on large viewports */}
                     {!isLeaderboardActive && (
@@ -187,6 +185,13 @@ function AuthenticatedApp(): ReactElement {
                 dropdown (outside click) can never tear the dialog down. */}
             {isAccountSettingsOpen && (
                 <AccountSettingsModal onClose={() => setIsAccountSettingsOpen(false)} />
+            )}
+
+            {/* US-45: the unlock feedback used to hang inside the HUD bar. The
+                bar is gone, so the toast is App's own overlay now — `fixed`
+                keeps it above the layout it no longer depends on. */}
+            {user !== null && pendingUnlocks.length > 0 && (
+                <LevelUpToast level={user.level} unlocks={pendingUnlocks} onDismiss={dismissLevelUp} />
             )}
         </div>
     );

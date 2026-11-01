@@ -19,6 +19,33 @@ If you are developing a production application, we recommend using TypeScript wi
 
 ## Hex To Binary Trainer
 
+### Changelog
+
+**Sprint 5 · US-45 — HUD entfernt, LevelUpToast in `App` umgesiedelt** (`feature/us-45-remove-gamehud`)
+
+*Removed*
+- `src/components/GameHud.tsx` und `test/components/GameHud.test.tsx` gelöscht. Aus `src/`
+  ist `GameHud` damit vollständig entfernt; die einzigen verbleibenden Nennungen stehen in
+  `test/App.gameHud.test.tsx`, das genau die **Abwesenheit** der Leiste pinnt (Region,
+  Fortschrittsbalken, Serien-Zeilen). Die Leiste ganz oben (XP-Fortschritt, Serie, beste
+  Serie) ist weg — die persönlichen Zahlen stehen bereits unten links in der Sidebar.
+- Tote i18n-Keys in beiden Locales: `hudLabel`, `xpProgress`, `streak`, `bestStreak`.
+- Toter Context-State: `lastAnswer` aus `AuthContextType` (Consumer ist weg).
+
+*Changed*
+- `LevelUpToast` wird jetzt direkt von `App` (`AuthenticatedApp`) als Overlay
+  gerendert, gespeist aus `useAuth()` (`user.level`, `pendingUnlocks`, `dismissLevelUp`).
+  Der Toast hing bisher im HUD und wäre mit dessen Entfernung still verschwunden — die
+  Unlock-Rückmeldung bleibt erhalten, positionsneutral (`fixed bottom-4 right-4`).
+- Die Toast-Invariante „begrenzte Verweildauer" (`TOAST_AUTO_DISMISS_MS` ≤ 8000 ms und
+  > 2000 ms) ist von `GameHud.test.tsx` nach `LevelUpToast.test.tsx` gewandert, wo sie
+  jetzt beim Eigentümer des Werts liegt.
+
+*Bewusste Grenze* (→ **TD-05** in `hexToBinaryTrainer2Backend/docs/backlog.md`):
+Mit dem HUD verschwinden `current_streak`, `best_streak` und der XP-Fortschrittsbalken
+vollständig aus der Oberfläche. Das ist die Anforderung („weniger anzeigen"), kein
+Versehen; falls Spieler die Serie vermissen, wird das eine eigene Story.
+
 ### Default Bit Selection (Tier-Unlock-System)
 
 Der Trainer startet bei jedem Login auf dem **niedrigsten Tier, das das Profil bereits
@@ -55,7 +82,9 @@ npm run test:watch      # Watch-Modus
 npm run test:coverage   # Tests + Coverage-Report (Schwelle 80 %)
 ```
 
-Aktueller Stand: **61 Tests in 9 Dateien**, Coverage ~93 % Statements / ~91 % Branches.
+Aktueller Stand: **440 Tests in 32 Dateien**, Coverage 94,45 % Statements / 89,28 % Branches
+(gemessen mit `npm run test:coverage`; Schwelle ist 80 % in jeder Kennzahl). Der eine Test mehr
+als in Sprint 4 gemessen ist die wiederhergestellte `TOAST_AUTO_DISMISS_MS`-Grenze aus US-45.
 
 ### Backend Deployment
 
