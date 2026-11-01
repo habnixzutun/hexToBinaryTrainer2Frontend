@@ -22,14 +22,18 @@ const BASE_URL: string = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
 // ==================== Types ====================
 
-/** Frozen Sprint 4 leaderboard shape (OQ-9): XP economy, no legacy `points`. */
+/**
+ * Leaderboard wire shape (OQ-9, slimmed by US-43): exactly
+ * `{user_id, username, total_xp, level}` — no legacy `points`, and no
+ * per-statistic columns. `correct_count` / `incorrect_count` are account
+ * statistics (GET /api/user/me), not leaderboard data; the panel ranks on XP
+ * alone, so carrying them would ship numbers nobody renders.
+ */
 export interface LeaderboardEntry {
     user_id: string;
     username: string;
     total_xp: number;
     level: number;
-    correct_count: number;
-    incorrect_count: number;
 }
 
 export interface LeaderboardResponse {
