@@ -20,6 +20,7 @@ import AccountPanel from './AccountPanel.tsx';
 
 interface Props {
     onLogout: () => void;
+    onOpenAccountSettings: () => void;
 }
 
 interface ItemProps {
@@ -46,7 +47,7 @@ function MenuItem({ icon, label, onSelect, danger = false }: ItemProps): ReactEl
     );
 }
 
-export default function MobileSettingsMenu({ onLogout }: Props): ReactElement {
+export default function MobileSettingsMenu({ onLogout, onOpenAccountSettings }: Props): ReactElement {
     const { t, locale, setLocale } = useI18n();
     const { theme, toggleTheme } = useTheme();
     const { isGuest } = useAuth();
@@ -85,7 +86,7 @@ export default function MobileSettingsMenu({ onLogout }: Props): ReactElement {
                     id="mobile-settings-menu"
                     className="absolute right-0 top-full mt-2 w-64 z-50 rounded-lg border border-outline-faint bg-surface-raised shadow-lg overflow-hidden"
                 >
-                    <AccountPanel />
+                    <AccountPanel onOpenSettings={select(onOpenAccountSettings)} />
                     <ul className="border-t border-outline-faint py-1">
                         <MenuItem
                             icon={<Globe size={16} aria-hidden="true" />}

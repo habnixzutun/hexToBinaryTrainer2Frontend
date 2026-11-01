@@ -14,6 +14,7 @@ export const testUser: UserMeResponse = {
   level: 1,
   current_streak: 0,
   best_streak: 3,
+  next_username_change_at: null,
 }
 
 /**
@@ -36,6 +37,7 @@ export function authValue(overrides: Partial<AuthValue> = {}): AuthValue {
     login: vi.fn().mockResolvedValue(undefined),
     register: vi.fn().mockResolvedValue(undefined),
     logout: vi.fn().mockResolvedValue(undefined),
+    endSessionAfterPasswordChange: vi.fn().mockResolvedValue(undefined),
     refreshUser: vi.fn().mockResolvedValue(undefined),
     applyGameResult: vi.fn(),
     dismissLevelUp: vi.fn(),
@@ -44,6 +46,7 @@ export function authValue(overrides: Partial<AuthValue> = {}): AuthValue {
     recordGuestAnswer: vi.fn(),
     welcomeView: 'login',
     clearWelcomeView: vi.fn(),
+    welcomeNotice: null,
     clearError: vi.fn(),
     ...overrides,
   }

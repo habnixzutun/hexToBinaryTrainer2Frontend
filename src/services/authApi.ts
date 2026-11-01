@@ -65,6 +65,8 @@ export interface UserMeResponse {
     level: number;
     current_streak: number;
     best_streak: number;
+    /** ISO timestamp until which the username is locked; null = may change now. */
+    next_username_change_at: string | null;
 }
 
 export interface RequestPasswordResetRequest {

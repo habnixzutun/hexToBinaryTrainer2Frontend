@@ -22,7 +22,7 @@ describe('MobileSettingsMenu', () => {
   }
 
   it('is closed by default and opens with the account section first', () => {
-    render(<MobileSettingsMenu onLogout={onLogout} />)
+    render(<MobileSettingsMenu onLogout={onLogout} onOpenAccountSettings={vi.fn()} />)
     expect(screen.queryByText(testUser.email)).not.toBeInTheDocument()
 
     const trigger = openMenu()
@@ -36,7 +36,7 @@ describe('MobileSettingsMenu', () => {
   })
 
   it('switches the language and closes after the selection', () => {
-    render(<MobileSettingsMenu onLogout={onLogout} />)
+    render(<MobileSettingsMenu onLogout={onLogout} onOpenAccountSettings={vi.fn()} />)
     openMenu()
 
     fireEvent.click(screen.getByRole('button', { name: 'English' }))
@@ -46,7 +46,7 @@ describe('MobileSettingsMenu', () => {
   })
 
   it('switches the theme and closes after the selection', () => {
-    render(<MobileSettingsMenu onLogout={onLogout} />)
+    render(<MobileSettingsMenu onLogout={onLogout} onOpenAccountSettings={vi.fn()} />)
     openMenu()
     fireEvent.click(screen.getByRole('button', { name: 'Heller Modus' }))
     expect(screen.queryByRole('button', { name: 'Heller Modus' })).not.toBeInTheDocument()
@@ -56,7 +56,7 @@ describe('MobileSettingsMenu', () => {
   })
 
   it('calls onLogout and closes', () => {
-    render(<MobileSettingsMenu onLogout={onLogout} />)
+    render(<MobileSettingsMenu onLogout={onLogout} onOpenAccountSettings={vi.fn()} />)
     const trigger = openMenu()
 
     fireEvent.click(screen.getByRole('button', { name: 'Ausloggen' }))
@@ -66,7 +66,7 @@ describe('MobileSettingsMenu', () => {
   })
 
   it('closes on Escape and returns focus to the gear button', () => {
-    render(<MobileSettingsMenu onLogout={onLogout} />)
+    render(<MobileSettingsMenu onLogout={onLogout} onOpenAccountSettings={vi.fn()} />)
     const trigger = openMenu()
 
     fireEvent.keyDown(document, { key: 'Escape' })
@@ -78,7 +78,7 @@ describe('MobileSettingsMenu', () => {
   it('shows the guest hint, "create account" and "leave guest mode" for a guest', () => {
     const auth = authValue({ user: null, isGuest: true, guestStats: { correct_count: 0, incorrect_count: 0 } })
     mockUseAuth.mockReturnValue(auth)
-    render(<MobileSettingsMenu onLogout={onLogout} />)
+    render(<MobileSettingsMenu onLogout={onLogout} onOpenAccountSettings={vi.fn()} />)
     openMenu()
 
     expect(screen.getByText(/Du nutzt die App als Gast/)).toBeInTheDocument()

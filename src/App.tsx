@@ -11,6 +11,9 @@ import { CookieBanner } from './components/CookieBanner.tsx';
 import GameHud from './components/GameHud.tsx';
 import HeaderToolbar from './components/header/HeaderToolbar.tsx';
 import MobileSettingsMenu from './components/header/MobileSettingsMenu.tsx';
+import AccountSettingsModal from './components/account/AccountSettingsModal.tsx';
+import EmailChangeLinkScreen from './components/account/EmailChangeLinkScreen.tsx';
+import { readEmailChangeTokenFromUrl } from './utils/emailChangeLink.ts';
 import { defaultTierFor, modeForDirection, type HexBinDirection } from './constants/gameModes.ts';
 import type { GameAnswerResponse } from './services/api.ts';
 
@@ -33,6 +36,7 @@ function AuthenticatedApp(): ReactElement {
     const [activeMode, setActiveMode] = useState<HexBinMode>('HexToBin');
     const [refreshKey, setRefreshKey] = useState(0);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [isAccountSettingsOpen, setIsAccountSettingsOpen] = useState(false);
     // US-46: open on the first tier this profile owns. A hardcoded 8 sent every
     // level-1 player's first answer into the server's unlock gate (403). The mode
     // is derived from `activeMode` exactly like `HexBinTrainer` does, so the two
@@ -98,7 +102,10 @@ function AuthenticatedApp(): ReactElement {
                 <span className="ml-2 text-base font-bold tracking-wider text-on-surface-dim uppercase">
                     IT Trainer
                 </span>
-                <MobileSettingsMenu onLogout={handleLogout} />
+                <MobileSettingsMenu
+                    onLogout={handleLogout}
+                    onOpenAccountSettings={() => setIsAccountSettingsOpen(true)}
+                />
             </header>
 
             <Sidebar
@@ -165,13 +172,22 @@ function AuthenticatedApp(): ReactElement {
                     <aside className={`shrink-0 flex flex-col overflow-hidden ${
                         isLeaderboardActive ? 'flex-1' : 'hidden lg:flex w-80'
                     }`}>
-                        <HeaderToolbar onLogout={handleLogout} />
+                        <HeaderToolbar
+                            onLogout={handleLogout}
+                            onOpenAccountSettings={() => setIsAccountSettingsOpen(true)}
+                        />
                         <div className="flex-1 min-h-0 overflow-y-auto">
                             <Leaderboard refreshTrigger={refreshKey} />
                         </div>
                     </aside>
                 </div>
             </div>
+
+            {/* Account settings float above everything; owned here so closing a
+                dropdown (outside click) can never tear the dialog down. */}
+            {isAccountSettingsOpen && (
+                <AccountSettingsModal onClose={() => setIsAccountSettingsOpen(false)} />
+            )}
         </div>
     );
 }
@@ -198,6 +214,18 @@ export default function App(): ReactElement {
  */
 function AuthGate(): ReactElement {
     const { user, isGuest, loading } = useAuth();
+    // Read once on first render: the link screen cleans the token out of the URL
+    // right away, so later renders must not look at the URL again.
+    const [emailChangeToken, setEmailChangeToken] = useState<string | null>(() => readEmailChangeTokenFromUrl());
+
+    if (emailChangeToken !== null) {
+        return (
+            <>
+                <EmailChangeLinkScreen token={emailChangeToken} onDone={() => setEmailChangeToken(null)} />
+                <CookieBanner />
+            </>
+        );
+    }
 
     return (
         <>

@@ -19,6 +19,7 @@ import { Mail, User, UserPlus } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext.tsx';
 import { useI18n } from '../../i18n/useI18n.ts';
 import PasswordInput from './PasswordInput.tsx';
+import { emailSchema, passwordChecks, passwordSchema, usernameSchema } from '../../utils/accountRules.ts';
 
 // ==================== Types ====================
 
@@ -36,20 +37,9 @@ export default function RegisterForm({ onSwitchToLogin, onRegisterSuccess }: Reg
 
     // Validation Schema (with translations)
     const registerSchema = z.object({
-        email: z.string()
-            .min(1, t.authEmailRequired)
-            .email(t.authEmailInvalid),
-        username: z.string()
-            .min(3, t.authUsernameMin)
-            .max(50, t.authUsernameMax)
-            .regex(/^[a-zA-Z0-9_-]+$/, t.authUsernameInvalid),
-        password: z.string()
-            .min(8, t.authPasswordMin)
-            .max(128, t.authPasswordMax)
-            .regex(/[A-Z]/, t.authPasswordUppercase)
-            .regex(/[a-z]/, t.authPasswordLowercase)
-            .regex(/[0-9]/, t.authPasswordDigit)
-            .regex(/[^A-Za-z0-9]/, t.authPasswordSpecial),
+        email: emailSchema(t),
+        username: usernameSchema(t),
+        password: passwordSchema(t),
         confirmPassword: z.string(),
     }).refine((data) => data.password === data.confirmPassword, {
         message: t.authPasswordsDontMatch,
@@ -90,13 +80,7 @@ export default function RegisterForm({ onSwitchToLogin, onRegisterSuccess }: Reg
     const displayError = submitError || authError;
 
     // Password strength indicator
-    const passwordChecks = [
-        { label: t.authPasswordReqLength, met: password.length >= 8 },
-        { label: t.authPasswordReqUppercase, met: /[A-Z]/.test(password) },
-        { label: t.authPasswordReqLowercase, met: /[a-z]/.test(password) },
-        { label: t.authPasswordReqDigit, met: /[0-9]/.test(password) },
-        { label: t.authPasswordReqSpecial, met: /[^A-Za-z0-9]/.test(password) },
-    ];
+    const checks = passwordChecks(t, password);
 
     return (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" aria-label={t.authRegisterButton}>
@@ -174,7 +158,7 @@ export default function RegisterForm({ onSwitchToLogin, onRegisterSuccess }: Reg
             {/* Password Requirements */}
             {password && (
                 <div id="password-requirements" className="space-y-1">
-                    {passwordChecks.map((check, index) => (
+                    {checks.map((check, index) => (
                         <div key={index} className="flex items-center gap-2 text-xs">
                             <div className={`w-1.5 h-1.5 rounded-full ${check.met ? 'bg-accent' : 'bg-on-surface-subtle'}`} />
                             <span className={check.met ? 'text-accent' : 'text-on-surface-faint'}>

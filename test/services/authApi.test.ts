@@ -36,6 +36,7 @@ const user: UserMeResponse = {
   level: 3,
   current_streak: 2,
   best_streak: 6,
+  next_username_change_at: null,
 }
 
 describe('authApi', () => {

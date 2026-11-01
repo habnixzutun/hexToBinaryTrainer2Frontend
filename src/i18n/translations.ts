@@ -174,6 +174,37 @@ export const translations = {
         accountTitle: 'Konto',
         accountGuestInfo: 'Du nutzt die App als Gast. Mit einem Konto werden deine Ergebnisse gespeichert und du erscheinst in der Bestenliste.',
         accountCreate: 'Konto erstellen',
+        accountSettings: 'Kontoeinstellungen',
+        accountClose: 'Schließen',
+        accountSaving: 'Speichern…',
+        accountGenericError: 'Das hat nicht geklappt. Bitte versuche es später erneut.',
+        accountUsernameSection: 'Benutzername',
+        accountUsernameNew: 'Neuer Benutzername',
+        accountUsernameSave: 'Benutzernamen ändern',
+        accountUsernameSaved: 'Benutzername geändert.',
+        accountUsernameTaken: 'Dieser Benutzername ist bereits vergeben.',
+        accountUsernameSame: 'Das ist bereits dein aktueller Benutzername.',
+        accountUsernameHint: 'Der Benutzername kann nur alle 7 Tage geändert werden.',
+        accountUsernameLockedUntil: (date: string) => `Du kannst deinen Benutzernamen erst ab dem ${date} wieder ändern.`,
+        accountEmailSection: 'E-Mail-Adresse',
+        accountEmailNew: 'Neue E-Mail-Adresse',
+        accountEmailSave: 'Bestätigungsmail senden',
+        accountEmailSent: (email: string) => `Wir haben einen Bestätigungslink an ${email} geschickt. Deine Adresse ändert sich erst, wenn du ihn öffnest.`,
+        accountEmailTaken: 'Diese E-Mail-Adresse ist bereits registriert.',
+        accountEmailSame: 'Das ist bereits deine aktuelle E-Mail-Adresse.',
+        accountPasswordSection: 'Passwort',
+        accountPasswordOld: 'Aktuelles Passwort',
+        accountPasswordNew: 'Neues Passwort',
+        accountPasswordNewConfirm: 'Neues Passwort bestätigen',
+        accountPasswordSave: 'Passwort ändern',
+        accountPasswordHint: 'Nach der Änderung wirst du auf allen Geräten abgemeldet.',
+        accountPasswordWrongOld: 'Das aktuelle Passwort ist falsch.',
+        accountPasswordSame: 'Das neue Passwort muss sich vom aktuellen unterscheiden.',
+        accountPasswordWeak: 'Das neue Passwort erfüllt die Anforderungen nicht.',
+        accountPasswordChangedNotice: 'Passwort geändert. Bitte melde dich mit dem neuen Passwort neu an.',
+        accountEmailChangedSubtitle: 'Deine neue E-Mail-Adresse ist aktiv. Melde dich ab jetzt damit an.',
+        accountEmailLinkInvalid: 'Der Link ist ungültig oder abgelaufen. Fordere die Änderung in den Kontoeinstellungen erneut an.',
+        accountContinue: 'Weiter zur App',
         themeLight: 'Heller Modus',
         themeDark: 'Dunkler Modus',
         languageSwitch: 'English',
@@ -353,6 +384,37 @@ export const translations = {
         accountTitle: 'Account',
         accountGuestInfo: 'You are using the app as a guest. With an account, your results are saved and you appear on the leaderboard.',
         accountCreate: 'Create account',
+        accountSettings: 'Account settings',
+        accountClose: 'Close',
+        accountSaving: 'Saving…',
+        accountGenericError: 'That did not work. Please try again later.',
+        accountUsernameSection: 'Username',
+        accountUsernameNew: 'New username',
+        accountUsernameSave: 'Change username',
+        accountUsernameSaved: 'Username changed.',
+        accountUsernameTaken: 'This username is already taken.',
+        accountUsernameSame: 'That is already your current username.',
+        accountUsernameHint: 'The username can only be changed once every 7 days.',
+        accountUsernameLockedUntil: (date: string) => `You can change your username again on ${date}.`,
+        accountEmailSection: 'Email address',
+        accountEmailNew: 'New email address',
+        accountEmailSave: 'Send confirmation email',
+        accountEmailSent: (email: string) => `We sent a confirmation link to ${email}. Your address only changes once you open it.`,
+        accountEmailTaken: 'This email address is already registered.',
+        accountEmailSame: 'That is already your current email address.',
+        accountPasswordSection: 'Password',
+        accountPasswordOld: 'Current password',
+        accountPasswordNew: 'New password',
+        accountPasswordNewConfirm: 'Confirm new password',
+        accountPasswordSave: 'Change password',
+        accountPasswordHint: 'After the change you will be signed out on all devices.',
+        accountPasswordWrongOld: 'The current password is wrong.',
+        accountPasswordSame: 'The new password must differ from the current one.',
+        accountPasswordWeak: 'The new password does not meet the requirements.',
+        accountPasswordChangedNotice: 'Password changed. Please sign in again with your new password.',
+        accountEmailChangedSubtitle: 'Your new email address is active. Use it to sign in from now on.',
+        accountEmailLinkInvalid: 'The link is invalid or has expired. Request the change again in your account settings.',
+        accountContinue: 'Continue to the app',
         themeLight: 'Light mode',
         themeDark: 'Dark mode',
         languageSwitch: 'Deutsch',
@@ -527,6 +589,37 @@ export type Translations = {
     accountTitle: string;
     accountGuestInfo: string;
     accountCreate: string;
+    accountSettings: string;
+    accountClose: string;
+    accountSaving: string;
+    accountGenericError: string;
+    accountUsernameSection: string;
+    accountUsernameNew: string;
+    accountUsernameSave: string;
+    accountUsernameSaved: string;
+    accountUsernameTaken: string;
+    accountUsernameSame: string;
+    accountUsernameHint: string;
+    accountUsernameLockedUntil: (date: string) => string;
+    accountEmailSection: string;
+    accountEmailNew: string;
+    accountEmailSave: string;
+    accountEmailSent: (email: string) => string;
+    accountEmailTaken: string;
+    accountEmailSame: string;
+    accountPasswordSection: string;
+    accountPasswordOld: string;
+    accountPasswordNew: string;
+    accountPasswordNewConfirm: string;
+    accountPasswordSave: string;
+    accountPasswordHint: string;
+    accountPasswordWrongOld: string;
+    accountPasswordSame: string;
+    accountPasswordWeak: string;
+    accountPasswordChangedNotice: string;
+    accountEmailChangedSubtitle: string;
+    accountEmailLinkInvalid: string;
+    accountContinue: string;
     themeLight: string;
     themeDark: string;
     languageSwitch: string;

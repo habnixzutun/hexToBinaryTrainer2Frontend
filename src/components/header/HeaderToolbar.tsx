@@ -18,12 +18,13 @@ import AccountPanel from './AccountPanel.tsx';
 
 interface Props {
     onLogout: () => void;
+    onOpenAccountSettings: () => void;
 }
 
 const ICON_BUTTON =
     'flex items-center justify-center gap-1.5 min-w-[44px] min-h-[44px] px-2.5 rounded text-sm text-on-surface-faint hover:text-on-surface-dim transition-colors';
 
-export default function HeaderToolbar({ onLogout }: Props): ReactElement {
+export default function HeaderToolbar({ onLogout, onOpenAccountSettings }: Props): ReactElement {
     const { t, locale, setLocale } = useI18n();
     const { theme, toggleTheme } = useTheme();
     const { isGuest } = useAuth();
@@ -87,7 +88,12 @@ export default function HeaderToolbar({ onLogout }: Props): ReactElement {
                         id="account-menu"
                         className="absolute right-0 top-full mt-2 w-64 z-50 rounded-lg border border-outline-faint bg-surface-raised shadow-lg"
                     >
-                        <AccountPanel />
+                        <AccountPanel
+                            onOpenSettings={() => {
+                                closeAccount();
+                                onOpenAccountSettings();
+                            }}
+                        />
                     </div>
                 )}
             </div>
