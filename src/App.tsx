@@ -64,10 +64,17 @@ function AuthenticatedApp(): ReactElement {
         setRefreshKey(prev => prev + 1);
     };
 
-    /** The /answer payload already carries the new economy — no second round-trip. */
+    /**
+     * The /answer payload already carries the new economy — no second round-trip.
+     *
+     * US-44 review: intentionally does NOT bump `refreshKey`. The own row moves
+     * from the session overlay in the render (see `mergeOwnEntry`), so re-fetching
+     * the board here would fire exactly the request the story set out to avoid and
+     * restart the stagger animation on every answer. The 30 s poll stays the only
+     * source for foreign rows.
+     */
     const handleGameResult = (result: GameAnswerResponse): void => {
         applyGameResult(result);
-        setRefreshKey(prev => prev + 1);
     };
 
     if (!user && !isGuest) {

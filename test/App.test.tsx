@@ -193,6 +193,47 @@ describe('App', () => {
     expect(screen.queryByLabelText('Beste Serie')).not.toBeInTheDocument()
   })
 
+  it('moves the own leaderboard row on the answer payload, without waiting for the board', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await screen.findByRole('heading', { name: 'Willkommen zurück' })
+    await loginThroughForm(user)
+
+    // The board opens on the /me numbers: the signed-in row sits behind Alice.
+    expect(await screen.findByLabelText(/rank 2: testuser, 50 xp/i)).toBeInTheDocument()
+
+    await user.type(screen.getByRole('textbox'), '1000')
+    await user.click(screen.getByRole('button', { name: /check answer/i }))
+
+    // US-44: /answer writes the session before the leaderboard poll can land, so
+    // the own row shows the new XP straight away. The board still sends the old
+    // 50 — that must not cover the number the session already knows.
+    expect(await screen.findByLabelText(/rank 2: testuser, 58 xp/i)).toBeInTheDocument()
+  })
+
+  it('moves the own row from the session alone, with no second board request (US-44 review)', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await screen.findByRole('heading', { name: 'Willkommen zurück' })
+    await loginThroughForm(user)
+
+    // The board is fetched exactly once on mount. The 30 s poll uses real timers
+    // here, so it never fires inside the test window.
+    await waitFor(() => expect(mockedGameApi.getLeaderboard).toHaveBeenCalledTimes(1))
+    expect(await screen.findByLabelText(/rank 2: testuser, 50 xp/i)).toBeInTheDocument()
+
+    await user.type(screen.getByRole('textbox'), '1000')
+    await user.click(screen.getByRole('button', { name: /check answer/i }))
+
+    // The own row still moves — proof the overlay is what paints it — but nothing
+    // re-requested the board or refreshed /me to make it happen. handleGameResult
+    // must NOT bump the refresh trigger: that round-trip is exactly what US-44
+    // removes, and it brought the stagger flicker with it.
+    expect(await screen.findByLabelText(/rank 2: testuser, 58 xp/i)).toBeInTheDocument()
+    expect(mockedGameApi.getLeaderboard).toHaveBeenCalledTimes(1)
+    expect(mockedAuthApi.getCurrentUser).toHaveBeenCalledTimes(1)
+  })
+
   it('logs out and returns to the login screen', async () => {
     const user = userEvent.setup()
     render(<App />)
