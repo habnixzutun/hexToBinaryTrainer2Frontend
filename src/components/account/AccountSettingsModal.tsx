@@ -17,6 +17,8 @@ import { useI18n } from '../../i18n/useI18n.ts';
 import UsernameSection from './UsernameSection.tsx';
 import EmailSection from './EmailSection.tsx';
 import PasswordSection from './PasswordSection.tsx';
+import DevicesSection from './DevicesSection.tsx';
+import DeleteAccountSection from './DeleteAccountSection.tsx';
 
 interface Props {
     onClose: () => void;
@@ -104,6 +106,8 @@ export default function AccountSettingsModal({ onClose }: Props): ReactElement {
                     <UsernameSection />
                     <EmailSection />
                     <PasswordSection />
+                    <DevicesSection onSelfRevoke={onClose} />
+                    <DeleteAccountSection />
                 </div>
             </motion.div>
         </div>,

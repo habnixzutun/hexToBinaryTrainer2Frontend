@@ -206,6 +206,33 @@ export const translations = {
         themeDark: 'Dunkler Modus',
         languageSwitch: 'English',
 
+        // Devices (US-44–US-46)
+        accountDevicesSection: 'Aktive Sitzungen',
+        accountDevicesHint: 'Hier siehst du alle Geräte, auf denen du aktuell eingeloggt bist.',
+        accountDevicesEmpty: 'Keine aktiven Sitzungen gefunden.',
+        accountDevicesLoadError: 'Sitzungen konnten nicht geladen werden.',
+        accountDevicesCurrent: 'Dieses Gerät',
+        accountDevicesSignedIn: 'Angemeldet:',
+        accountDevicesRevoke: 'Gerät abmelden',
+        accountDevicesLogoutSelf: 'Von diesem Gerät abmelden',
+
+        // Account Deletion (US-47–US-48)
+        accountDeleteSection: 'Konto löschen',
+        accountDeleteHint: 'Das Löschen deines Kontos ist unwiderruflich. Alle Daten werden dauerhaft gelöscht.',
+        accountDeleteButton: 'Konto löschen…',
+        accountDeleteConfirmText: 'Du erhältst eine E-Mail mit einem Bestätigungslink. Dort musst du dein Passwort eingeben. Danach werden dein Konto und alle Daten sofort gelöscht.',
+        accountDeleteConfirmButton: 'Bestätigungsmail senden',
+        accountDeleteCancel: 'Abbrechen',
+        accountDeleteEmailSent: 'Wir haben dir eine Bestätigungs-E-Mail gesendet. Klicke auf den Link darin, um die Löschung abzuschließen.',
+        accountDeleteWrongPassword: 'Das Passwort ist falsch.',
+        accountDeleteLinkInvalidTitle: 'Link ungültig',
+        accountDeleteLinkInvalidText: 'Der Löschungslink ist ungültig oder abgelaufen. Starte den Vorgang erneut in den Kontoeinstellungen.',
+        accountDeleteConfirmTitle: 'Konto endgültig löschen',
+        accountDeleteConfirmSubtitle: 'Gib dein Passwort ein, um die Löschung zu bestätigen. Dieser Schritt kann nicht rückgängig gemacht werden.',
+        accountDeleteConfirmSubmit: 'Konto unwiderruflich löschen',
+        accountDeleteDoneTitle: 'Konto gelöscht',
+        accountDeleteDoneText: 'Dein Konto und alle zugehörigen Daten wurden dauerhaft gelöscht.',
+
         // sr-only helpers
         srAnswerFormat: (format: string) => `Gib deine Antwort im ${format}-Format ein`,
         srUtf8Binary: 'Gib die UTF-8 Binärdarstellung mit 0en und 1en ein',
@@ -413,6 +440,33 @@ export const translations = {
         themeDark: 'Dark mode',
         languageSwitch: 'Deutsch',
 
+        // Devices (US-44–US-46)
+        accountDevicesSection: 'Active sessions',
+        accountDevicesHint: 'These are all the devices you are currently signed in on.',
+        accountDevicesEmpty: 'No active sessions found.',
+        accountDevicesLoadError: 'Could not load sessions.',
+        accountDevicesCurrent: 'This device',
+        accountDevicesSignedIn: 'Signed in:',
+        accountDevicesRevoke: 'Sign out device',
+        accountDevicesLogoutSelf: 'Sign out this device',
+
+        // Account Deletion (US-47–US-48)
+        accountDeleteSection: 'Delete account',
+        accountDeleteHint: 'Deleting your account is irreversible. All data will be permanently removed.',
+        accountDeleteButton: 'Delete account…',
+        accountDeleteConfirmText: 'You will receive an email with a confirmation link. There you must enter your password. Afterwards your account and all data will be deleted immediately.',
+        accountDeleteConfirmButton: 'Send confirmation email',
+        accountDeleteCancel: 'Cancel',
+        accountDeleteEmailSent: 'We sent you a confirmation email. Click the link in it to complete the deletion.',
+        accountDeleteWrongPassword: 'The password is incorrect.',
+        accountDeleteLinkInvalidTitle: 'Link invalid',
+        accountDeleteLinkInvalidText: 'The deletion link is invalid or has expired. Restart the process in your account settings.',
+        accountDeleteConfirmTitle: 'Permanently delete account',
+        accountDeleteConfirmSubtitle: 'Enter your password to confirm deletion. This step cannot be undone.',
+        accountDeleteConfirmSubmit: 'Permanently delete account',
+        accountDeleteDoneTitle: 'Account deleted',
+        accountDeleteDoneText: 'Your account and all associated data have been permanently deleted.',
+
         // sr-only helpers
         srAnswerFormat: (format: string) => `Enter your answer in ${format} format`,
         srUtf8Binary: 'Enter the UTF-8 binary representation using 0s and 1s',
@@ -613,6 +667,33 @@ export type Translations = {
     themeLight: string;
     themeDark: string;
     languageSwitch: string;
+
+    // Devices (US-44–US-46)
+    accountDevicesSection: string;
+    accountDevicesHint: string;
+    accountDevicesEmpty: string;
+    accountDevicesLoadError: string;
+    accountDevicesCurrent: string;
+    accountDevicesSignedIn: string;
+    accountDevicesRevoke: string;
+    accountDevicesLogoutSelf: string;
+
+    // Account Deletion (US-47–US-48)
+    accountDeleteSection: string;
+    accountDeleteHint: string;
+    accountDeleteButton: string;
+    accountDeleteConfirmText: string;
+    accountDeleteConfirmButton: string;
+    accountDeleteCancel: string;
+    accountDeleteEmailSent: string;
+    accountDeleteWrongPassword: string;
+    accountDeleteLinkInvalidTitle: string;
+    accountDeleteLinkInvalidText: string;
+    accountDeleteConfirmTitle: string;
+    accountDeleteConfirmSubtitle: string;
+    accountDeleteConfirmSubmit: string;
+    accountDeleteDoneTitle: string;
+    accountDeleteDoneText: string;
 
     // sr-only helpers
     srAnswerFormat: (format: string) => string;

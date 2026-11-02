@@ -13,7 +13,9 @@ import HeaderToolbar from './components/header/HeaderToolbar.tsx';
 import MobileSettingsMenu from './components/header/MobileSettingsMenu.tsx';
 import AccountSettingsModal from './components/account/AccountSettingsModal.tsx';
 import EmailChangeLinkScreen from './components/account/EmailChangeLinkScreen.tsx';
+import DeleteAccountConfirmScreen from './components/account/DeleteAccountConfirmScreen.tsx';
 import { readEmailChangeTokenFromUrl } from './utils/emailChangeLink.ts';
+import { readAccountDeletionTokenFromUrl } from './utils/accountDeletionLink.ts';
 import { defaultTierFor, modeForDirection, type HexBinDirection } from './constants/gameModes.ts';
 import type { GameAnswerResponse } from './services/api.ts';
 
@@ -229,6 +231,16 @@ function AuthGate(): ReactElement {
     // Read once on first render: the link screen cleans the token out of the URL
     // right away, so later renders must not look at the URL again.
     const [emailChangeToken, setEmailChangeToken] = useState<string | null>(() => readEmailChangeTokenFromUrl());
+    const [deletionToken, setDeletionToken] = useState<string | null>(() => readAccountDeletionTokenFromUrl());
+
+    if (deletionToken !== null) {
+        return (
+            <>
+                <DeleteAccountConfirmScreen token={deletionToken} onDone={() => setDeletionToken(null)} />
+                <CookieBanner />
+            </>
+        );
+    }
 
     if (emailChangeToken !== null) {
         return (
