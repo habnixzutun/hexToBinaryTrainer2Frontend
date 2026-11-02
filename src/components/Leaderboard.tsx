@@ -1,9 +1,10 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Zap, Award, Info } from 'lucide-react';
 import { gameApi, type LeaderboardEntry } from '../services/api.ts';
 import { useAuth } from '../contexts/AuthContext.tsx';
 import { useI18n } from '../i18n/useI18n.ts';
+import { mergeOwnEntry } from '../utils/leaderboardMerge.ts';
 
 interface Props {
     refreshTrigger: number;
@@ -27,6 +28,11 @@ const ETERNAL_TOOLTIP = 'Er wird für immer unsere 1 bleiben';
  * Order by total XP, then lift Max to the top when he would otherwise sit
  * behind somebody else. Both figures are returned immutably: the caller needs
  * to know whether the promotion happened, not just the new order.
+ *
+ * US-44: this runs on the OVERLAID rows, in the render — not on the fetch result.
+ * Sorting at the fetch would freeze the viewer's own row in its old position the
+ * moment the session numbers moved, and a poll that lands late would quietly
+ * re-sort it back. Pipeline: fetch (raw) → overlay → sort.
  */
 function rankEntries(rows: readonly LeaderboardEntry[]): { ranked: LeaderboardEntry[]; promoted: boolean } {
     const sorted = [...rows].sort((a, b) => b.total_xp - a.total_xp);
@@ -50,8 +56,9 @@ function rankEntries(rows: readonly LeaderboardEntry[]): { ranked: LeaderboardEn
 export default function Leaderboard({ refreshTrigger }: Props) {
     const { user } = useAuth();
     const { t, locale } = useI18n();
+    // Raw fetch result: the overlay and the ranking belong to the render, so a
+    // late poll can never carry a decision about the viewer's numbers (US-44).
     const [data, setData] = useState<LeaderboardEntry[]>([]);
-    const [promoted, setPromoted] = useState(false);
     const [loading, setLoading] = useState(true);
     const [failed, setFailed] = useState(false);
 
@@ -59,9 +66,7 @@ export default function Leaderboard({ refreshTrigger }: Props) {
         setLoading(true);
         try {
             const result = await gameApi.getLeaderboard();
-            const { ranked, promoted: isPromoted } = rankEntries(result);
-            setData(ranked);
-            setPromoted(isPromoted);
+            setData(result);
             setFailed(false);
         } catch {
             // The panel outlives a single failed poll: keep the last good rows
@@ -82,6 +87,21 @@ export default function Leaderboard({ refreshTrigger }: Props) {
         const interval = setInterval(refreshData, LEADERBOARD_POLL_MS);
         return () => clearInterval(interval);
     }, [refreshData]);
+
+    /**
+     * US-44: fetch → overlay → sort, recomputed whenever either input moves.
+     *
+     * The session is the fresher source for the viewer's own row, so the row
+     * follows the economy on every /answer without waiting for a request. A poll
+     * that resolves later re-runs this same merge over the same session — it can
+     * re-render the board, it can never pull the local numbers back. No effect and
+     * no second piece of state hold the merged rows, so there is nothing to get out
+     * of sync.
+     */
+    const { ranked, promoted } = useMemo(
+        () => rankEntries(mergeOwnEntry(data, user)),
+        [data, user],
+    );
 
     return (
         <div className="h-full flex flex-col" role="region" aria-label="Leaderboard">
@@ -127,7 +147,7 @@ export default function Leaderboard({ refreshTrigger }: Props) {
                 aria-live="polite"
                 aria-atomic="false"
             >
-                {data.map((entry, idx) => {
+                {ranked.map((entry, idx) => {
                     // US-43: identity is the stable id, never the display name —
                     // a player who renames themselves keeps their badge.
                     const isMe = entry.user_id === user?.id;
