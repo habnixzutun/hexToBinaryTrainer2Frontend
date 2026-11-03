@@ -53,7 +53,7 @@ export default function BitByteSelector({
                             aria-describedby={locked ? lockHintId(b) : undefined}
                             className={`flex-1 h-8 rounded text-xs font-semibold transition-colors flex items-center justify-center gap-1 ${
                                 value === b
-                                    ? 'bg-emerald-800 text-emerald-100'
+                                    ? 'bg-accent text-white'
                                     : 'bg-surface-alt text-on-surface-faint hover:text-on-surface-dim'
                             } ${locked ? 'opacity-50' : ''}`}
                         >
