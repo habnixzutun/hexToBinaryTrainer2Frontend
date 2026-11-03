@@ -66,7 +66,7 @@ export default function UsernameSection(): ReactElement {
                 {' '}<span className="text-on-surface-dim">{user?.username}</span>
             </p>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-3" noValidate>
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 max-w-lg" noValidate>
                 <div>
                     <label htmlFor="account-username" className="sr-only">{t.accountUsernameNew}</label>
                     <input

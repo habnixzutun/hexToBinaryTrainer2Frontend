@@ -55,7 +55,7 @@ export default function EmailSection(): ReactElement {
             </h3>
             <p className="text-xs text-on-surface-dim break-all">{user?.email}</p>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-3" noValidate>
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 max-w-lg" noValidate>
                 <div>
                     <label htmlFor="account-email" className="sr-only">{t.accountEmailNew}</label>
                     <input
