@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Hash, Binary, Trophy, ChevronDown } from 'lucide-react';
-import TerminalIcon from './icons/TerminalIcon';
+import TerminalIcon from './icons/TerminalIcon.tsx';
 import { useI18n } from '../i18n/useI18n.ts';
 import { useAuth } from '../contexts/AuthContext.tsx';
 import { type ActiveApp, type HexBinMode } from '../App.tsx';

@@ -56,30 +56,32 @@ export default function AppFooter() {
                             {t.footerDatenschutz}
                         </button>
                     </nav>
+                    <div className="flex flex-wrap items-center justify-end gap-3 pb-3">
+                        <a
+                            href={GITHUB_URL}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1.5 text-xs text-on-surface-subtle hover:text-on-surface-dim transition-colors"
+                            aria-label="GitHub repository"
+                        >
+                            <GithubIcon size={14} />
+                            GitHub
+                        </a>
+
+                        {TECH_BADGES.map(({ label, color }) => (
+                            <span
+                                key={label}
+                                className={`px-2 py-0.5 rounded text-[10px] font-semibold tracking-wider border ${color}`}
+                            >
+                                {label}
+                            </span>
+                        ))}
+                    </div>
                 </div>
 
                 {/* Bottom row: GitHub + tech badges */}
-                <div className="flex flex-wrap items-center justify-end gap-3 pb-3">
-                    <a
-                        href={GITHUB_URL}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1.5 text-xs text-on-surface-subtle hover:text-on-surface-dim transition-colors"
-                        aria-label="GitHub repository"
-                    >
-                        <GithubIcon size={14} />
-                        GitHub
-                    </a>
 
-                    {TECH_BADGES.map(({ label, color }) => (
-                        <span
-                            key={label}
-                            className={`px-2 py-0.5 rounded text-[10px] font-semibold tracking-wider border ${color}`}
-                        >
-                            {label}
-                        </span>
-                    ))}
-                </div>
+
             </footer>
 
             {showImpressum && (

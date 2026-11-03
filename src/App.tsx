@@ -92,7 +92,7 @@ function AuthenticatedApp(): ReactElement {
     const isLeaderboardActive = activeApp === 'leaderboard';
 
     return (
-        <div className="flex flex-col lg:flex-row h-screen bg-surface text-on-surface-dim overflow-hidden font-sans">
+        <div className="flex flex-col h-screen bg-surface text-on-surface-dim overflow-hidden font-sans">
             {/* Skip link for keyboard navigation */}
             <a href="#main-content" className="skip-link">
                 Skip to main content
@@ -119,78 +119,76 @@ function AuthenticatedApp(): ReactElement {
                 />
             </header>
 
-            <Sidebar
-                activeApp={activeApp}
-                setActiveApp={setActiveApp}
-                isMobileMenuOpen={isMobileMenuOpen}
-                setIsMobileMenuOpen={setIsMobileMenuOpen}
-                hideLeaderboardNav={!isMobile && !isLeaderboardActive}
-                isMobile={isMobile}
-                activeHexMode={activeMode}
-                onHexModeChange={(mode: HexBinMode) => setActiveMode(mode)}
-                bits={bits}
-                onBitsChange={setBits}
-                bytes={bytes}
-                onBytesChange={setBytes}
-            />
+            {/* Middle row: fills remaining height, sidebar (lg:static) + trainer/leaderboard */}
+            <div className="flex flex-1 lg:flex-row min-w-0 min-h-0 overflow-hidden">
+                <Sidebar
+                    activeApp={activeApp}
+                    setActiveApp={setActiveApp}
+                    isMobileMenuOpen={isMobileMenuOpen}
+                    setIsMobileMenuOpen={setIsMobileMenuOpen}
+                    hideLeaderboardNav={!isMobile && !isLeaderboardActive}
+                    isMobile={isMobile}
+                    activeHexMode={activeMode}
+                    onHexModeChange={(mode: HexBinMode) => setActiveMode(mode)}
+                    bits={bits}
+                    onBitsChange={setBits}
+                    bytes={bytes}
+                    onBytesChange={setBytes}
+                />
 
-            {/* Play area: trainer on the left, right column (settings toolbar +
-                leaderboard). The personal figures used to sit in a HUD bar above
-                this — US-45 dropped it, the sidebar owns them now. */}
-            <div className="flex flex-1 min-w-0 flex-col overflow-hidden">
-                <div className="flex flex-1 min-h-0 overflow-hidden">                    {/* Trainer area — hidden when leaderboard is active on large viewports */}
-                    {!isLeaderboardActive && (
-                        <main id="main-content" className="flex-1 overflow-y-auto border-r border-outline-faint" role="main">
-                            <AnimatePresence mode="wait">
-                                <motion.div
-                                    key={activeApp}
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    exit={{ opacity: 0 }}
-                                    transition={{ duration: 0.15 }}
-                                    className="h-full"
-                                >
-                                    {activeApp === 'hex' ? (
-                                        <HexBinTrainer
-                                            onUpdate={updateUserData}
-                                            onGameResult={handleGameResult}
-                                            onGuestAnswer={isGuest ? recordGuestAnswer : undefined}
-                                            activeMode={activeMode}
-                                            bits={bits}
-                                            onBitsChange={setBits}
-                                            playerLevel={user?.level}
-                                        />
-                                    ) : (
-                                        <UnicodeTrainer
-                                            onUpdate={updateUserData}
-                                            onGameResult={handleGameResult}
-                                            onGuestAnswer={isGuest ? recordGuestAnswer : undefined}
-                                            bytes={bytes}
-                                            onBytesChange={setBytes}
-                                            playerLevel={user?.level}
-                                        />
-                                    )}
-                                </motion.div>
-                            </AnimatePresence>
-                        </main>
-                    )}
+                {/* Trainer area — hidden when leaderboard is active on large viewports */}
+                {!isLeaderboardActive && (
+                    <main id="main-content" className="flex-1 overflow-y-auto border-r border-outline-faint" role="main">
+                        <AnimatePresence mode="wait">
+                            <motion.div
+                                key={activeApp}
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 0.15 }}
+                                className="h-full"
+                            >
+                                {activeApp === 'hex' ? (
+                                    <HexBinTrainer
+                                        onUpdate={updateUserData}
+                                        onGameResult={handleGameResult}
+                                        onGuestAnswer={isGuest ? recordGuestAnswer : undefined}
+                                        activeMode={activeMode}
+                                        bits={bits}
+                                        onBitsChange={setBits}
+                                        playerLevel={user?.level}
+                                    />
+                                ) : (
+                                    <UnicodeTrainer
+                                        onUpdate={updateUserData}
+                                        onGameResult={handleGameResult}
+                                        onGuestAnswer={isGuest ? recordGuestAnswer : undefined}
+                                        bytes={bytes}
+                                        onBytesChange={setBytes}
+                                        playerLevel={user?.level}
+                                    />
+                                )}
+                            </motion.div>
+                        </AnimatePresence>
+                    </main>
+                )}
 
-                    {/* Right column — settings toolbar on top (lg+), leaderboard below.
-                        Always visible on lg+, full-width when the leaderboard is active. */}
-                    <aside className={`shrink-0 flex flex-col overflow-hidden ${
-                        isLeaderboardActive ? 'flex-1' : 'hidden lg:flex w-80'
-                    }`}>
-                        <HeaderToolbar
-                            onLogout={handleLogout}
-                            onOpenAccountSettings={() => setIsAccountSettingsOpen(true)}
-                        />
-                        <div className="flex-1 min-h-0 overflow-y-auto">
-                            <Leaderboard refreshTrigger={refreshKey} />
-                        </div>
-                    </aside>
-                </div>
-                <AppFooter />
+                {/* Right column — settings toolbar on top (lg+), leaderboard below.
+                    Always visible on lg+, full-width when the leaderboard is active. */}
+                <aside className={`shrink-0 flex flex-col overflow-hidden ${
+                    isLeaderboardActive ? 'flex-1' : 'hidden lg:flex w-80'
+                }`}>
+                    <HeaderToolbar
+                        onLogout={handleLogout}
+                        onOpenAccountSettings={() => setIsAccountSettingsOpen(true)}
+                    />
+                    <div className="flex-1 min-h-0 overflow-y-auto">
+                        <Leaderboard refreshTrigger={refreshKey} />
+                    </div>
+                </aside>
             </div>
+
+            <AppFooter />
 
             {/* Account settings float above everything; owned here so closing a
                 dropdown (outside click) can never tear the dialog down. */}
