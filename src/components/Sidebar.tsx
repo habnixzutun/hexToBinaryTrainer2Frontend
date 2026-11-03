@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Terminal, Hash, Binary, Trophy, ChevronDown } from 'lucide-react';
+import { Hash, Binary, Trophy, ChevronDown } from 'lucide-react';
+import TerminalIcon from './icons/TerminalIcon';
 import { useI18n } from '../i18n/useI18n.ts';
 import { useAuth } from '../contexts/AuthContext.tsx';
 import { type ActiveApp, type HexBinMode } from '../App.tsx';
@@ -112,7 +113,7 @@ export default function Sidebar({
             >
                 {/* Logo — only visible on lg+ (on mobile it's in the global header) */}
                 <div className="lg:flex hidden items-center gap-3 px-5 h-16 border-b border-outline-faint">
-                    <Terminal strokeWidth={1.5} size={18} className="text-accent shrink-0" aria-hidden="true" />
+                    <TerminalIcon size={18} className="text-accent shrink-0" aria-hidden="true" />
                     <span className="text-base font-bold tracking-wider text-on-surface-dim uppercase">
                         IT Trainer
                     </span>
