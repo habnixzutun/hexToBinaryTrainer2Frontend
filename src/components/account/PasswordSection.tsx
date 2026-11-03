@@ -61,7 +61,7 @@ export default function PasswordSection(): ReactElement {
             </h3>
             <p className="text-xs text-on-surface-faint">{t.accountPasswordHint}</p>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-3" noValidate>
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 max-w-lg" noValidate>
                 <PasswordInput
                     id="account-old-password"
                     name="oldPassword"
