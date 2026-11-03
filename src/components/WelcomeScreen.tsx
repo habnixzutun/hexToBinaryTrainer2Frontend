@@ -10,7 +10,8 @@
 
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { motion } from 'framer-motion';
-import { Terminal, Globe, Sun, Moon, ArrowLeft, UserRound } from 'lucide-react';
+import { Globe, Sun, Moon, ArrowLeft, UserRound } from 'lucide-react';
+import TerminalIcon from './icons/TerminalIcon';
 import { useI18n } from '../i18n/useI18n.ts';
 import { type Locale } from '../i18n/translations.ts';
 import { useTheme } from '../theme/useTheme.ts';
@@ -187,7 +188,7 @@ export default function WelcomeScreen(): ReactElement {
             <main className="w-full max-w-sm" aria-labelledby="welcome-heading">
                 {/* Logo */}
                 <div className="flex items-center gap-2 mb-4">
-                    <Terminal strokeWidth={1.5} size={16} className="text-accent" aria-hidden="true" />
+                    <TerminalIcon size={16} className="text-accent" aria-hidden="true" />
                     <span className="text-xs font-bold tracking-wider text-on-surface-faint uppercase">IT Trainer</span>
                 </div>
 

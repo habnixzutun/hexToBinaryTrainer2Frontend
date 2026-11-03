@@ -1,6 +1,7 @@
 import { useState, useEffect, type ReactElement } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Terminal, Menu, X, Loader2 } from 'lucide-react';
+import { Menu, X, Loader2 } from 'lucide-react';
+import TerminalIcon from './components/icons/TerminalIcon';
 import Sidebar from './components/Sidebar.tsx';
 import HexBinTrainer from './components/HexBinTrainer.tsx';
 import UnicodeTrainer from './components/UnicodeTrainer.tsx';
@@ -108,7 +109,7 @@ function AuthenticatedApp(): ReactElement {
                 >
                     {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
                 </button>
-                <Terminal strokeWidth={1.5} size={18} className="text-accent ml-2" aria-hidden="true" />
+                <TerminalIcon size={18} className="text-accent ml-2" aria-hidden="true" />
                 <span className="ml-2 text-base font-bold tracking-wider text-on-surface-dim uppercase">
                     IT Trainer
                 </span>
