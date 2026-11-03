@@ -10,7 +10,7 @@
  */
 
 import { useEffect, useRef, useState, type ReactElement } from 'react';
-import { Terminal } from 'lucide-react';
+import TerminalIcon from '../icons/TerminalIcon';
 import { useAuth } from '../../contexts/AuthContext.tsx';
 import { useI18n } from '../../i18n/useI18n.ts';
 import { verifyEmailChange } from '../../services/accountApi.ts';
@@ -51,7 +51,7 @@ export default function EmailChangeLinkScreen({ token, onDone }: Props): ReactEl
         <div className="flex items-center justify-center min-h-screen bg-surface p-4">
             <main className="w-full max-w-sm" aria-labelledby="welcome-heading">
                 <div className="flex items-center gap-2 mb-6">
-                    <Terminal strokeWidth={1.5} size={16} className="text-accent" aria-hidden="true" />
+                    <TerminalIcon size={16} className="text-accent" aria-hidden="true" />
                     <span className="text-xs font-bold tracking-wider text-on-surface-faint uppercase">IT Trainer</span>
                 </div>
                 <VerifyLinkScreen
