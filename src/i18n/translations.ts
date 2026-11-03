@@ -233,6 +233,36 @@ export const translations = {
         accountDeleteDoneTitle: 'Konto gelöscht',
         accountDeleteDoneText: 'Dein Konto und alle zugehörigen Daten wurden dauerhaft gelöscht.',
 
+        // Footer legal links
+        footerImpressum: 'Impressum',
+        footerDatenschutz: 'Datenschutzerklärung',
+        footerImpressumTitle: 'Impressum',
+        footerDatenschutzTitle: 'Datenschutzerklärung',
+        footerClose: 'Schließen',
+
+        // Impressum (mock)
+        impressumAnbieter: 'Anbieter',
+        impressumName: 'Max Mustermann',
+        impressumAddress: 'Musterstraße 1, 12345 Musterstadt',
+        impressumCountry: 'Deutschland',
+        impressumContact: 'Kontakt',
+        impressumEmail: 'kontakt@ittrainer.example',
+        impressumPhone: '+49 123 456789',
+        impressumDisclaimer: 'Haftungshinweis',
+        impressumDisclaimerText: 'Trotz sorgfältiger inhaltlicher Kontrolle übernehmen wir keine Haftung für die Inhalte externer Links. Für den Inhalt der verlinkten Seiten sind ausschließlich deren Betreiber verantwortlich.',
+
+        // Datenschutz (mock)
+        datenschutzIntroTitle: 'Datenschutz auf einen Blick',
+        datenschutzIntroText: 'Die folgenden Hinweise geben einen einfachen Überblick darüber, was mit Ihren personenbezogenen Daten passiert, wenn Sie diese Website besuchen.',
+        datenschutzDataCollectionTitle: 'Welche Daten erfassen wir?',
+        datenschutzDataCollectionText: 'Wir erfassen ausschließlich die Daten, die für den Betrieb dieser Anwendung erforderlich sind: E-Mail-Adresse, Benutzername und Trainingsfortschritt. Es werden keine Tracking- oder Marketing-Daten erhoben.',
+        datenschutzCookiesTitle: 'Cookies',
+        datenschutzCookiesText: 'Diese App verwendet ausschließlich technisch notwendige HTTP-only-Cookies zur Aufrechterhaltung Ihrer Anmeldung. Es werden keine Tracking- oder Analyse-Cookies eingesetzt.',
+        datenschutzRightsTitle: 'Ihre Rechte',
+        datenschutzRightsText: 'Sie haben das Recht auf Auskunft, Berichtigung, Löschung und Einschränkung der Verarbeitung Ihrer personenbezogenen Daten. Wenden Sie sich hierfür an die oben genannte Kontaktadresse.',
+        datenschutzContactTitle: 'Datenschutzbeauftragter',
+        datenschutzContactText: 'Bei Fragen zum Datenschutz wenden Sie sich an: datenschutz@ittrainer.example',
+
         // sr-only helpers
         srAnswerFormat: (format: string) => `Gib deine Antwort im ${format}-Format ein`,
         srUtf8Binary: 'Gib die UTF-8 Binärdarstellung mit 0en und 1en ein',
@@ -467,6 +497,36 @@ export const translations = {
         accountDeleteDoneTitle: 'Account deleted',
         accountDeleteDoneText: 'Your account and all associated data have been permanently deleted.',
 
+        // Footer legal links
+        footerImpressum: 'Imprint',
+        footerDatenschutz: 'Privacy Policy',
+        footerImpressumTitle: 'Imprint',
+        footerDatenschutzTitle: 'Privacy Policy',
+        footerClose: 'Close',
+
+        // Impressum (mock)
+        impressumAnbieter: 'Provider',
+        impressumName: 'Max Mustermann',
+        impressumAddress: '1 Example Street, 12345 Example City',
+        impressumCountry: 'Germany',
+        impressumContact: 'Contact',
+        impressumEmail: 'contact@ittrainer.example',
+        impressumPhone: '+49 123 456789',
+        impressumDisclaimer: 'Disclaimer',
+        impressumDisclaimerText: 'Despite careful content control, we assume no liability for the content of external links. The operators of the linked pages are solely responsible for their content.',
+
+        // Datenschutz (mock)
+        datenschutzIntroTitle: 'Privacy at a Glance',
+        datenschutzIntroText: 'The following information provides a simple overview of what happens to your personal data when you visit this website.',
+        datenschutzDataCollectionTitle: 'What data do we collect?',
+        datenschutzDataCollectionText: 'We only collect data that is necessary for the operation of this application: email address, username, and training progress. No tracking or marketing data is collected.',
+        datenschutzCookiesTitle: 'Cookies',
+        datenschutzCookiesText: 'This app exclusively uses technically necessary HTTP-only cookies to maintain your login session. No tracking or analytics cookies are used.',
+        datenschutzRightsTitle: 'Your Rights',
+        datenschutzRightsText: 'You have the right to access, correct, delete, and restrict the processing of your personal data. Please contact the address provided above.',
+        datenschutzContactTitle: 'Data Protection Officer',
+        datenschutzContactText: 'For privacy-related questions, contact us at: privacy@ittrainer.example',
+
         // sr-only helpers
         srAnswerFormat: (format: string) => `Enter your answer in ${format} format`,
         srUtf8Binary: 'Enter the UTF-8 binary representation using 0s and 1s',
@@ -698,4 +758,34 @@ export type Translations = {
     // sr-only helpers
     srAnswerFormat: (format: string) => string;
     srUtf8Binary: string;
+
+    // Footer legal links
+    footerImpressum: string;
+    footerDatenschutz: string;
+    footerImpressumTitle: string;
+    footerDatenschutzTitle: string;
+    footerClose: string;
+
+    // Impressum (mock)
+    impressumAnbieter: string;
+    impressumName: string;
+    impressumAddress: string;
+    impressumCountry: string;
+    impressumContact: string;
+    impressumEmail: string;
+    impressumPhone: string;
+    impressumDisclaimer: string;
+    impressumDisclaimerText: string;
+
+    // Datenschutz (mock)
+    datenschutzIntroTitle: string;
+    datenschutzIntroText: string;
+    datenschutzDataCollectionTitle: string;
+    datenschutzDataCollectionText: string;
+    datenschutzCookiesTitle: string;
+    datenschutzCookiesText: string;
+    datenschutzRightsTitle: string;
+    datenschutzRightsText: string;
+    datenschutzContactTitle: string;
+    datenschutzContactText: string;
 };

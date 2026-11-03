@@ -8,7 +8,6 @@ import { useI18n } from '../i18n/useI18n.ts';
 import { flashAccent } from '../utils/flashAccent.ts';
 import AnswerFeedback, { QUESTION_DELAY_MS, WRONG_FEEDBACK_MS } from './AnswerFeedback.tsx';
 import TierLockBadge from './TierLockBadge.tsx';
-import AppFooter from './AppFooter.tsx';
 
 interface Props {
     onUpdate: () => void;
@@ -292,8 +291,6 @@ export default function UnicodeTrainer({ onUpdate, onGameResult, onGuestAnswer, 
                     </motion.button>
                 </div>
             </div>
-
-            <AppFooter />
         </div>
     );
 }

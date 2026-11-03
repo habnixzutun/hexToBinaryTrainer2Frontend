@@ -6,6 +6,7 @@ import HexBinTrainer from './components/HexBinTrainer.tsx';
 import UnicodeTrainer from './components/UnicodeTrainer.tsx';
 import Leaderboard from './components/Leaderboard.tsx';
 import WelcomeScreen from './components/WelcomeScreen.tsx';
+import AppFooter from './components/AppFooter.tsx';
 import { AuthProvider, useAuth } from './contexts/AuthContext.tsx';
 import { CookieBanner } from './components/CookieBanner.tsx';
 import LevelUpToast from './components/LevelUpToast.tsx';
@@ -136,8 +137,7 @@ function AuthenticatedApp(): ReactElement {
                 leaderboard). The personal figures used to sit in a HUD bar above
                 this — US-45 dropped it, the sidebar owns them now. */}
             <div className="flex flex-1 min-w-0 flex-col overflow-hidden">
-                <div className="flex flex-1 min-h-0 overflow-hidden">
-                    {/* Trainer area — hidden when leaderboard is active on large viewports */}
+                <div className="flex flex-1 min-h-0 overflow-hidden">                    {/* Trainer area — hidden when leaderboard is active on large viewports */}
                     {!isLeaderboardActive && (
                         <main id="main-content" className="flex-1 overflow-y-auto border-r border-outline-faint" role="main">
                             <AnimatePresence mode="wait">
@@ -188,6 +188,7 @@ function AuthenticatedApp(): ReactElement {
                         </div>
                     </aside>
                 </div>
+                <AppFooter />
             </div>
 
             {/* Account settings float above everything; owned here so closing a
