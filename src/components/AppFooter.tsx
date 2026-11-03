@@ -1,3 +1,8 @@
+import { useState } from 'react';
+import { useI18n } from '../i18n/useI18n.ts';
+import ImpressumModal from './ImpressumModal.tsx';
+import DatenschutzModal from './DatenschutzModal.tsx';
+
 const GITHUB_URL = 'https://github.com/habnixzutun/hexToBinaryTrainer2Frontend';
 
 const TECH_BADGES = [
@@ -19,37 +24,70 @@ const GithubIcon = ({ size = 14 }: { size?: number }) => (
 );
 
 export default function AppFooter() {
+    const { t } = useI18n();
+    const [showImpressum, setShowImpressum] = useState(false);
+    const [showDatenschutz, setShowDatenschutz] = useState(false);
+
     return (
-        <footer
-            className="h-14 px-4 sm:px-8 border-t border-outline-faint flex items-center justify-between shrink-0"
-            role="contentinfo"
-        >
-            <p className="text-xs text-on-surface-subtle">
-                © 2026 HexToBinaryTrainer v2.0
-            </p>
+        <>
+            <footer
+                className="px-4 sm:px-6 border-t border-outline-faint shrink-0"
+                role="contentinfo"
+            >
+                {/* Top row: copyright + legal links */}
+                <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 pt-3 pb-1 min-h-[2.5rem]">
+                    <p className="text-xs text-on-surface-subtle whitespace-nowrap">
+                        © 2026 HexToBinaryTrainer v2.0
+                    </p>
 
-            <div className="flex items-center gap-3">
-                <a
-                    href={GITHUB_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 text-xs text-on-surface-subtle hover:text-on-surface-dim transition-colors"
-                    aria-label="GitHub repository"
-                >
-                    <GithubIcon size={14} />
-                    GitHub
-                </a>
+                    <nav aria-label="Legal" className="flex items-center gap-3">
+                        <button
+                            type="button"
+                            onClick={() => setShowImpressum(true)}
+                            className="text-xs text-on-surface-subtle hover:text-on-surface-dim transition-colors"
+                        >
+                            {t.footerImpressum}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setShowDatenschutz(true)}
+                            className="text-xs text-on-surface-subtle hover:text-on-surface-dim transition-colors"
+                        >
+                            {t.footerDatenschutz}
+                        </button>
+                    </nav>
+                </div>
 
-                {TECH_BADGES.map(({ label, color }) => (
-                    <span
-                        key={label}
-                        className={`px-2 py-0.5 rounded text-[10px] font-semibold tracking-wider border ${color}`}
+                {/* Bottom row: GitHub + tech badges */}
+                <div className="flex flex-wrap items-center justify-end gap-3 pb-3">
+                    <a
+                        href={GITHUB_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 text-xs text-on-surface-subtle hover:text-on-surface-dim transition-colors"
+                        aria-label="GitHub repository"
                     >
-                        {label}
-                    </span>
-                ))}
-            </div>
-        </footer>
+                        <GithubIcon size={14} />
+                        GitHub
+                    </a>
+
+                    {TECH_BADGES.map(({ label, color }) => (
+                        <span
+                            key={label}
+                            className={`px-2 py-0.5 rounded text-[10px] font-semibold tracking-wider border ${color}`}
+                        >
+                            {label}
+                        </span>
+                    ))}
+                </div>
+            </footer>
+
+            {showImpressum && (
+                <ImpressumModal onClose={() => setShowImpressum(false)} />
+            )}
+            {showDatenschutz && (
+                <DatenschutzModal onClose={() => setShowDatenschutz(false)} />
+            )}
+        </>
     );
 }
-

@@ -25,6 +25,8 @@ import { useDismissable } from '../../hooks/useDismissable.ts';
 import UsernameSection from './UsernameSection.tsx';
 import EmailSection from './EmailSection.tsx';
 import PasswordSection from './PasswordSection.tsx';
+import DevicesSection from './DevicesSection.tsx';
+import DeleteAccountSection from './DeleteAccountSection.tsx';
 
 /* ─── Layout constants — change these to resize the modal ───────────────── */
 const MODAL_MAX_WIDTH = 'max-w-[850px]';         // total dialog width on desktop
@@ -32,7 +34,7 @@ const SIDEBAR_WIDTH = 'lg:w-[220px]';            // sidebar width on desktop
 const CONTENT_MIN_HEIGHT = 'lg:min-h-[420px]';   // prevents layout jump when switching tabs
 /* ────────────────────────────────────────────────────────────────────────── */
 
-type TabId = 'username' | 'email' | 'password';
+type TabId = 'username' | 'email' | 'password' | 'devices' | 'delete';
 
 interface Props {
     onClose: () => void;
@@ -40,7 +42,7 @@ interface Props {
 
 const FOCUSABLE = 'button:not([disabled]), input:not([disabled]), [href], [tabindex]:not([tabindex="-1"])';
 
-const TAB_IDS: readonly TabId[] = ['username', 'email', 'password'];
+const TAB_IDS: readonly TabId[] = ['username', 'email', 'password', 'devices', 'delete'];
 
 export default function AccountSettingsModal({ onClose }: Props): ReactElement {
     const { t } = useI18n();
@@ -60,6 +62,8 @@ export default function AccountSettingsModal({ onClose }: Props): ReactElement {
         username: t.accountUsernameSection,
         email: t.accountEmailSection,
         password: t.accountPasswordSection,
+        devices: t.accountDevicesSection,
+        delete: t.accountDeleteSection,
     };
 
     useEffect(() => {
@@ -238,6 +242,12 @@ export default function AccountSettingsModal({ onClose }: Props): ReactElement {
                         </div>
                         <div className={activeTab !== 'password' ? 'hidden' : ''}>
                             <PasswordSection />
+                        </div>
+                        <div className={activeTab !== 'devices' ? 'hidden' : ''}>
+                            <DevicesSection onSelfRevoke={onClose} />
+                        </div>
+                        <div className={activeTab !== 'delete' ? 'hidden' : ''}>
+                            <DeleteAccountSection />
                         </div>
                     </div>
                 </div>

@@ -206,6 +206,63 @@ export const translations = {
         themeDark: 'Dunkler Modus',
         languageSwitch: 'English',
 
+        // Devices (US-44–US-46)
+        accountDevicesSection: 'Aktive Sitzungen',
+        accountDevicesHint: 'Hier siehst du alle Geräte, auf denen du aktuell eingeloggt bist.',
+        accountDevicesEmpty: 'Keine aktiven Sitzungen gefunden.',
+        accountDevicesLoadError: 'Sitzungen konnten nicht geladen werden.',
+        accountDevicesCurrent: 'Dieses Gerät',
+        accountDevicesSignedIn: 'Angemeldet:',
+        accountDevicesRevoke: 'Gerät abmelden',
+        accountDevicesLogoutSelf: 'Von diesem Gerät abmelden',
+
+        // Account Deletion (US-47–US-48)
+        accountDeleteSection: 'Konto löschen',
+        accountDeleteHint: 'Das Löschen deines Kontos ist unwiderruflich. Alle Daten werden dauerhaft gelöscht.',
+        accountDeleteButton: 'Konto löschen…',
+        accountDeleteConfirmText: 'Du erhältst eine E-Mail mit einem Bestätigungslink. Dort musst du dein Passwort eingeben. Danach werden dein Konto und alle Daten sofort gelöscht.',
+        accountDeleteConfirmButton: 'Bestätigungsmail senden',
+        accountDeleteCancel: 'Abbrechen',
+        accountDeleteEmailSent: 'Wir haben dir eine Bestätigungs-E-Mail gesendet. Klicke auf den Link darin, um die Löschung abzuschließen.',
+        accountDeleteWrongPassword: 'Das Passwort ist falsch.',
+        accountDeleteLinkInvalidTitle: 'Link ungültig',
+        accountDeleteLinkInvalidText: 'Der Löschungslink ist ungültig oder abgelaufen. Starte den Vorgang erneut in den Kontoeinstellungen.',
+        accountDeleteConfirmTitle: 'Konto endgültig löschen',
+        accountDeleteConfirmSubtitle: 'Gib dein Passwort ein, um die Löschung zu bestätigen. Dieser Schritt kann nicht rückgängig gemacht werden.',
+        accountDeleteConfirmSubmit: 'Konto unwiderruflich löschen',
+        accountDeleteDoneTitle: 'Konto gelöscht',
+        accountDeleteDoneText: 'Dein Konto und alle zugehörigen Daten wurden dauerhaft gelöscht.',
+
+        // Footer legal links
+        footerImpressum: 'Impressum',
+        footerDatenschutz: 'Datenschutzerklärung',
+        footerImpressumTitle: 'Impressum',
+        footerDatenschutzTitle: 'Datenschutzerklärung',
+        footerClose: 'Schließen',
+
+        // Impressum (mock)
+        impressumAnbieter: 'Anbieter',
+        impressumName: 'Max Mustermann',
+        impressumAddress: 'Musterstraße 1, 12345 Musterstadt',
+        impressumCountry: 'Deutschland',
+        impressumContact: 'Kontakt',
+        impressumEmail: 'kontakt@ittrainer.example',
+        impressumPhone: '+49 123 456789',
+        impressumDisclaimer: 'Haftungshinweis',
+        impressumDisclaimerText: 'Trotz sorgfältiger inhaltlicher Kontrolle übernehmen wir keine Haftung für die Inhalte externer Links. Für den Inhalt der verlinkten Seiten sind ausschließlich deren Betreiber verantwortlich.',
+
+        // Datenschutz (mock)
+        datenschutzIntroTitle: 'Datenschutz auf einen Blick',
+        datenschutzIntroText: 'Die folgenden Hinweise geben einen einfachen Überblick darüber, was mit Ihren personenbezogenen Daten passiert, wenn Sie diese Website besuchen.',
+        datenschutzDataCollectionTitle: 'Welche Daten erfassen wir?',
+        datenschutzDataCollectionText: 'Wir erfassen ausschließlich die Daten, die für den Betrieb dieser Anwendung erforderlich sind: E-Mail-Adresse, Benutzername und Trainingsfortschritt. Es werden keine Tracking- oder Marketing-Daten erhoben.',
+        datenschutzCookiesTitle: 'Cookies',
+        datenschutzCookiesText: 'Diese App verwendet ausschließlich technisch notwendige HTTP-only-Cookies zur Aufrechterhaltung Ihrer Anmeldung. Es werden keine Tracking- oder Analyse-Cookies eingesetzt.',
+        datenschutzRightsTitle: 'Ihre Rechte',
+        datenschutzRightsText: 'Sie haben das Recht auf Auskunft, Berichtigung, Löschung und Einschränkung der Verarbeitung Ihrer personenbezogenen Daten. Wenden Sie sich hierfür an die oben genannte Kontaktadresse.',
+        datenschutzContactTitle: 'Datenschutzbeauftragter',
+        datenschutzContactText: 'Bei Fragen zum Datenschutz wenden Sie sich an: datenschutz@ittrainer.example',
+
         // sr-only helpers
         srAnswerFormat: (format: string) => `Gib deine Antwort im ${format}-Format ein`,
         srUtf8Binary: 'Gib die UTF-8 Binärdarstellung mit 0en und 1en ein',
@@ -413,6 +470,63 @@ export const translations = {
         themeDark: 'Dark mode',
         languageSwitch: 'Deutsch',
 
+        // Devices (US-44–US-46)
+        accountDevicesSection: 'Active sessions',
+        accountDevicesHint: 'These are all the devices you are currently signed in on.',
+        accountDevicesEmpty: 'No active sessions found.',
+        accountDevicesLoadError: 'Could not load sessions.',
+        accountDevicesCurrent: 'This device',
+        accountDevicesSignedIn: 'Signed in:',
+        accountDevicesRevoke: 'Sign out device',
+        accountDevicesLogoutSelf: 'Sign out this device',
+
+        // Account Deletion (US-47–US-48)
+        accountDeleteSection: 'Delete account',
+        accountDeleteHint: 'Deleting your account is irreversible. All data will be permanently removed.',
+        accountDeleteButton: 'Delete account…',
+        accountDeleteConfirmText: 'You will receive an email with a confirmation link. There you must enter your password. Afterwards your account and all data will be deleted immediately.',
+        accountDeleteConfirmButton: 'Send confirmation email',
+        accountDeleteCancel: 'Cancel',
+        accountDeleteEmailSent: 'We sent you a confirmation email. Click the link in it to complete the deletion.',
+        accountDeleteWrongPassword: 'The password is incorrect.',
+        accountDeleteLinkInvalidTitle: 'Link invalid',
+        accountDeleteLinkInvalidText: 'The deletion link is invalid or has expired. Restart the process in your account settings.',
+        accountDeleteConfirmTitle: 'Permanently delete account',
+        accountDeleteConfirmSubtitle: 'Enter your password to confirm deletion. This step cannot be undone.',
+        accountDeleteConfirmSubmit: 'Permanently delete account',
+        accountDeleteDoneTitle: 'Account deleted',
+        accountDeleteDoneText: 'Your account and all associated data have been permanently deleted.',
+
+        // Footer legal links
+        footerImpressum: 'Imprint',
+        footerDatenschutz: 'Privacy Policy',
+        footerImpressumTitle: 'Imprint',
+        footerDatenschutzTitle: 'Privacy Policy',
+        footerClose: 'Close',
+
+        // Impressum (mock)
+        impressumAnbieter: 'Provider',
+        impressumName: 'Max Mustermann',
+        impressumAddress: '1 Example Street, 12345 Example City',
+        impressumCountry: 'Germany',
+        impressumContact: 'Contact',
+        impressumEmail: 'contact@ittrainer.example',
+        impressumPhone: '+49 123 456789',
+        impressumDisclaimer: 'Disclaimer',
+        impressumDisclaimerText: 'Despite careful content control, we assume no liability for the content of external links. The operators of the linked pages are solely responsible for their content.',
+
+        // Datenschutz (mock)
+        datenschutzIntroTitle: 'Privacy at a Glance',
+        datenschutzIntroText: 'The following information provides a simple overview of what happens to your personal data when you visit this website.',
+        datenschutzDataCollectionTitle: 'What data do we collect?',
+        datenschutzDataCollectionText: 'We only collect data that is necessary for the operation of this application: email address, username, and training progress. No tracking or marketing data is collected.',
+        datenschutzCookiesTitle: 'Cookies',
+        datenschutzCookiesText: 'This app exclusively uses technically necessary HTTP-only cookies to maintain your login session. No tracking or analytics cookies are used.',
+        datenschutzRightsTitle: 'Your Rights',
+        datenschutzRightsText: 'You have the right to access, correct, delete, and restrict the processing of your personal data. Please contact the address provided above.',
+        datenschutzContactTitle: 'Data Protection Officer',
+        datenschutzContactText: 'For privacy-related questions, contact us at: privacy@ittrainer.example',
+
         // sr-only helpers
         srAnswerFormat: (format: string) => `Enter your answer in ${format} format`,
         srUtf8Binary: 'Enter the UTF-8 binary representation using 0s and 1s',
@@ -614,7 +728,64 @@ export type Translations = {
     themeDark: string;
     languageSwitch: string;
 
+    // Devices (US-44–US-46)
+    accountDevicesSection: string;
+    accountDevicesHint: string;
+    accountDevicesEmpty: string;
+    accountDevicesLoadError: string;
+    accountDevicesCurrent: string;
+    accountDevicesSignedIn: string;
+    accountDevicesRevoke: string;
+    accountDevicesLogoutSelf: string;
+
+    // Account Deletion (US-47–US-48)
+    accountDeleteSection: string;
+    accountDeleteHint: string;
+    accountDeleteButton: string;
+    accountDeleteConfirmText: string;
+    accountDeleteConfirmButton: string;
+    accountDeleteCancel: string;
+    accountDeleteEmailSent: string;
+    accountDeleteWrongPassword: string;
+    accountDeleteLinkInvalidTitle: string;
+    accountDeleteLinkInvalidText: string;
+    accountDeleteConfirmTitle: string;
+    accountDeleteConfirmSubtitle: string;
+    accountDeleteConfirmSubmit: string;
+    accountDeleteDoneTitle: string;
+    accountDeleteDoneText: string;
+
     // sr-only helpers
     srAnswerFormat: (format: string) => string;
     srUtf8Binary: string;
+
+    // Footer legal links
+    footerImpressum: string;
+    footerDatenschutz: string;
+    footerImpressumTitle: string;
+    footerDatenschutzTitle: string;
+    footerClose: string;
+
+    // Impressum (mock)
+    impressumAnbieter: string;
+    impressumName: string;
+    impressumAddress: string;
+    impressumCountry: string;
+    impressumContact: string;
+    impressumEmail: string;
+    impressumPhone: string;
+    impressumDisclaimer: string;
+    impressumDisclaimerText: string;
+
+    // Datenschutz (mock)
+    datenschutzIntroTitle: string;
+    datenschutzIntroText: string;
+    datenschutzDataCollectionTitle: string;
+    datenschutzDataCollectionText: string;
+    datenschutzCookiesTitle: string;
+    datenschutzCookiesText: string;
+    datenschutzRightsTitle: string;
+    datenschutzRightsText: string;
+    datenschutzContactTitle: string;
+    datenschutzContactText: string;
 };

@@ -23,6 +23,7 @@ import VerifyEmailScreen from './auth/VerifyEmailScreen.tsx';
 import VerifyLinkScreen, { type VerifyLinkStatus } from './auth/VerifyLinkScreen.tsx';
 import ForgotPasswordForm from './auth/ForgotPasswordForm.tsx';
 import ResetPasswordForm from './auth/ResetPasswordForm.tsx';
+import AppFooter from './AppFooter.tsx';
 
 // ==================== Types ====================
 
@@ -155,7 +156,8 @@ export default function WelcomeScreen(): ReactElement {
     };
 
     return (
-        <div className="min-h-screen bg-surface flex items-center justify-center p-4">
+        <div className="min-h-screen bg-surface flex flex-col">
+            <div className="flex-1 flex items-center justify-center p-4">
             {/* Top-right controls: theme toggle + language toggle */}
             <div className="fixed top-4 right-4 flex items-center gap-1.5" role="toolbar" aria-label="Settings">
                 <motion.button
@@ -295,6 +297,8 @@ export default function WelcomeScreen(): ReactElement {
                     />
                 )}
             </main>
+            </div>
+            <AppFooter />
         </div>
     );
 }
